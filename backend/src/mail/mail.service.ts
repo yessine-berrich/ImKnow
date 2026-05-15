@@ -35,7 +35,7 @@ export class MailService implements OnModuleInit {
 
   private async send(options: nodemailer.SendMailOptions): Promise<void> {
     await this.transporter.sendMail({
-      from: `"Ma Plateforme" <${this.config.get('EMAIL_USER')}>`,
+      from: `"ImKnow" <${this.config.get('EMAIL_USER')}>`,
       ...options,
     });
   }

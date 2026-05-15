@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Notification</title>
+  <title>Notification - ImKnow</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
 
@@ -12,12 +12,7 @@
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-          <!-- Logo / Brand -->
-          <tr>
-            <td align="center" style="padding-bottom:24px;">
-              <span style="font-size:22px;font-weight:700;color:#4f46e5;letter-spacing:-0.5px;">● Ma Plateforme</span>
-            </td>
-          </tr>
+        
 
           <!-- Card -->
           <tr>
@@ -25,13 +20,13 @@
 
               <!-- Dynamic header color based on notification type -->
               <%
-                let headerGradient = 'linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)';
+                let headerGradient = 'linear-gradient(135deg,#168F6F 0%,#0F6B54 100%)';
                 let headerIcon = '🔔';
                 let headerTitle = 'Notification';
                 let headerSub = 'Vous avez reçu une nouvelle notification';
 
                 if (typeof accountActivated !== 'undefined' && accountActivated) {
-                  headerGradient = 'linear-gradient(135deg,#168F6F 0%,#0e6b52 100%)';
+                  headerGradient = 'linear-gradient(135deg,#168F6F 0%,#0F6B54 100%)';
                   headerIcon = '✅';
                   headerTitle = 'Compte activé';
                   headerSub = 'Votre compte est maintenant actif';
@@ -64,7 +59,7 @@
                   headerTitle = 'Rôle mis à jour';
                   headerSub = 'Vos permissions ont été modifiées';
                 } else if (typeof systemMessage !== 'undefined') {
-                  headerGradient = 'linear-gradient(135deg,#6366f1 0%,#4338ca 100%)';
+                  headerGradient = 'linear-gradient(135deg,#168F6F 0%,#0F6B54 100%)';
                   headerIcon = 'ℹ️';
                   headerTitle = 'Information système';
                   headerSub = 'Un message important de la plateforme';
@@ -111,7 +106,7 @@
                         <p style="margin:0 0 16px;color:#1e293b;font-size:17px;font-weight:600;"><%= articleTitle %></p>
                         <% if (typeof articleUrl !== 'undefined' && articleUrl !== '#') { %>
                           <a href="<%= articleUrl %>" target="_self"
-                             style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:10px 24px;border-radius:8px;">
+                             style="display:inline-block;background:#168F6F;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:10px 24px;border-radius:8px;">
                             Voir l'article →
                           </a>
                         <% } %>
@@ -134,7 +129,7 @@
                     <% if (typeof accountActivated !== 'undefined' && accountActivated) { %>
                       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
                         <p style="margin:0 0 8px;font-size:32px;">🎉</p>
-                        <p style="margin:0 0 8px;color:#166534;font-size:16px;font-weight:600;">Votre compte est maintenant actif</p>
+                        <p style="margin:0 0 8px;color:#166534;font-size:16px;font-weight:600;">Votre compte ImKnow est maintenant actif</p>
                         <p style="margin:0;color:#15803d;font-size:14px;line-height:1.6;">Vous pouvez vous connecter et accéder à toutes les fonctionnalités de la plateforme.</p>
                       </div>
                     <% } %>
@@ -143,7 +138,7 @@
                     <% if (typeof accountDeactivated !== 'undefined' && accountDeactivated) { %>
                       <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
                         <p style="margin:0 0 8px;font-size:32px;">🔒</p>
-                        <p style="margin:0 0 8px;color:#991b1b;font-size:16px;font-weight:600;">Votre compte a été suspendu</p>
+                        <p style="margin:0 0 8px;color:#991b1b;font-size:16px;font-weight:600;">Votre compte ImKnow a été suspendu</p>
                         <p style="margin:0;color:#b91c1c;font-size:14px;line-height:1.6;">Si vous pensez que c'est une erreur, veuillez contacter un administrateur.</p>
                       </div>
                     <% } %>
@@ -167,7 +162,7 @@
 
                     <!-- Message système -->
                     <% if (typeof systemMessage !== 'undefined') { %>
-                      <div style="background:#f5f3ff;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;padding:16px;margin-bottom:28px;">
+                      <div style="background:#f5f3ff;border-left:4px solid #168F6F;border-radius:0 8px 8px 0;padding:16px;margin-bottom:28px;">
                         <p style="margin:0;color:#4c1d95;font-size:15px;line-height:1.7;"><%= systemMessage %></p>
                       </div>
                     <% } %>
@@ -176,12 +171,12 @@
                     <% if (senderName && senderName !== 'La plateforme') { %>
                       <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
                         <div style="width:36px;height:36px;background:#e0e7ff;border-radius:50%;text-align:center;line-height:36px;font-size:16px;display:inline-block;">👤</div>
-                        <span style="color:#6366f1;font-size:14px;font-weight:600;margin-left:10px;"><%= senderName %></span>
+                        <span style="color:#168F6F;font-size:14px;font-weight:600;margin-left:10px;"><%= senderName %></span>
                       </div>
                     <% } %>
 
                     <p style="margin:24px 0 0;color:#94a3b8;font-size:14px;border-top:1px solid #f1f5f9;padding-top:24px;">
-                      Connectez-vous à votre espace personnel pour plus de détails.
+                      Connectez-vous à votre espace personnel sur ImKnow pour plus de détails.
                     </p>
 
                   </td>
@@ -195,16 +190,16 @@
           <tr>
             <td style="padding:28px 0 0;text-align:center;">
               <p style="margin:0 0 4px;color:#94a3b8;font-size:13px;">
-                © <%= year %> Ma Plateforme · Tous droits réservés
+                © <%= year %> ImKnow · Tous droits réservés
               </p>
               <p style="margin:0;color:#cbd5e1;font-size:12px;">
-                Vous recevez cet email car vous êtes membre de la plateforme.
+                Vous recevez cet email car vous êtes membre de la plateforme ImKnow.
               </p>
             </td>
           </tr>
 
         </table>
-      </td>
+      </tr>
     </tr>
   </table>
 
