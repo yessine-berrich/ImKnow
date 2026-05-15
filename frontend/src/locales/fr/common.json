@@ -1,0 +1,39 @@
+{
+  "article_card": {
+    "featured": "Featured",
+    "menu": {
+      "export_pdf": "Exporter en PDF",
+      "exporting": "Export en cours...",
+      "print": "Imprimer",
+      "copy_link": "Copier le lien",
+      "edit": "Modifier",
+      "history": "Historique des versions",
+      "delete": "Supprimer"
+    },
+    "print": {
+      "author_label": "Auteur",
+      "date_label": "Date",
+      "footer": "Exporté depuis KnowledgeHub"
+    },
+    "share": {
+      "link_copied": "Lien copié !"
+    },
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer cet article ?",
+    "time_ago": {
+      "years_one": "il y a {{count}} an",
+      "years_other": "il y a {{count}} ans",
+      "days_one": "il y a {{count}} jour",
+      "days_other": "il y a {{count}} jours",
+      "hours_one": "il y a {{count}} heure",
+      "hours_other": "il y a {{count}} heures",
+      "minutes": "il y a quelques minutes"
+    },
+    "aria": {
+      "view_profile": "Voir le profil de {{name}}",
+      "more_options": "More options",
+      "share": "Share",
+      "bookmark": "Bookmark",
+      "export_pdf": "Exporter en PDF"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+# Robot Framework outputs
+results/
+
+# Node
+node_modules/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log

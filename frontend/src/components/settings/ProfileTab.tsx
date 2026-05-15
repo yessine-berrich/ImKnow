@@ -1,0 +1,416 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { User, Mail, Phone, MapPin, Globe, Upload, Building, X } from 'lucide-react';
+import { getToken } from '../../../services/auth.service';
+import { resolveAvatarUrl } from '@/utils/profile-image';
+import { useUser } from '@/context/UserContext';
+import { toast } from '@/components/modals/ToastContainer';
+import { useTranslation } from '@/context/LanguageContext';
+
+interface ProfileTabProps {
+  currentProfile: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    country: string;
+    city: string;
+    postalCode: string;
+    bio?: string;
+    department?: string;
+    /** The stored profileImage path — e.g. /uploads/avatars/user-5-abc12.webp */
+    avatar?: string | null;
+  };
+  userId: string;
+  onSave: (data: any) => void;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTabProps) {
+  const { t } = useTranslation();
+  const { updateUser } = useUser();
+
+  const [profile, setProfile] = useState(currentProfile);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Local file selected by the user — shown as a preview before save
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Whether the user has requested to remove their current photo
+  const [pendingRemovePhoto, setPendingRemovePhoto] = useState(false);
+
+  // Sync local form state when the parent updates currentProfile
+  useEffect(() => {
+    setProfile(currentProfile);
+    setSelectedFile(null);
+    setPendingRemovePhoto(false);
+    // Revoke any leftover preview blob
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }, [currentProfile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Revoke preview blob URL when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setProfile((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setPendingRemovePhoto(false);
+    // Revoke old preview before creating a new one
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleRemovePhoto = () => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    // Only mark for removal if there is an existing server-side avatar
+    if (currentProfile.avatar) {
+      setPendingRemovePhoto(true);
+    }
+  };
+
+  /** Returns the URL to display in the preview circle. */
+  const displaySrc = (): string | null => {
+    if (previewUrl) return previewUrl; // local blob preview
+    if (pendingRemovePhoto) return null;
+    return resolveAvatarUrl(currentProfile.avatar) || null;
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('firstName', profile.firstName);
+      formData.append('lastName', profile.lastName);
+      formData.append('email', profile.email);
+      formData.append('phone', profile.phone || '');
+      formData.append('country', profile.country || '');
+      formData.append('city', profile.city || '');
+      formData.append('postalCode', profile.postalCode || '');
+      formData.append('bio', profile.bio || '');
+      formData.append('department', profile.department || '');
+
+      if (selectedFile) {
+        formData.append('profileImage', selectedFile);
+      } else if (pendingRemovePhoto) {
+        formData.append('removeProfileImage', 'true');
+      }
+
+      // Use getToken() so it works for both localStorage and sessionStorage sessions
+      const token = getToken();
+      const response = await fetch(`${API_URL}/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.message || `Erreur ${response.status}`);
+      }
+
+      const updatedUser = await response.json();
+
+      // ── Propagate changes to global context ──────────────────────────────
+      // Every component reading from UserContext (header, navbar, etc.) will
+      // re-render automatically without any page reload.
+      updateUser(updatedUser);
+      onSave(updatedUser);
+
+      // Clean up the local preview blob now that the server has the new image
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+        setPreviewUrl(null);
+      }
+      setSelectedFile(null);
+      setPendingRemovePhoto(false);
+
+      toast.success(t('profile.success_message'));
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error(t('profile.error_message'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const currentSrc = displaySrc();
+
+  return (
+    <div className="space-y-6">
+      {/* ── Photo de profil ──────────────────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          {t('profile.profile_photo')}
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          {t('profile.click_to_change')}
+        </p>
+
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div
+              className="w-32 h-32 rounded-full flex items-center justify-center text-white font-bold text-4xl overflow-hidden"
+              style={{ background: 'linear-gradient(135deg, #168F6F, #0e6b52)' }}
+            >
+              {currentSrc ? (
+                <img
+                  src={currentSrc}
+                  alt={t('profile.avatar_preview')}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User size={48} />
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSubmitting}
+              className="absolute bottom-0 right-0 p-2 text-white rounded-full hover:opacity-90 transition-colors shadow-lg disabled:opacity-50"
+              style={{ backgroundColor: '#168F6F' }}
+            >
+              <Upload size={20} />
+            </button>
+
+            {currentSrc && (
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                disabled={isSubmitting}
+                title={t('profile.remove_photo')}
+                className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md disabled:opacity-50"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleAvatarChange}
+            className="hidden"
+            disabled={isSubmitting}
+          />
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t('profile.click_to_upload')}
+          </p>
+        </div>
+      </div>
+
+      {/* ── Informations personnelles ────────────────────────────────────── */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          {t('profile.personal_info')}
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          {t('profile.update_info')}
+        </p>
+
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.first_name')} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="firstName"
+                  value={profile.firstName}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isSubmitting}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  placeholder={t('profile.first_name_placeholder')}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.last_name')} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="lastName"
+                  value={profile.lastName}
+                  onChange={handleInputChange}
+                  required
+                  disabled={isSubmitting}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  placeholder={t('profile.last_name_placeholder')}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.email')} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  name="email"
+                  value={profile.email}
+                  disabled
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white opacity-60 cursor-not-allowed"
+                  placeholder={t('profile.email_placeholder')}
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {t('profile.email_cannot_change')}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.phone')}
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={profile.phone || ''}
+                  onChange={handleInputChange}
+                  disabled={isSubmitting}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  placeholder={t('profile.phone_placeholder')}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('profile.department')}
+            </label>
+            <div className="relative">
+              <Building className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                name="department"
+                value={profile.department || ''}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                placeholder={t('profile.department_placeholder')}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.country')}
+              </label>
+              <div className="relative">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="country"
+                  value={profile.country || ''}
+                  onChange={handleInputChange}
+                  disabled={isSubmitting}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  placeholder={t('profile.country_placeholder')}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.city')}
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  name="city"
+                  value={profile.city || ''}
+                  onChange={handleInputChange}
+                  disabled={isSubmitting}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  placeholder={t('profile.city_placeholder')}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('profile.postal_code')}
+              </label>
+              <input
+                type="text"
+                name="postalCode"
+                value={profile.postalCode || ''}
+                onChange={handleInputChange}
+                disabled={isSubmitting}
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                placeholder={t('profile.postal_code_placeholder')}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('profile.bio')}
+            </label>
+            <textarea
+              name="bio"
+              value={profile.bio || ''}
+              onChange={handleInputChange}
+              disabled={isSubmitting}
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none disabled:opacity-50"
+              placeholder={t('profile.bio_placeholder')}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="px-6 py-2.5 text-white font-medium rounded-lg hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          style={{ backgroundColor: '#168F6F' }}
+        >
+          {isSubmitting && (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          )}
+          {isSubmitting ? t('profile.saving') : t('profile.save')}
+        </button>
+      </div>
+    </div>
+  );
+}

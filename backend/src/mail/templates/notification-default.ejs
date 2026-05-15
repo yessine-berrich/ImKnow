@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notification</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          <!-- Logo / Brand -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <span style="font-size:22px;font-weight:700;color:#4f46e5;letter-spacing:-0.5px;">● Ma Plateforme</span>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+              <!-- Dynamic header color based on notification type -->
+              <%
+                let headerGradient = 'linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)';
+                let headerIcon = '🔔';
+                let headerTitle = 'Notification';
+                let headerSub = 'Vous avez reçu une nouvelle notification';
+
+                if (typeof accountActivated !== 'undefined' && accountActivated) {
+                  headerGradient = 'linear-gradient(135deg,#168F6F 0%,#0e6b52 100%)';
+                  headerIcon = '✅';
+                  headerTitle = 'Compte activé';
+                  headerSub = 'Votre compte est maintenant actif';
+                } else if (typeof accountDeactivated !== 'undefined' && accountDeactivated) {
+                  headerGradient = 'linear-gradient(135deg,#dc2626 0%,#9f1239 100%)';
+                  headerIcon = '🔒';
+                  headerTitle = 'Compte désactivé';
+                  headerSub = 'Votre compte a été suspendu';
+                } else if (typeof articleTitle !== 'undefined' && typeof rejectionReason === 'undefined') {
+                  // PUBLISHED or PENDING
+                  if (typeof moderationScore !== 'undefined') {
+                    headerGradient = 'linear-gradient(135deg,#059669 0%,#047857 100%)';
+                    headerIcon = '✅';
+                    headerTitle = 'Article publié !';
+                    headerSub = 'Votre article est maintenant en ligne';
+                  } else {
+                    headerGradient = 'linear-gradient(135deg,#d97706 0%,#b45309 100%)';
+                    headerIcon = '⏳';
+                    headerTitle = 'En attente de modération';
+                    headerSub = 'Votre article est en cours de vérification';
+                  }
+                } else if (typeof rejectionReason !== 'undefined') {
+                  headerGradient = 'linear-gradient(135deg,#dc2626 0%,#9f1239 100%)';
+                  headerIcon = '❌';
+                  headerTitle = 'Article refusé';
+                  headerSub = 'Votre article n\'a pas pu être publié';
+                } else if (typeof newRole !== 'undefined') {
+                  headerGradient = 'linear-gradient(135deg,#0891b2 0%,#0e7490 100%)';
+                  headerIcon = '👤';
+                  headerTitle = 'Rôle mis à jour';
+                  headerSub = 'Vos permissions ont été modifiées';
+                } else if (typeof systemMessage !== 'undefined') {
+                  headerGradient = 'linear-gradient(135deg,#6366f1 0%,#4338ca 100%)';
+                  headerIcon = 'ℹ️';
+                  headerTitle = 'Information système';
+                  headerSub = 'Un message important de la plateforme';
+                }
+              %>
+
+              <!-- Header -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:<%= headerGradient %>;padding:48px 40px;text-align:center;">
+                    <div style="width:64px;height:64px;background:rgba(255,255,255,0.2);border-radius:50%;margin:0 auto 20px;">
+                      <span style="font-size:32px;line-height:64px;display:block;"><%= headerIcon %></span>
+                    </div>
+                    <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">
+                      <%= headerTitle %>
+                    </h1>
+                    <p style="margin:10px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">
+                      <%= headerSub %>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Body -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:40px;">
+
+                    <p style="margin:0 0 24px;color:#374151;font-size:16px;line-height:1.6;">
+                      Bonjour,
+                    </p>
+
+                    <!-- Message principal -->
+                    <% if (message) { %>
+                      <p style="margin:0 0 28px;color:#374151;font-size:16px;line-height:1.7;">
+                        <%= message %>
+                      </p>
+                    <% } %>
+
+                    <!-- Article publié -->
+                    <% if (typeof articleTitle !== 'undefined' && typeof rejectionReason === 'undefined') { %>
+                      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:28px;">
+                        <p style="margin:0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Article</p>
+                        <p style="margin:0 0 16px;color:#1e293b;font-size:17px;font-weight:600;"><%= articleTitle %></p>
+                        <% if (typeof articleUrl !== 'undefined' && articleUrl !== '#') { %>
+                          <a href="<%= articleUrl %>" target="_self"
+                             style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:10px 24px;border-radius:8px;">
+                            Voir l'article →
+                          </a>
+                        <% } %>
+                      </div>
+                    <% } %>
+
+                    <!-- Article refusé -->
+                    <% if (typeof rejectionReason !== 'undefined') { %>
+                      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;">
+                        <p style="margin:0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Article concerné</p>
+                        <p style="margin:0;color:#1e293b;font-size:17px;font-weight:600;"><%= articleTitle %></p>
+                      </div>
+                      <div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:0 8px 8px 0;padding:16px;margin-bottom:28px;">
+                        <p style="margin:0 0 6px;color:#dc2626;font-size:13px;font-weight:600;">Motif du refus</p>
+                        <p style="margin:0;color:#7f1d1d;font-size:14px;line-height:1.6;"><%= rejectionReason %></p>
+                      </div>
+                    <% } %>
+
+                    <!-- Compte activé -->
+                    <% if (typeof accountActivated !== 'undefined' && accountActivated) { %>
+                      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
+                        <p style="margin:0 0 8px;font-size:32px;">🎉</p>
+                        <p style="margin:0 0 8px;color:#166534;font-size:16px;font-weight:600;">Votre compte est maintenant actif</p>
+                        <p style="margin:0;color:#15803d;font-size:14px;line-height:1.6;">Vous pouvez vous connecter et accéder à toutes les fonctionnalités de la plateforme.</p>
+                      </div>
+                    <% } %>
+
+                    <!-- Compte désactivé -->
+                    <% if (typeof accountDeactivated !== 'undefined' && accountDeactivated) { %>
+                      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:24px;margin-bottom:28px;text-align:center;">
+                        <p style="margin:0 0 8px;font-size:32px;">🔒</p>
+                        <p style="margin:0 0 8px;color:#991b1b;font-size:16px;font-weight:600;">Votre compte a été suspendu</p>
+                        <p style="margin:0;color:#b91c1c;font-size:14px;line-height:1.6;">Si vous pensez que c'est une erreur, veuillez contacter un administrateur.</p>
+                      </div>
+                    <% } %>
+
+                    <!-- Changement de rôle -->
+                    <% if (typeof newRole !== 'undefined') { %>
+                      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px;margin-bottom:28px;text-align:center;">
+                        <% if (typeof oldRole !== 'undefined') { %>
+                          <p style="margin:0 0 12px;color:#0369a1;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Changement de rôle</p>
+                          <div style="display:inline-flex;align-items:center;gap:12px;">
+                            <span style="background:#e0f2fe;color:#0369a1;padding:6px 14px;border-radius:20px;font-size:14px;font-weight:600;"><%= oldRole %></span>
+                            <span style="color:#64748b;font-size:18px;">→</span>
+                            <span style="background:#0369a1;color:#fff;padding:6px 14px;border-radius:20px;font-size:14px;font-weight:600;"><%= newRole %></span>
+                          </div>
+                        <% } else { %>
+                          <p style="margin:0 0 8px;color:#0369a1;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Nouveau rôle</p>
+                          <p style="margin:0;color:#0c4a6e;font-size:24px;font-weight:700;"><%= newRole %></p>
+                        <% } %>
+                      </div>
+                    <% } %>
+
+                    <!-- Message système -->
+                    <% if (typeof systemMessage !== 'undefined') { %>
+                      <div style="background:#f5f3ff;border-left:4px solid #7c3aed;border-radius:0 8px 8px 0;padding:16px;margin-bottom:28px;">
+                        <p style="margin:0;color:#4c1d95;font-size:15px;line-height:1.7;"><%= systemMessage %></p>
+                      </div>
+                    <% } %>
+
+                    <!-- Sender -->
+                    <% if (senderName && senderName !== 'La plateforme') { %>
+                      <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+                        <div style="width:36px;height:36px;background:#e0e7ff;border-radius:50%;text-align:center;line-height:36px;font-size:16px;display:inline-block;">👤</div>
+                        <span style="color:#6366f1;font-size:14px;font-weight:600;margin-left:10px;"><%= senderName %></span>
+                      </div>
+                    <% } %>
+
+                    <p style="margin:24px 0 0;color:#94a3b8;font-size:14px;border-top:1px solid #f1f5f9;padding-top:24px;">
+                      Connectez-vous à votre espace personnel pour plus de détails.
+                    </p>
+
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:28px 0 0;text-align:center;">
+              <p style="margin:0 0 4px;color:#94a3b8;font-size:13px;">
+                © <%= year %> Ma Plateforme · Tous droits réservés
+              </p>
+              <p style="margin:0;color:#cbd5e1;font-size:12px;">
+                Vous recevez cet email car vous êtes membre de la plateforme.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "bookmarked": {
+    "loading": "Chargement de vos articles sauvegardés...",
+    "header": {
+      "title": "Articles sauvegardés",
+      "empty_subtitle": "Vous n'avez pas encore sauvegardé d'articles",
+      "subtitle_one": "{{count}} article dans votre bibliothèque",
+      "subtitle_other": "{{count}} articles dans votre bibliothèque"
+    },
+    "badge": "Sauvegardé",
+    "error": {
+      "session_expired_title": "Session expirée",
+      "session_expired_message": "Veuillez vous reconnecter",
+      "loading_title": "Erreur de chargement",
+      "retry": "Réessayer",
+      "signin": "Se connecter"
+    },
+    "empty": {
+      "title": "Aucun article sauvegardé",
+      "description": "Vous n'avez pas encore sauvegardé d'articles. Explorez notre base de connaissances et sauvegardez vos articles préférés !",
+      "cta": "Explorer les articles"
+    },
+    "pagination": {
+      "showing": "Affichage {{from}} - {{to}} sur {{total}} article",
+      "showing_plural": "Affichage {{from}} - {{to}} sur {{total}} articles"
+    },
+    "confirm_delete": "Êtes-vous sûr de vouloir supprimer cet article ?"
+  }
+}

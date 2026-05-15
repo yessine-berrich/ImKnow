@@ -1,0 +1,21 @@
+# Robot Framework configuration file
+# Run with: robot --argumentfile robot.toml tests/
+
+[tool.robot]
+# Output directory for results
+outputdir = results
+
+# Log level (TRACE, DEBUG, INFO, WARN, ERROR)
+loglevel = INFO
+
+# Report title
+reporttitle = ImKnow Frontend Test Report
+
+# Test tags to always include (comment out to run all)
+# include = smoke
+
+# Test tags to always exclude
+# exclude = skip
+
+# Parallel execution (requires robotframework-pabot)
+# processes = 4

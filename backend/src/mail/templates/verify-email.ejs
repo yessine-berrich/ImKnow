@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vérifiez votre adresse email - ImKnow</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f4f8;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+          
+          <!-- Card -->
+          <tr>
+            <td style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+              <!-- Header -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:linear-gradient(135deg,#168F6F 0%,#0F6B54 100%);padding:48px 40px;text-align:center;">
+                    <div>
+                      <span style="font-size:32px;line-height:64px;display:block;">✉️</span>
+                    </div>
+                    <h1 style="margin:0;color:#ffffff;font-size:26px;font-weight:700;letter-spacing:-0.5px;">
+                      Vérifiez votre adresse email
+                    </h1>
+                    <p style="margin:10px 0 0;color:rgba(255,255,255,0.8);font-size:15px;">
+                      Plus qu'une étape pour activer votre compte
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Body -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:40px;">
+                    <p style="margin:0 0 16px;color:#374151;font-size:16px;line-height:1.6;">
+                      Bonjour,
+                    </p>
+                    <p style="margin:0 0 32px;color:#374151;font-size:16px;line-height:1.7;">
+                      Merci de vous être inscrit sur <strong style="color:#168F6F;">ImKnow</strong>. Pour finaliser la création de votre compte, veuillez confirmer votre adresse email en cliquant sur le bouton ci-dessous.
+                    </p>
+
+                    <!-- CTA Button -->
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td align="center" style="padding:8px 0 32px;">
+                          <a href="<%= link %>" target="_self"
+                             style="display:inline-block;background:linear-gradient(135deg,#168F6F,#0F6B54);color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;padding:16px 40px;border-radius:10px;letter-spacing:0.3px;">
+                            ✅ &nbsp;Vérifier mon email
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Fallback link -->
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-bottom:32px;">
+                      <p style="margin:0 0 8px;color:#64748b;font-size:13px;">
+                        Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+                      </p>
+                      <p style="margin:0;word-break:break-all;">
+                        <a href="<%= link %>" target="_self" style="color:#168F6F;font-size:13px;"><%= link %></a>
+                      </p>
+                    </div>
+
+                    <!-- Warning -->
+                    <div style="background:#f0fdf4;border-left:4px solid #168F6F;border-radius:0 8px 8px 0;padding:14px 16px;">
+                      <p style="margin:0;color:#065f46;font-size:13px;line-height:1.5;">
+                        ⚠️ Ce lien expire dans <strong>24 heures</strong>. Si vous n'avez pas créé de compte, ignorez cet email.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+            <table>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:28px 0 0;text-align:center;">
+              <p style="margin:0 0 4px;color:#94a3b8;font-size:13px;">
+                © <%= new Date().getFullYear() %> ImKnow · Tous droits réservés
+              </p>
+              <p style="margin:0;color:#cbd5e1;font-size:12px;">
+                Vous recevez cet email car vous avez créé un compte sur notre plateforme.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </table>
+    </tr>
+  </table>
+
+</body>
+</html>

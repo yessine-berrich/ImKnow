@@ -1,0 +1,29 @@
+{
+  "bookmarked": {
+    "loading": "Loading your saved articles...",
+    "header": {
+      "title": "Saved articles",
+      "empty_subtitle": "You haven't saved any articles yet",
+      "subtitle_one": "{{count}} article in your library",
+      "subtitle_other": "{{count}} articles in your library"
+    },
+    "badge": "Saved",
+    "error": {
+      "session_expired_title": "Session expired",
+      "session_expired_message": "Please sign in again",
+      "loading_title": "Loading error",
+      "retry": "Try again",
+      "signin": "Sign in"
+    },
+    "empty": {
+      "title": "No saved articles",
+      "description": "You haven't saved any articles yet. Explore our knowledge base and save your favourite articles!",
+      "cta": "Explore articles"
+    },
+    "pagination": {
+      "showing": "Showing {{from}} - {{to}} of {{total}} article",
+      "showing_plural": "Showing {{from}} - {{to}} of {{total}} articles"
+    },
+    "confirm_delete": "Are you sure you want to delete this article?"
+  }
+}

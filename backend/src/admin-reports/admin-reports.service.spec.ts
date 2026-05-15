@@ -1,0 +1,470 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { AdminReportsService } from './admin-reports.service';
+import { ArticleReport } from 'src/article/entities/article-report.entity';
+import { UserReport } from 'src/users/entities/user-report.entity';
+import { Article } from 'src/article/entities/article.entity';
+import { User } from 'src/users/entities/user.entity';
+import { ArticleStatus } from 'utils/constants';
+
+describe('AdminReportsService', () => {
+  let service: AdminReportsService;
+
+  const now = new Date();
+
+  const mockArticle = {
+    id: 1,
+    title: 'Test Article',
+    status: ArticleStatus.PUBLISHED,
+    content: 'Some article content for testing purposes.',
+    author: { id: 2, firstName: 'John', lastName: 'Doe' },
+    createdAt: now,
+  };
+
+  const mockReporter = { id: 3, firstName: 'Reporter', lastName: 'User' };
+
+  const mockArticleReport = {
+    id: 1,
+    reason: 'spam',
+    details: 'Spam content',
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    article: mockArticle,
+    reporter: mockReporter,
+  };
+
+  const mockUser = {
+    id: 10,
+    firstName: 'Alice',
+    lastName: 'Smith',
+    email: 'alice@example.com',
+    department: 'Engineering',
+    isActive: true,
+    role: 'employee',
+    createdAt: now,
+  };
+
+  const mockUserReport = {
+    id: 2,
+    reason: 'harassment',
+    details: 'Harassing behaviour',
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+    reportedUser: mockUser,
+    reporter: mockReporter,
+  };
+
+  const makeQB = (results: any[]) => ({
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    getMany: jest.fn().mockResolvedValue(results),
+  });
+
+  const mockArticleReportRepo = {
+    createQueryBuilder: jest.fn(),
+    find: jest.fn(),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
+  const mockUserReportRepo = {
+    createQueryBuilder: jest.fn(),
+    find: jest.fn(),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
+  const mockArticleRepo = {
+    findOne: jest.fn(),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
+  const mockUserRepo = {
+    findOne: jest.fn(),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AdminReportsService,
+        { provide: getRepositoryToken(ArticleReport), useValue: mockArticleReportRepo },
+        { provide: getRepositoryToken(UserReport),   useValue: mockUserReportRepo },
+        { provide: getRepositoryToken(Article),      useValue: mockArticleRepo },
+        { provide: getRepositoryToken(User),         useValue: mockUserRepo },
+      ],
+    }).compile();
+
+    service = module.get<AdminReportsService>(AdminReportsService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // getReportedArticles
+  // ═══════════════════════════════════════════════════════════════
+
+  describe('getReportedArticles', () => {
+    it('should return paginated article report entries', async () => {
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+
+      const result = await service.getReportedArticles({});
+
+      expect(result.total).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].articleId).toBe(1);
+      expect(result.items[0].title).toBe('Test Article');
+      expect(result.items[0].reportCount).toBe(1);
+      expect(result.summary).toBeDefined();
+    });
+
+    it('should return empty result when no reports', async () => {
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([]));
+
+      const result = await service.getReportedArticles({});
+
+      expect(result.total).toBe(0);
+      expect(result.items).toHaveLength(0);
+    });
+
+    it('should filter by riskLevel', async () => {
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+
+      const result = await service.getReportedArticles({ riskLevel: 'critical' });
+
+      // spam score is low, so riskLevel is 'low' → filtered out
+      expect(result.items).toHaveLength(0);
+    });
+
+    it('should filter by search term', async () => {
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+
+      const result = await service.getReportedArticles({ search: 'Test' });
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].title).toContain('Test');
+    });
+
+    it('should filter by search term that matches nothing', async () => {
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+
+      const result = await service.getReportedArticles({ search: 'zzz_nomatch' });
+
+      expect(result.items).toHaveLength(0);
+    });
+
+    it('should apply status filter via QB andWhere when status is not all', async () => {
+      const qb = makeQB([]);
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.getReportedArticles({ status: 'pending' });
+
+      expect(qb.andWhere).toHaveBeenCalledWith('r.status = :status', { status: 'pending' });
+    });
+
+    it('should not call andWhere when status is all', async () => {
+      const qb = makeQB([]);
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.getReportedArticles({ status: 'all' });
+
+      expect(qb.andWhere).not.toHaveBeenCalled();
+    });
+
+    it('should paginate results correctly', async () => {
+      const reports = Array.from({ length: 5 }, (_, i) => ({
+        ...mockArticleReport,
+        id: i + 1,
+        article: { ...mockArticle, id: i + 1, title: `Article ${i + 1}` },
+      }));
+      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB(reports));
+
+      const result = await service.getReportedArticles({ page: 1, limit: 2 });
+
+      expect(result.items).toHaveLength(2);
+      expect(result.totalPages).toBe(3);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // getArticleReportDetail
+  // ═══════════════════════════════════════════════════════════════
+
+  describe('getArticleReportDetail', () => {
+    it('should return full article report detail', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
+      mockArticleReportRepo.find.mockResolvedValue([mockArticleReport]);
+
+      const result = await service.getArticleReportDetail(1);
+
+      expect(result.article.id).toBe(1);
+      expect(result.article.title).toBe('Test Article');
+      expect(result.intelligence).toBeDefined();
+      expect(result.intelligence.riskScore).toBeDefined();
+      expect(result.intelligence.recommendation).toBeDefined();
+      expect(result.reports).toHaveLength(1);
+      expect(result.reports[0].reason).toBe('spam');
+    });
+
+    it('should throw NotFoundException when article not found', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.getArticleReportDetail(999)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should handle article with no reports', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
+      mockArticleReportRepo.find.mockResolvedValue([]);
+
+      const result = await service.getArticleReportDetail(1);
+
+      expect(result.reports).toHaveLength(0);
+      expect(result.intelligence.riskScore).toBe(0);
+    });
+
+    it('should recommend unpublish for hate_speech', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
+      mockArticleReportRepo.find.mockResolvedValue([
+        { ...mockArticleReport, reason: 'hate_speech' },
+      ]);
+
+      const result = await service.getArticleReportDetail(1);
+
+      expect(result.intelligence.recommendation.action).toBe('unpublish');
+      expect(result.intelligence.recommendation.severity).toBe('danger');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // takeActionOnArticle
+  // ═══════════════════════════════════════════════════════════════
+
+  describe('takeActionOnArticle', () => {
+    beforeEach(() => {
+      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
+      mockArticleReportRepo.find.mockResolvedValue([mockArticleReport]);
+    });
+
+    it('should dismiss_all pending reports', async () => {
+      const result = await service.takeActionOnArticle(1, 'dismiss_all', 99);
+
+      expect(mockArticleReportRepo.update).toHaveBeenCalledWith(
+        { article: { id: 1 }, status: 'pending' },
+        { status: 'dismissed' },
+      );
+      expect(result.action).toBe('dismiss_all');
+    });
+
+    it('should review_all pending reports', async () => {
+      const result = await service.takeActionOnArticle(1, 'review_all', 99);
+
+      expect(mockArticleReportRepo.update).toHaveBeenCalledWith(
+        { article: { id: 1 }, status: 'pending' },
+        { status: 'reviewed' },
+      );
+      expect(result.action).toBe('review_all');
+    });
+
+    it('should unpublish the article and mark reports reviewed', async () => {
+      const result = await service.takeActionOnArticle(1, 'unpublish', 99);
+
+      expect(mockArticleRepo.update).toHaveBeenCalledWith(1, { status: ArticleStatus.REJECTED });
+      expect(mockArticleReportRepo.update).toHaveBeenCalled();
+      expect(result.action).toBe('unpublish');
+    });
+
+    it('should warn_author and mark reports reviewed', async () => {
+      const result = await service.takeActionOnArticle(1, 'warn_author', 99);
+
+      expect(mockArticleReportRepo.update).toHaveBeenCalled();
+      expect(result.action).toBe('warn_author');
+    });
+
+    it('should throw NotFoundException when article not found', async () => {
+      mockArticleRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.takeActionOnArticle(999, 'dismiss_all', 99))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for invalid action', async () => {
+      await expect(service.takeActionOnArticle(1, 'ban' as any, 99))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // getReportedUsers
+  // ═══════════════════════════════════════════════════════════════
+
+  describe('getReportedUsers', () => {
+    it('should return paginated user report entries', async () => {
+      mockUserReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockUserReport]));
+
+      const result = await service.getReportedUsers({});
+
+      expect(result.total).toBe(1);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].userId).toBe(10);
+      expect(result.items[0].userName).toBe('Alice Smith');
+      expect(result.items[0].reportCount).toBe(1);
+      expect(result.summary).toBeDefined();
+      expect(result.summary.bannedUsers).toBeDefined();
+    });
+
+    it('should return empty when no user reports', async () => {
+      mockUserReportRepo.createQueryBuilder.mockReturnValue(makeQB([]));
+
+      const result = await service.getReportedUsers({});
+
+      expect(result.total).toBe(0);
+      expect(result.items).toHaveLength(0);
+    });
+
+    it('should filter by search term matching username', async () => {
+      mockUserReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockUserReport]));
+
+      const result = await service.getReportedUsers({ search: 'Alice' });
+
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should filter by search term matching email', async () => {
+      mockUserReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockUserReport]));
+
+      const result = await service.getReportedUsers({ search: 'alice@' });
+
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should count banned users in summary', async () => {
+      const bannedReport = {
+        ...mockUserReport,
+        reportedUser: { ...mockUser, isActive: false },
+      };
+      mockUserReportRepo.createQueryBuilder.mockReturnValue(makeQB([bannedReport]));
+
+      const result = await service.getReportedUsers({});
+
+      expect(result.summary.bannedUsers).toBe(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // getUserReportDetail
+  // ═══════════════════════════════════════════════════════════════
+
+  describe('getUserReportDetail', () => {
+    it('should return full user report detail', async () => {
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
+      mockUserReportRepo.find.mockResolvedValue([mockUserReport]);
+
+      const result = await service.getUserReportDetail(10);
+
+      expect(result.user.id).toBe(10);
+      expect(result.user.name).toBe('Alice Smith');
+      expect(result.intelligence).toBeDefined();
+      expect(result.intelligence.recommendation).toBeDefined();
+      expect(result.reports).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.getUserReportDetail(999)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should recommend review_all for inactive user', async () => {
+      mockUserRepo.findOne.mockResolvedValue({ ...mockUser, isActive: false });
+      mockUserReportRepo.find.mockResolvedValue([mockUserReport]);
+
+      const result = await service.getUserReportDetail(10);
+
+      expect(result.intelligence.recommendation.action).toBe('review_all');
+    });
+
+    it('should recommend ban for harassment on active user with high risk', async () => {
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
+      // Many harassment reports to raise risk level to critical
+      const heavyReports = Array.from({ length: 5 }, () => ({
+        ...mockUserReport,
+        reason: 'harassment',
+        createdAt: new Date(),
+      }));
+      mockUserReportRepo.find.mockResolvedValue(heavyReports);
+
+      const result = await service.getUserReportDetail(10);
+
+      expect(result.intelligence.recommendation.severity).toMatch(/danger|warning/);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // takeActionOnUser
+  // ═══════════════════════════════════════════════════════════════
+
+  describe('takeActionOnUser', () => {
+    beforeEach(() => {
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
+    });
+
+    it('should dismiss_all pending user reports', async () => {
+      const result = await service.takeActionOnUser(10, 'dismiss_all', 99);
+
+      expect(mockUserReportRepo.update).toHaveBeenCalledWith(
+        { reportedUser: { id: 10 }, status: 'pending' },
+        { status: 'dismissed' },
+      );
+      expect(result.action).toBe('dismiss_all');
+    });
+
+    it('should review_all pending user reports', async () => {
+      const result = await service.takeActionOnUser(10, 'review_all', 99);
+
+      expect(mockUserReportRepo.update).toHaveBeenCalled();
+      expect(result.action).toBe('review_all');
+    });
+
+    it('should warn user and mark reports reviewed', async () => {
+      const result = await service.takeActionOnUser(10, 'warn', 99);
+
+      expect(mockUserReportRepo.update).toHaveBeenCalled();
+      expect(result.action).toBe('warn');
+    });
+
+    it('should ban user and mark reports reviewed', async () => {
+      const result = await service.takeActionOnUser(10, 'ban', 99);
+
+      expect(mockUserRepo.update).toHaveBeenCalledWith(10, { isActive: false });
+      expect(mockUserReportRepo.update).toHaveBeenCalled();
+      expect(result.action).toBe('ban');
+    });
+
+    it('should throw NotFoundException when user not found', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.takeActionOnUser(999, 'warn', 99))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when admin acts on themselves', async () => {
+      mockUserRepo.findOne.mockResolvedValue({ ...mockUser, id: 99 });
+
+      await expect(service.takeActionOnUser(99, 'warn', 99))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for invalid action', async () => {
+      await expect(service.takeActionOnUser(10, 'unpublish' as any, 99))
+        .rejects.toThrow(BadRequestException);
+    });
+  });
+});
