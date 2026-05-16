@@ -95,13 +95,16 @@ export default function TagsPage() {
       const data = await response.json();
       
       // Adaptation des données NestJS -> Format TagItem
-      const formattedTags: TagItem[] = data.map((tag: any) => ({
-        id: tag.id.toString(),
-        name: tag.name,
-        count: tag.articles ? tag.articles.length : 0,
-        trending: tag.articles && tag.articles.length > 5,
-        color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-      }));
+      const formattedTags: TagItem[] = data.map((tag: any) => {
+        const count = tag.count ?? (tag.articles ? tag.articles.length : 0);
+        return {
+          id: tag.id.toString(),
+          name: tag.name,
+          count,
+          trending: count > 5,
+          color: 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] border border-[#168F6F]/20',
+        };
+      });
       
       setTags(formattedTags);
     } catch (error) {

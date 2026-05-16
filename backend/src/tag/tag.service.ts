@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tag } from './entities/tag.entity';
@@ -17,11 +17,18 @@ export class TagService {
     this.ollama = new Ollama({ host: 'http://localhost:11434' });
   }
 
-  async findAll(): Promise<Tag[]> {
-    return this.tagRepository.find({
-      relations: ['articles'],
-      order: { name: 'ASC' },
-    });
+  async findAll(): Promise<{ id: number; name: string; count: number }[]> {
+    const tags = await this.tagRepository
+      .createQueryBuilder('tag')
+      .loadRelationCountAndMap('tag.count', 'tag.articles')
+      .orderBy('tag.name', 'ASC')
+      .getMany();
+
+    return tags.map((t) => ({
+      id: t.id,
+      name: t.name,
+      count: (t as any).count ?? 0,
+    }));
   }
 
   async findOne(id: number): Promise<Tag> {
@@ -34,12 +41,20 @@ export class TagService {
   }
 
   async create(createTagDto: CreateTagDto): Promise<Tag> {
+    const existing = await this.tagRepository.findOne({
+      where: { name: createTagDto.name },
+    });
+    if (existing) throw new ConflictException(`Le tag "${createTagDto.name}" existe déjà`);
     const tag = this.tagRepository.create(createTagDto);
     return this.tagRepository.save(tag);
   }
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
     const tag = await this.findOne(id);
+    if (updateTagDto.name && updateTagDto.name !== tag.name) {
+      const conflict = await this.tagRepository.findOne({ where: { name: updateTagDto.name } });
+      if (conflict) throw new ConflictException(`Le tag "${updateTagDto.name}" existe déjà`);
+    }
     Object.assign(tag, updateTagDto);
     return this.tagRepository.save(tag);
   }
@@ -54,123 +69,136 @@ export class TagService {
   }
 
   /**
-   * Suggest relevant tags for an article using Ollama AI (local, free).
-   * Returns a mix of existing tags (with their IDs) and new tag suggestions.
+   * Strip markdown syntax from content so the LLM receives plain prose.
+   */
+  private stripMarkdown(text: string): string {
+    return text
+      .replace(/!\[.*?\]\(.*?\)/g, '')          // images
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')  // links → keep label
+      .replace(/```[\s\S]*?```/g, '')            // fenced code blocks
+      .replace(/`[^`]+`/g, '')                   // inline code
+      .replace(/#{1,6}\s/g, '')                  // headings
+      .replace(/(\*{1,3}|_{1,3})(.*?)\1/g, '$2') // bold / italic
+      .replace(/^[-*+]\s+/gm, '')               // list bullets
+      .replace(/^\d+\.\s+/gm, '')               // numbered lists
+      .replace(/^>\s+/gm, '')                   // blockquotes
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Suggest relevant tags for an article using Ollama AI.
+   * Returns existing tags (with IDs) + new tag name suggestions.
    */
   async suggestTags(
     title: string,
-    content: string,
+    content: string = '',
   ): Promise<{
     existingTags: { id: number; name: string }[];
     newSuggestions: string[];
   }> {
-    // Load all existing tags for context
     const allTags = await this.tagRepository.find({ order: { name: 'ASC' } });
     const existingTagNames = allTags.map((t) => t.name);
 
-    // Truncate content to avoid token overload
-    const truncatedContent = content
-      .replace(/!\[.*?\]\(.*?\)/g, '')
-      .replace(/\s+/g, ' ')
-      .substring(0, 1500);
+    const plainContent = this.stripMarkdown(content).substring(0, 1500);
 
-    const prompt = `You are a tagging assistant for a knowledge-sharing platform.
+    // Detect language hint from title (heuristic: French characters present)
+    const looksLikeFrench = /[àâäéèêëîïôùûüçœæ]/i.test(title + content);
+    const langHint = looksLikeFrench
+      ? 'The article is in French. Suggest tags in French when appropriate.'
+      : 'Suggest tags in the same language as the article.';
+
+    const prompt = `You are a precise tagging assistant for a technical knowledge-sharing platform.
+
+${langHint}
 
 Article title: "${title}"
-
-Article content (excerpt):
-${truncatedContent}
-
-Existing tags on the platform:
+${plainContent ? `\nArticle content (excerpt):\n${plainContent}\n` : ''}
+Available tags on the platform (use their exact spelling when matching):
 ${existingTagNames.length > 0 ? existingTagNames.join(', ') : '(none yet)'}
 
-Your task:
-1. Suggest 3 to 6 highly relevant tags for this article.
-2. Prefer existing tags when they fit well.
-3. If no existing tag fits a concept, suggest a short new tag (1-3 words, lowercase, no special chars).
-4. Return ONLY a valid JSON object, no explanation, no markdown, no code block.
+Instructions:
+1. Suggest between 3 and 6 relevant tags total.
+2. PREFER tags from the available list when they match well — copy them exactly as written.
+3. For concepts not covered by existing tags, suggest new tags of MAXIMUM 3 words (lowercase, hyphens instead of spaces, no special characters).
+4. Respond with ONLY a valid JSON object — no explanation, no markdown fences.
 
-Format:
+Response format:
 {
-  "existing": ["tag1", "tag2"],
-  "new": ["new-tag1", "new-tag2"]
+  "existing": ["ExactTagNameFromList"],
+  "new": ["new-concept", "another-tag"]
 }
 
 Rules:
-- "existing" must only contain tags from the provided existing tags list (exact match).
-- "new" contains tags that are NOT in the existing list.
-- Total tags (existing + new) must be between 3 and 6.
-- Tags must be short, specific, and relevant to the article content.
-
-Example response:
-{
-  "existing": ["javascript", "nestjs"],
-  "new": ["api-design"]
-}`;
+- "existing" values must exactly match strings from the available tags list (case-sensitive).
+- "new" values must NOT appear in the available tags list.
+- Total of existing + new must be 3–6.`;
 
     try {
-      // Check if Ollama is running
       await this.checkOllamaConnection();
 
       const response = await this.ollama.generate({
-        model: 'llama3.2:3b', // You can change this to any model you pulled
-        prompt: prompt,
-        format: 'json', // Forces JSON output
+        model: 'llama3.2:3b',
+        prompt,
+        format: 'json',
         options: {
-          temperature: 0.3, // Lower = more consistent, higher = more creative
-          num_predict: 300, // Max tokens to generate
+          temperature: 0.2,
+          num_predict: 300,
         },
       });
 
-      // Parse the JSON response
       let parsed: { existing: string[]; new: string[] };
-      
+
       try {
         parsed = JSON.parse(response.response);
-      } catch (parseError) {
-        console.error('Failed to parse Ollama response:', response.response);
-        // Attempt to extract JSON from response if wrapped in markdown
+      } catch {
         const jsonMatch = response.response.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           parsed = JSON.parse(jsonMatch[0]);
         } else {
-          throw parseError;
+          throw new Error('Could not parse Ollama response as JSON');
         }
       }
 
-      // Match existing tag names back to their full objects (id + name)
-      const existingTagNames_set = new Set(
-        (parsed.existing || []).map((n) => n.toLowerCase()),
+      // Match existing tag names back to DB objects (exact match first, then case-insensitive)
+      const suggestedExisting = new Set(
+        (parsed.existing || []).map((n) => n.trim()),
       );
-      const matchedExisting = allTags.filter((t) =>
-        existingTagNames_set.has(t.name.toLowerCase()),
+      const matchedExisting = allTags.filter(
+        (t) =>
+          suggestedExisting.has(t.name) ||
+          suggestedExisting.has(t.name.toLowerCase()),
       );
 
-      // Sanitize new suggestions
+      // Sanitize new suggestions: lowercase, alphanumeric + accented + hyphens, max 3 words
       const newSuggestions = (parsed.new || [])
         .map((s) =>
           String(s)
             .toLowerCase()
-            .replace(/[^a-z0-9\u00C0-\u017E\s-]/g, '')
+            .replace(/[^a-z0-9À-ž\s-]/g, '')
             .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '') // strip leading/trailing hyphens
             .trim(),
         )
-        .filter((s) => s.length > 0 && s.length <= 50);
+        .filter((s) => {
+          if (s.length === 0 || s.length > 50) return false;
+          // Count words (hyphen-separated or space-separated segments)
+          const wordCount = s.split(/[-\s]+/).filter(Boolean).length;
+          return wordCount <= 3;
+        })
+        // Remove any that accidentally match an existing tag
+        .filter(
+          (s) =>
+            !allTags.some(
+              (t) =>
+                t.name.toLowerCase().replace(/^#/, '') === s ||
+                t.name.toLowerCase() === s,
+            ),
+        );
 
-      // Ensure we have at least some tags
       if (matchedExisting.length === 0 && newSuggestions.length === 0) {
-        // Fallback: generate a simple tag from the title
-        const fallbackTag = title
-          .toLowerCase()
-          .split(' ')
-          .slice(0, 3)
-          .join('-')
-          .replace(/[^a-z0-9-]/g, '');
-        
-        return {
-          existingTags: [],
-          newSuggestions: fallbackTag ? [fallbackTag] : ['uncategorized'],
-        };
+        return this.titleFallback(title);
       }
 
       return {
@@ -178,33 +206,34 @@ Example response:
         newSuggestions,
       };
     } catch (error) {
-      console.error('Error calling Ollama:', error);
-      
-      // Return a simple fallback based on title keywords
-      const fallbackTags = title
-        .toLowerCase()
-        .split(' ')
-        .filter(word => word.length > 3)
-        .slice(0, 3)
-        .map(word => word.replace(/[^a-z0-9]/g, '-'));
-      
-      return {
-        existingTags: [],
-        newSuggestions: fallbackTags.length > 0 ? fallbackTags : ['general'],
-      };
+      console.error('Tag suggestion error:', (error as Error).message);
+      return this.titleFallback(title);
     }
   }
 
-  /**
-   * Check if Ollama is running and accessible
-   */
+  private titleFallback(title: string): {
+    existingTags: { id: number; name: string }[];
+    newSuggestions: string[];
+  } {
+    const tags = title
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 3)
+      .slice(0, 3)
+      .map((w) => w.replace(/[^a-z0-9À-ž-]/g, '').replace(/^-+|-+$/g, ''))
+      .filter((w) => w.length > 0);
+    return {
+      existingTags: [],
+      newSuggestions: tags.length > 0 ? tags : ['general'],
+    };
+  }
+
   private async checkOllamaConnection(): Promise<void> {
     try {
-      // Try to list models as a connection test
       await this.ollama.list();
-    } catch (error) {
+    } catch {
       throw new Error(
-        'Ollama is not running. Please start Ollama first using "ollama serve" or launch the Ollama application.',
+        'Ollama is not running. Start it with "ollama serve" or launch the Ollama app.',
       );
     }
   }

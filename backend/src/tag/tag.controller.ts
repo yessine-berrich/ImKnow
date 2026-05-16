@@ -11,21 +11,11 @@ import {
 import { TagService } from './tag.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
+import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { Roles } from 'src/users/decorators/user-role.decorator';
 import { userRole } from 'utils/constants';
 import { AuthGuard } from 'src/users/guards/auth.guard';
 import { AuthRolesGuard } from 'src/users/guards/auth-roles.guard';
-import { IsString, IsNotEmpty } from 'class-validator';
-
-class SuggestTagsDto {
-  @IsString()
-  @IsNotEmpty()
-  title: string;
-
-  @IsString()
-  @IsNotEmpty()
-  content: string;
-}
 
 @Controller('api/tags')
 export class TagController {
@@ -51,14 +41,12 @@ export class TagController {
 
   /**
    * POST /api/tags/suggest
-   * Returns AI-suggested tags based on article title + content.
-   * Must be declared BEFORE @Post(':id') style routes to avoid conflicts.
+   * Must be declared before @Post(':id') routes to avoid routing conflicts.
    */
   @Post('suggest')
   @UseGuards(AuthGuard)
   async suggestTags(@Body() body: SuggestTagsDto) {
-    const { title, content } = body;
-    const result = await this.tagService.suggestTags(title, content);
+    const result = await this.tagService.suggestTags(body.title, body.content);
     return {
       success: true,
       existingTags: result.existingTags,
