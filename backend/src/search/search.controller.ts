@@ -58,4 +58,19 @@ export class SearchController {
       users: await this.searchService.searchUsersOnly(query, limit),
     };
   }
+
+  @Get('chunks')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  async searchChunks(
+    @Query('query') query: string,
+    @Query('limit') rawLimit?: string,
+  ) {
+    if (!query?.trim()) {
+      return { chunks: [] };
+    }
+    const limit = rawLimit ? Math.min(Math.max(parseInt(rawLimit, 10) || 5, 1), 20) : 5;
+    const chunks = await this.searchService.searchChunks(query.trim(), limit);
+    return { chunks };
+  }
 }

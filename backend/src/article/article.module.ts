@@ -16,6 +16,8 @@ import { ArticleInteractionService } from './article-interaction.service';
 import { ContentModerationModule } from 'src/content-moderation/content-moderation.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { ArticleVersioningService } from './article-versioning.service';
+import { ArticleChunk } from './entities/article-chunk.entity';
+import { ArticleChunkService } from './article-chunk.service';
 
 @Module({
   imports: [
@@ -27,15 +29,16 @@ import { ArticleVersioningService } from './article-versioning.service';
       ArticleView,
       ArticleReport,
       User,
+      ArticleChunk,
     ]),
     UsersModule,
     MediaModule,
     SearchModule,
     ContentModerationModule,
-    NotificationModule
+    NotificationModule,
   ],
   controllers: [ArticleController],
-  providers: [ArticleService, ArticleInteractionService, ArticleVersioningService],
-  exports: [ArticleService, ArticleInteractionService, ArticleVersioningService],
+  providers: [ArticleService, ArticleInteractionService, ArticleVersioningService, ArticleChunkService],
+  exports: [ArticleService, ArticleInteractionService, ArticleVersioningService, ArticleChunkService],
 })
 export class ArticleModule {}

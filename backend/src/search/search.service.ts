@@ -379,4 +379,71 @@ export class SearchService {
 
     return results;
   }
+
+  async searchChunks(
+    query: string,
+    limit = 5,
+    minSimilarity = 0.25,
+  ): Promise<
+    {
+      chunkId: number;
+      articleId: number;
+      title: string;
+      chunkIndex: number;
+      excerpt: string;
+      similarity: number;
+    }[]
+  > {
+    if (!query?.trim()) return [];
+
+    const queryVector = await this.generateEmbedding(query.trim());
+    if (!queryVector || !Array.isArray(queryVector) || queryVector.length !== 768) {
+      console.warn('[SEARCH CHUNKS] Invalid query vector');
+      return [];
+    }
+
+    const vectorString =
+      '[' + queryVector.map((v) => Number(v).toFixed(8)).join(', ') + ']';
+
+    try {
+      const rows = await this.articleRepository.query(
+        `
+        SELECT
+          c.id                                                                      AS "chunkId",
+          a.id                                                                      AS "articleId",
+          a.title,
+          c."chunkIndex",
+          c.content,
+          ROUND(CAST((1 - (c.embedding_vector_pg <=> $1::vector)) AS numeric), 4)  AS similarity
+        FROM article_chunks c
+        JOIN articles a ON a.id = c."articleId"
+        WHERE c.embedding_vector_pg IS NOT NULL
+          AND a.status = 'published'
+          AND (1 - (c.embedding_vector_pg <=> $1::vector)) >= $2
+        ORDER BY similarity DESC
+        LIMIT $3
+        `,
+        [vectorString, minSimilarity, limit],
+      );
+
+      return rows.map((r: Record<string, unknown>) => ({
+        chunkId: Number(r.chunkId),
+        articleId: Number(r.articleId),
+        title: r.title as string,
+        chunkIndex: Number(r.chunkIndex),
+        excerpt: this.makeExcerpt(r.content as string),
+        similarity: Number(r.similarity),
+      }));
+    } catch (err: any) {
+      console.error('[SEARCH CHUNKS] pgvector query error:', err.message);
+      return [];
+    }
+  }
+
+  private makeExcerpt(content: string, maxLength = 180): string {
+    const flat = content.replace(/\s+/g, ' ').trim();
+    if (flat.length <= maxLength) return flat;
+    const cut = flat.lastIndexOf(' ', maxLength);
+    return flat.slice(0, cut > 0 ? cut : maxLength) + '…';
+  }
 }

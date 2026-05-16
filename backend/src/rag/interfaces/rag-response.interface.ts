@@ -1,12 +1,15 @@
+export interface RagSource {
+  articleId: number;
+  title: string;
+  chunkIndex: number;
+  similarity: number;
+}
+
 export interface RagResponse {
   success: boolean;
   query: string;
   found: number;
-  retrieved_articles?: Array<{
-    id: number;
-    title: string;
-    similarity: number;
-  }>;
   answer?: string;
+  sources?: RagSource[];
   error?: string;
 }

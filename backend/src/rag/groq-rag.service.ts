@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import Groq from 'groq-sdk';
+import { ChunkSearchResult } from './rag-retrieval.service';
 
 @Injectable()
 export class GroqRagService {
@@ -8,10 +9,13 @@ export class GroqRagService {
 
   async generateRAGResponse(
     question: string,
-    contextChunks: { title: string; content_preview: string; similarity: number }[],
+    chunks: ChunkSearchResult[],
   ): Promise<string> {
-    const contextText = contextChunks
-      .map((c, i) => `[Article ${i + 1}] (${c.title} – pertinence ${c.similarity.toFixed(3)})\n${c.content_preview}`)
+    const contextText = chunks
+      .map(
+        (c, i) =>
+          `[Article ${i + 1}] "${c.title}" — extrait ${c.chunkIndex + 1} (pertinence ${c.similarity.toFixed(3)})\n${c.content}`,
+      )
       .join('\n────────────────────\n');
 
     try {
@@ -20,36 +24,15 @@ export class GroqRagService {
         messages: [
           {
             role: 'system',
-            content: `Tu es un assistant expert en intelligence artificielle, spécialisé dans l'analyse et la synthèse d'articles techniques et scientifiques.
+            content: `Tu es un assistant expert en intelligence artificielle, spécialisé dans la synthèse d'articles techniques.
 
-📌 **Règles strictes à suivre :**
-1. **Base-toi UNIQUEMENT sur le contexte fourni** - N'utilise pas tes connaissances personnelles si l'information n'est pas dans le contexte
-2. **Si l'information n'est pas disponible** - Réponds clairement : "Je ne trouve pas d'information sur ce sujet dans les documents fournis."
-3. **Cite tes sources** - Référence les articles pertinents (ex: "Selon l'article 1...", "L'article 3 mentionne...")
-4. **Sois précis et concis** - Va droit au but sans ajouter de contenu superflu
-5. **Structure ta réponse** - Utilise des paragraphes courts et une hiérarchie claire (listes, titres si pertinent)
-6. **Langue française** - Réponds toujours en français, avec un ton professionnel mais accessible
-7. **Pertinence avant tout** - Si plusieurs articles parlent du même sujet, synthétise sans répétition inutile
-
-✅ **Ce que tu dois faire :**
-- Extraire les informations clés du contexte
-- Faire des liens entre les différents articles
-- Proposer des exemples concrets quand disponibles dans le contexte
-- Indiquer le niveau de certitude de l'information (ex: "l'article suggère que...", "il est clairement indiqué que...")
-
-❌ **Ce que tu ne dois PAS faire :**
-- Inventer des informations ou "halluciner"
-- Donner ton avis personnel
-- Ignorer des informations pertinentes du contexte
-- Utiliser des termes trop techniques sans explication
-- Dépasser les limites du contexte fourni
-
-🔍 **Spécificités pour les questions techniques :**
-- Privilégie les définitions et explications présentes dans les articles
-- Pour les comparaisons (ex: "différence entre X et Y"), base-toi uniquement sur ce que disent les articles
-- Pour les questions d'implémentation, ne fournis que le code présent dans le contexte
-
-Rappel : Ta crédibilité dépend de ta fidélité au contexte. En cas de doute, privilégie l'honnêteté plutôt qu'une réponse approximative.`,
+Règles absolues :
+1. Réponds UNIQUEMENT à partir des extraits fournis dans le contexte. N'utilise jamais tes connaissances générales.
+2. Si la réponse n'est pas dans le contexte, dis clairement : "Je ne trouve pas cette information dans les documents disponibles."
+3. Cite obligatoirement tes sources avec la notation [Article 1], [Article 2], etc., correspondant aux numéros du contexte.
+4. Réponds toujours en français, avec un ton professionnel et concis.
+5. Ne répète pas les extraits mot pour mot ; synthétise et structure la réponse.
+6. N'invente aucune information. En cas de doute, choisis la transparence.`,
           },
           {
             role: 'user',
@@ -58,17 +41,20 @@ Rappel : Ta crédibilité dépend de ta fidélité au contexte. En cas de doute,
 Contexte extrait des articles :
 ${contextText}
 
-Réponds en te basant sur le contexte fourni :`,
+Réponds en citant les sources [Article N] :`,
           },
         ],
-        temperature: 0.65,
-        max_tokens: 1800,
+        temperature: 0.2,
+        max_tokens: 1200,
       });
 
-      return response.choices[0]?.message?.content?.trim() || "Aucune réponse générée.";
-    } catch (err) {
+      return (
+        response.choices[0]?.message?.content?.trim() ||
+        'Aucune réponse générée.'
+      );
+    } catch (err: any) {
       console.error('[GROQ RAG] Erreur :', err.message);
-      return "Désolé, une erreur est survenue avec Groq.";
+      return 'Désolé, une erreur est survenue avec Groq.';
     }
   }
 }
