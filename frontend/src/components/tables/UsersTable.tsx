@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation';
 import {
   Trash2, Eye, UserCheck, UserX, Mail, Shield, MoreVertical,
   ChevronLeft, ChevronRight, ArrowUpDown, Send, Power,
-  Loader2, CheckCircle
+  Loader2, CheckCircle,
+  Loader
 } from 'lucide-react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
@@ -386,7 +387,7 @@ export default function UsersTable({
                             'text-red-500 dark:text-red-400'
                           }`}>
                             {user.status === 'active'           ? <UserCheck size={16} /> :
-                             user.status === 'pending'          ? <Mail size={16} /> :
+                             user.status === 'pending'          ? <Loader size={16} /> :
                              user.status === 'email_unverified' ? <Mail size={16} /> :
                              <UserX size={16} />}
                             <span className="text-sm">

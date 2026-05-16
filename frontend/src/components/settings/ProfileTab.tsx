@@ -35,7 +35,14 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
   const [profile, setProfile] = useState(currentProfile);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phoneError, setPhoneError] = useState<string>('');
+  const [emptyFields, setEmptyFields] = useState<string[]>([]);
+  const [shakeFields, setShakeFields] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Refs pour les champs
+  const firstNameRef = useRef<HTMLInputElement>(null);
+  const lastNameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
 
   // Local file selected by the user — shown as a preview before save
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -50,6 +57,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
     setSelectedFile(null);
     setPendingRemovePhoto(false);
     setPhoneError('');
+    setEmptyFields([]);
     // Revoke any leftover preview blob
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -96,8 +104,72 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
     return cleaned;
   };
 
+  // Fonction pour animer le clignotement rouge
+  const triggerBlinkAnimation = (fieldName: string) => {
+    setShakeFields(prev => [...prev, fieldName]);
+    setTimeout(() => {
+      setShakeFields(prev => prev.filter(f => f !== fieldName));
+    }, 500);
+  };
+
+  // Fonction pour scroller vers un élément
+  const scrollToElement = (element: HTMLElement | null) => {
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+      // Ajouter une classe pour mettre en évidence
+      element.classList.add('highlight-field');
+      setTimeout(() => {
+        element.classList.remove('highlight-field');
+      }, 2000);
+    }
+  };
+
+  // Valider les champs obligatoires
+  const validateRequiredFields = (): boolean => {
+    const requiredFields = ['firstName', 'lastName'];
+    const empty: string[] = [];
+    
+    requiredFields.forEach(field => {
+      const value = profile[field as keyof typeof profile];
+      if (!value || value.trim() === '') {
+        empty.push(field);
+      }
+    });
+    
+    setEmptyFields(empty);
+    
+    // Déclencher l'animation pour chaque champ vide
+    empty.forEach(field => {
+      triggerBlinkAnimation(field);
+    });
+    
+    // Scroller vers le premier champ vide
+    if (empty.length > 0) {
+      const firstEmptyField = empty[0];
+      switch(firstEmptyField) {
+        case 'firstName':
+          scrollToElement(firstNameRef.current);
+          break;
+        case 'lastName':
+          scrollToElement(lastNameRef.current);
+          break;
+      }
+    }
+    
+    return empty.length === 0;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Retirer le champ de la liste des champs vides si l'utilisateur commence à taper
+    if (emptyFields.includes(name)) {
+      setEmptyFields(prev => prev.filter(f => f !== name));
+    }
     
     if (name === 'phone') {
       // Formate le numéro pendant la saisie
@@ -146,10 +218,18 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
   };
 
   const handleSubmit = async () => {
+    // Vérifier les champs obligatoires
+    if (!validateRequiredFields()) {
+      toast.error('Error updating profile.');
+      return;
+    }
+    
     // Validation du téléphone avant soumission
     if (profile.phone && !validatePhoneNumber(profile.phone)) {
       setPhoneError(t('profile.invalid_phone') || 'Veuillez entrer un numéro de téléphone valide');
-      toast.error(t('profile.invalid_phone') || 'Numéro de téléphone invalide');
+      triggerBlinkAnimation('phone');
+      scrollToElement(phoneRef.current);
+      toast.error('Error updating profile.');
       return;
     }
 
@@ -203,11 +283,12 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
       setSelectedFile(null);
       setPendingRemovePhoto(false);
       setPhoneError('');
+      setEmptyFields([]);
 
       toast.success(t('profile.success_message'));
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error(t('profile.error_message'));
+      toast.error('Error updating profile.');
     } finally {
       setIsSubmitting(false);
     }
@@ -215,8 +296,51 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
 
   const currentSrc = displaySrc();
 
+  // Fonction pour obtenir les classes CSS avec animation
+  const getFieldClassName = (fieldName: string, hasError: boolean = false) => {
+    const baseClass = "w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 transition-all duration-200";
+    const isShaking = shakeFields.includes(fieldName);
+    const isEmpty = emptyFields.includes(fieldName);
+    
+    if (hasError) {
+      return `${baseClass} border-red-500 focus:ring-red-500 ${isShaking ? 'animate-shake' : ''}`;
+    }
+    if (isEmpty) {
+      return `${baseClass} border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/10 ${isShaking ? 'animate-shake' : ''}`;
+    }
+    return `${baseClass} border-gray-300 dark:border-gray-700`;
+  };
+
   return (
     <div className="space-y-6">
+      <style jsx global>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+          20%, 40%, 60%, 80% { transform: translateX(2px); }
+        }
+        @keyframes blinkRed {
+          0%, 100% { border-color: #ef4444; background-color: rgba(239, 68, 68, 0.05); }
+          50% { border-color: #dc2626; background-color: rgba(220, 38, 38, 0.15); }
+        }
+        @keyframes highlightPulse {
+          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .animate-shake {
+          animation: shake 0.5s ease-in-out;
+        }
+        .animate-blink {
+          animation: blinkRed 0.5s ease-in-out 2;
+        }
+        .highlight-field {
+          animation: highlightPulse 0.8s ease-out;
+          position: relative;
+          z-index: 10;
+        }
+      `}</style>
+
       {/* ── Photo de profil ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -298,16 +422,23 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
+                  ref={firstNameRef}
                   type="text"
                   name="firstName"
                   value={profile.firstName}
                   onChange={handleInputChange}
                   required
                   disabled={isSubmitting}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  className={getFieldClassName('firstName')}
                   placeholder={t('profile.first_name_placeholder')}
                 />
               </div>
+              {emptyFields.includes('firstName') && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
+                  {t('profile.required_field') || 'Ce champ est obligatoire'}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -316,16 +447,23 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
+                  ref={lastNameRef}
                   type="text"
                   name="lastName"
                   value={profile.lastName}
                   onChange={handleInputChange}
                   required
                   disabled={isSubmitting}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  className={getFieldClassName('lastName')}
                   placeholder={t('profile.last_name_placeholder')}
                 />
               </div>
+              {emptyFields.includes('lastName') && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
+                  {t('profile.required_field') || 'Ce champ est obligatoire'}
+                </p>
+              )}
             </div>
           </div>
 
@@ -356,16 +494,13 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
+                  ref={phoneRef}
                   type="tel"
                   name="phone"
                   value={profile.phone || ''}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 ${
-                    phoneError 
-                      ? 'border-red-500 focus:ring-red-500' 
-                      : 'border-gray-300 dark:border-gray-700'
-                  }`}
+                  className={getFieldClassName('phone', !!phoneError)}
                   placeholder={t('profile.phone_placeholder') || '+33 6 12 34 56 78'}
                 />
               </div>
@@ -375,7 +510,6 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
                   {phoneError}
                 </p>
               )}
-              
             </div>
           </div>
 
@@ -468,7 +602,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
       <div className="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting || !!phoneError}
+          disabled={isSubmitting}
           className="px-6 py-2.5 text-white font-medium rounded-lg hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           style={{ backgroundColor: '#168F6F' }}
         >
