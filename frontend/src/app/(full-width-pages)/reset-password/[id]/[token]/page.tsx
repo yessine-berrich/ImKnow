@@ -5,10 +5,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { KeyRound, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2, ChevronLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { resetPassword, verifyResetPasswordLink } from '../../../../../../services/auth.service';
 
 type LinkStatus = 'loading' | 'valid' | 'invalid';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
+
+interface PasswordValidation {
+  hasMinLength: boolean;
+  hasUppercase: boolean;
+  hasLowercase: boolean;
+  hasNumber: boolean;
+  hasSpecialChar: boolean;
+  isValid: boolean;
+}
 
 export default function ResetPasswordPage() {
   const params = useParams();
@@ -22,8 +32,30 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Password validation logic
+  const validatePassword = (password: string): PasswordValidation => {
+    const hasMinLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isValid = hasMinLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar;
+    
+    return {
+      hasMinLength,
+      hasUppercase,
+      hasLowercase,
+      hasNumber,
+      hasSpecialChar,
+      isValid,
+    };
+  };
+
+  const passwordValidation = validatePassword(newPassword);
 
   // Verify link validity on mount
   useEffect(() => {
@@ -41,13 +73,13 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setErrorMessage('');
 
-    if (newPassword !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+    if (!passwordValidation.isValid) {
+      setErrorMessage('Please meet all password requirements.');
       return;
     }
 
-    if (newPassword.length < 8) {
-      setErrorMessage('Password must be at least 8 characters.');
+    if (newPassword !== confirmPassword) {
+      setErrorMessage('Passwords do not match.');
       return;
     }
 
@@ -206,12 +238,16 @@ export default function ResetPasswordPage() {
                       type={showNewPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
+                      onFocus={() => setIsPasswordFocused(true)}
+                      onBlur={() => setIsPasswordFocused(false)}
                       placeholder="Enter your new password"
                       required
                       disabled={submitStatus === 'loading'}
-                      className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all disabled:bg-gray-50"
-                      onFocus={(e) => (e.target.style.borderColor = '#168F6F')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
+                      className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all disabled:bg-gray-50 focus:ring-2 focus:ring-opacity-50"
+                      style={{ 
+                        borderColor: isPasswordFocused ? '#168F6F' : '#e5e7eb',
+                        boxShadow: isPasswordFocused ? `0 0 0 2px ${'#168F6F'}20` : 'none'
+                      }}
                     />
                     <button
                       type="button"
@@ -221,8 +257,37 @@ export default function ResetPasswordPage() {
                       {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  {newPassword && newPassword.length < 8 && (
-                    <p className="mt-1 text-xs text-red-500">At least 8 characters required</p>
+                  
+                  {/* Password validation dropdown */}
+                  {(isPasswordFocused || (newPassword && !passwordValidation.isValid)) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs space-y-1.5"
+                    >
+                      <p className="text-gray-600 dark:text-gray-400 mb-1 font-medium">Password must contain:</p>
+                      <div className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className="text-sm">{passwordValidation.hasMinLength ? '✓' : '○'}</span>
+                        <span>At least 8 characters</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className="text-sm">{passwordValidation.hasUppercase ? '✓' : '○'}</span>
+                        <span>One uppercase letter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.hasLowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className="text-sm">{passwordValidation.hasLowercase ? '✓' : '○'}</span>
+                        <span>One lowercase letter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className="text-sm">{passwordValidation.hasNumber ? '✓' : '○'}</span>
+                        <span>One number</span>
+                      </div>
+                      <div className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                        <span className="text-sm">{passwordValidation.hasSpecialChar ? '✓' : '○'}</span>
+                        <span>One special character (!@#$%^&*...)</span>
+                      </div>
+                    </motion.div>
                   )}
                 </div>
 
@@ -239,9 +304,11 @@ export default function ResetPasswordPage() {
                       placeholder="Confirm your new password"
                       required
                       disabled={submitStatus === 'loading'}
-                      className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all disabled:bg-gray-50"
-                      onFocus={(e) => (e.target.style.borderColor = passwordsMismatch ? '#ef4444' : '#168F6F')}
-                      onBlur={(e) => (e.target.style.borderColor = '#e5e7eb')}
+                      className="w-full px-4 py-3 pr-12 rounded-xl border text-sm text-gray-800 placeholder-gray-400 outline-none transition-all disabled:bg-gray-50"
+                      style={{ 
+                        borderColor: passwordsMismatch ? '#ef4444' : (confirmPassword ? '#e5e7eb' : '#e5e7eb'),
+                        boxShadow: passwordsMismatch ? '0 0 0 2px #ef444420' : 'none'
+                      }}
                     />
                     <button
                       type="button"
@@ -260,8 +327,8 @@ export default function ResetPasswordPage() {
 
                 <button
                   type="submit"
-                  disabled={submitStatus === 'loading'}
-                  className="w-full py-3 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-md flex items-center justify-center gap-2 disabled:opacity-70 mt-2"
+                  disabled={submitStatus === 'loading' || !passwordValidation.isValid}
+                  className="w-full py-3 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-md flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                   style={{ backgroundColor: '#168F6F' }}
                 >
                   {submitStatus === 'loading' ? (

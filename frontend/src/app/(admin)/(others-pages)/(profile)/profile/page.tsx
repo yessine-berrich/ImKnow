@@ -551,58 +551,6 @@ export default function CurrentUserProfilePageWithAPI() {
                         />
                       </div>
                     ))}
-
-                    {/* Performance Summary (published tab only) */}
-                    {activeTab === 'articles' && publishedArticles.length > 0 && (
-                      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800">
-                        <h4 className="font-semibold text-gray-800 dark:text-white/90 mb-4">
-                          Résumé des performances
-                        </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <div className="text-sm text-blue-600 dark:text-blue-400">Engagement moyen</div>
-                            <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                              {userStats.totalArticles > 0
-                                ? Math.round((userStats.totalLikes + userStats.totalComments) / userStats.totalArticles)
-                                : 0}
-                            </div>
-                          </div>
-                          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <div className="text-sm text-green-600 dark:text-green-400">Vues/article</div>
-                            <div className="text-lg font-bold text-green-700 dark:text-green-300">
-                              {userStats.totalArticles > 0
-                                ? Math.round(userStats.totalViews / userStats.totalArticles)
-                                : 0}
-                            </div>
-                          </div>
-                          <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                            <div className="text-sm text-purple-600 dark:text-purple-400">Taux de likes</div>
-                            <div className="text-lg font-bold text-purple-700 dark:text-purple-300">
-                              {userStats.totalViews > 0
-                                ? Math.round((userStats.totalLikes / userStats.totalViews) * 100)
-                                : 0}%
-                            </div>
-                          </div>
-                          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                            <div className="text-sm text-orange-600 dark:text-orange-400">Taux de commentaires</div>
-                            <div className="text-lg font-bold text-orange-700 dark:text-orange-300">
-                              {userStats.totalViews > 0
-                                ? Math.round((userStats.totalComments / userStats.totalViews) * 100)
-                                : 0}%
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Detailed Summary */}
-                        <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            <span className="font-medium">Total likes reçus :</span> {userStats.totalLikes} ·{' '}
-                            <span className="font-medium">Total commentaires :</span> {userStats.totalComments} ·{' '}
-                            <span className="font-medium">Total vues :</span> {userStats.totalViews}
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </>
                 )}
               </div>

@@ -34,6 +34,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
 
   const [profile, setProfile] = useState(currentProfile);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneError, setPhoneError] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Local file selected by the user — shown as a preview before save
@@ -48,6 +49,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
     setProfile(currentProfile);
     setSelectedFile(null);
     setPendingRemovePhoto(false);
+    setPhoneError('');
     // Revoke any leftover preview blob
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
@@ -62,9 +64,55 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
     };
   }, [previewUrl]);
 
+  // Fonction de validation du numéro de téléphone
+  const validatePhoneNumber = (phone: string): boolean => {
+    if (!phone) return true; // Champ optionnel
+    
+    // Supprime tous les espaces et caractères non numériques pour la validation
+    const cleanPhone = phone.replace(/\s/g, '');
+    
+    // Regex pour différents formats internationaux
+    // Accepte: +XX XXXXXXXXX, 0XXXXXXXXX, etc.
+    const phoneRegex = /^(\+?\d{1,4}[-.\s]?)?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
+    
+    // Validation plus stricte pour les numéros de téléphone
+    // Minimum 8 chiffres, maximum 15 chiffres
+    const digitsOnly = cleanPhone.replace(/[^+\d]/g, '');
+    const digitCount = digitsOnly.replace(/[^0-9]/g, '').length;
+    
+    return phoneRegex.test(cleanPhone) && digitCount >= 8 && digitCount <= 15;
+  };
+
+  // Formater le numéro de téléphone pendant la saisie
+  const formatPhoneNumber = (value: string): string => {
+    // Supprime tous les caractères non numériques sauf le +
+    let cleaned = value.replace(/[^\d+]/g, '');
+    
+    // Si le numéro commence par 00, le remplacer par +
+    if (cleaned.startsWith('00')) {
+      cleaned = '+' + cleaned.slice(2);
+    }
+    
+    return cleaned;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    
+    if (name === 'phone') {
+      // Formate le numéro pendant la saisie
+      const formattedValue = formatPhoneNumber(value);
+      setProfile((prev) => ({ ...prev, [name]: formattedValue }));
+      
+      // Valide le numéro
+      if (formattedValue && !validatePhoneNumber(formattedValue)) {
+        setPhoneError(t('profile.invalid_phone') || 'Numéro de téléphone invalide');
+      } else {
+        setPhoneError('');
+      }
+    } else {
+      setProfile((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,6 +146,13 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
   };
 
   const handleSubmit = async () => {
+    // Validation du téléphone avant soumission
+    if (profile.phone && !validatePhoneNumber(profile.phone)) {
+      setPhoneError(t('profile.invalid_phone') || 'Veuillez entrer un numéro de téléphone valide');
+      toast.error(t('profile.invalid_phone') || 'Numéro de téléphone invalide');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -147,6 +202,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
       }
       setSelectedFile(null);
       setPendingRemovePhoto(false);
+      setPhoneError('');
 
       toast.success(t('profile.success_message'));
     } catch (error) {
@@ -305,10 +361,21 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
                   value={profile.phone || ''}
                   onChange={handleInputChange}
                   disabled={isSubmitting}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
-                  placeholder={t('profile.phone_placeholder')}
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50 ${
+                    phoneError 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 dark:border-gray-700'
+                  }`}
+                  placeholder={t('profile.phone_placeholder') || '+33 6 12 34 56 78'}
                 />
               </div>
+              {phoneError && (
+                <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
+                  {phoneError}
+                </p>
+              )}
+              
             </div>
           </div>
 
@@ -401,7 +468,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
       <div className="flex items-center justify-end pt-4 border-t border-gray-200 dark:border-gray-800">
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !!phoneError}
           className="px-6 py-2.5 text-white font-medium rounded-lg hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           style={{ backgroundColor: '#168F6F' }}
         >
