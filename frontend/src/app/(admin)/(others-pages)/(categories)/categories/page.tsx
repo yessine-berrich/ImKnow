@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle } from 'lucide-react';
 import CreateCategoryModal from '@/components/modals/CreateCategoryModal';
+import { confirm } from '@/components/modals/ConfirmModal';
 import CategoriesManager from '@/components/categories/CategoriesManager';
 import { categoryService, Category as ApiCategory } from '../../../../../../services/category.service';
 import { toast } from '@/components/modals/ToastContainer';
@@ -128,7 +129,7 @@ export default function CategoriesPage() {
       ? `Êtes-vous sûr de vouloir supprimer "${category.name}" ? Cette catégorie contient ${category.articleCount} article(s).`
       : `Êtes-vous sûr de vouloir supprimer "${category.name}" ?`;
 
-    if (window.confirm(message)) {
+    if (await confirm(message)) {
       try {
         await categoryService.delete(Number(id));
         await loadCategories();
@@ -163,7 +164,7 @@ export default function CategoriesPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-6" />
+          <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Vérification des accès...
           </h3>
@@ -179,7 +180,7 @@ export default function CategoriesPage() {
     return (
       <div className="p-4 md:p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-600 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-600 border-t-[#168F6F] rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Chargement des catégories...</p>
         </div>
       </div>

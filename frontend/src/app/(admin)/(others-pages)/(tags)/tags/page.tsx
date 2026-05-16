@@ -5,7 +5,8 @@ import { getToken } from '../../../../../../services/auth.service';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import CreateTagModal from '@/components/modals/CreateTagModal';
-import EditTagModal from '@/components/modals/EditTagModal'; // À créer si nécessaire
+import EditTagModal from '@/components/modals/EditTagModal';
+import { confirm } from '@/components/modals/ConfirmModal';
 import TagsManager from '@/components/tags/tagsManager';
 import { toast } from '@/components/modals/ToastContainer';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -189,7 +190,7 @@ export default function TagsPage() {
   const handleDeleteTag = async (id: string) => {
     const token = getToken();
     
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce tag ?')) {
+    if (await confirm('Êtes-vous sûr de vouloir supprimer ce tag ?')) {
       try {
         const response = await fetch(`${API_URL}/${id}`, {
           method: 'DELETE',
@@ -222,7 +223,7 @@ export default function TagsPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-6" />
+          <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Vérification des accès...
           </h3>
@@ -239,7 +240,7 @@ export default function TagsPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#168F6F] mx-auto mb-6"></div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Chargement des tags...
           </h3>

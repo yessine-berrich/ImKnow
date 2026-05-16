@@ -12,6 +12,7 @@ import {
 import Avatar from '@/components/ui/avatar/Avatar';
 import SendMessageRequestModal from '@/components/chat/SendMessageRequestModal';
 import { followService, FollowRelationshipDto, FollowStatsDto, FriendSuggestionDto } from '../../../../../../services/follow.service';
+import { confirm } from '@/components/modals/ConfirmModal';
 
 type TabType = 'followers' | 'following' | 'friends' | 'suggestions';
 type ViewType = 'grid' | 'list';
@@ -507,7 +508,7 @@ export default function ConnectionsPage() {
   };
 
   const handleUnfollow = async (userId: number, userName: string) => {
-    if (!confirm(`Ne plus suivre ${userName} ?`)) return;
+    if (!await confirm(`Ne plus suivre ${userName} ?`)) return;
     
     setProcessingIds(prev => new Set(prev).add(userId));
     try {
@@ -531,7 +532,7 @@ export default function ConnectionsPage() {
   };
 
   const handleRemoveFollower = async (userId: number, userName: string) => {
-    if (!confirm(`Retirer ${userName} de vos abonnés ?`)) return;
+    if (!await confirm(`Retirer ${userName} de vos abonnés ?`)) return;
     
     setProcessingIds(prev => new Set(prev).add(userId));
     try {

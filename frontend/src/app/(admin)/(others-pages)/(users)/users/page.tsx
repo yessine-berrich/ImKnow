@@ -176,7 +176,7 @@ export default function UsersPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-6" />
+          <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Vérification des accès...
           </h3>
@@ -193,7 +193,7 @@ export default function UsersPage() {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-blue-600 mx-auto mb-6" />
+          <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Chargement des utilisateurs...
           </h3>

@@ -5,10 +5,12 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Eye, MoreVertical, ChevronLeft, ChevronRight, ArrowUpDown,
-  Loader2, CheckCircle, XCircle, Copy, Shield, User,
-  AlertTriangle, BarChart2, Tag, Brain, Info, Trash2, ThumbsUp,
+  Loader2, Copy, Shield, User,
+  AlertTriangle, BarChart2, Brain, Info, Trash2, ThumbsUp,
   X,
 } from 'lucide-react';
+import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { ModerationArticle } from '@/app/(admin)/(others-pages)/(rejected)/rejected/moderation/page';
 import Avatar from '@/components/ui/avatar/Avatar';
 import MarkdownPreview from '@/components/markdoun-editor/MarkdownPreview';
@@ -40,49 +42,6 @@ const truncateText = (text: string, maxLength: number = 20): string => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
 };
-
-// ─── Confirmation modal ───────────────────────────────────────────────────────
-interface ConfirmModalProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  confirmClass: string;
-  icon: React.ReactNode;
-  onConfirm: () => void;
-  onCancel: () => void;
-  loading?: boolean;
-}
-
-function ConfirmModal({
-  isOpen, title, message, confirmLabel, confirmClass, icon,
-  onConfirm, onCancel, loading,
-}: ConfirmModalProps) {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-sm animate-slideIn">
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="p-3 rounded-full bg-gray-100 dark:bg-gray-800">{icon}</div>
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{message}</p>
-          </div>
-          <div className="flex gap-3 w-full mt-2">
-            <button onClick={onCancel} disabled={loading} className="flex-1 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50">
-              Annuler
-            </button>
-            <button onClick={onConfirm} disabled={loading} className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 ${confirmClass}`}>
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              {confirmLabel}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Modal d'article simplifié ────────────────────────────────────────────────
 interface SimpleArticleModalProps {
@@ -201,20 +160,11 @@ export default function ModerationTable({
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('bottom');
   const [loading, setLoading] = useState<Record<number, boolean>>({});
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [expandedDetailId, setExpandedDetailId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  
+
   const [selectedArticle, setSelectedArticle] = useState<ModerationArticle | null>(null);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
-
-  const [modal, setModal] = useState<{
-    open: boolean;
-    type: 'approve' | 'delete' | null;
-    articleId: number | null;
-    articleTitle: string;
-    loading: boolean;
-  }>({ open: false, type: null, articleId: null, articleTitle: '', loading: false });
 
   useEffect(() => { setArticles(initialArticles); }, [initialArticles]);
 
@@ -226,21 +176,17 @@ export default function ModerationTable({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
   const getAuthHeaders = () => {
     const token = getToken();
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   };
 
-  const handleApprove = async () => {
-    if (!modal.articleId) return;
-    setModal((m) => ({ ...m, loading: true }));
+  const handleApprove = async (id: number, title: string) => {
+    setOpenMenuId(null);
+    if (!await confirm(`"${title}" sera publié et l'auteur en sera notifié.`, { title: "Approuver l'article ?" })) return;
+    setLoading((l) => ({ ...l, [id]: true }));
     try {
-      const res = await fetch(`http://localhost:3000/api/articles/${modal.articleId}/approve`, {
+      const res = await fetch(`http://localhost:3000/api/articles/${id}/approve`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
       });
@@ -248,20 +194,21 @@ export default function ModerationTable({
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || `Erreur ${res.status}`);
       }
-      setArticles((prev) => prev.filter((a) => a.id !== modal.articleId));
-      showToast(`✅ Article approuvé et publié avec succès`, 'success');
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+      toast.success('Article approuvé et publié avec succès');
     } catch (err: any) {
-      showToast(`❌ Échec de l'approbation : ${err.message}`, 'error');
+      toast.error(`Échec de l'approbation : ${err.message}`);
     } finally {
-      setModal({ open: false, type: null, articleId: null, articleTitle: '', loading: false });
+      setLoading((l) => ({ ...l, [id]: false }));
     }
   };
 
-  const handleDelete = async () => {
-    if (!modal.articleId) return;
-    setModal((m) => ({ ...m, loading: true }));
+  const handleDelete = async (id: number, title: string) => {
+    setOpenMenuId(null);
+    if (!await confirm(`"${title}" sera supprimé définitivement. Cette action est irréversible.`, { title: 'Supprimer définitivement ?' })) return;
+    setLoading((l) => ({ ...l, [id]: true }));
     try {
-      const res = await fetch(`http://localhost:3000/api/articles/${modal.articleId}`, {
+      const res = await fetch(`http://localhost:3000/api/articles/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -269,23 +216,13 @@ export default function ModerationTable({
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || `Erreur ${res.status}`);
       }
-      setArticles((prev) => prev.filter((a) => a.id !== modal.articleId));
-      showToast(`🗑️ Article supprimé définitivement`, 'success');
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+      toast.success('Article supprimé définitivement');
     } catch (err: any) {
-      showToast(`❌ Échec de la suppression : ${err.message}`, 'error');
+      toast.error(`Échec de la suppression : ${err.message}`);
     } finally {
-      setModal({ open: false, type: null, articleId: null, articleTitle: '', loading: false });
+      setLoading((l) => ({ ...l, [id]: false }));
     }
-  };
-
-  const openApproveModal = (id: number, title: string) => {
-    setOpenMenuId(null);
-    setModal({ open: true, type: 'approve', articleId: id, articleTitle: title, loading: false });
-  };
-
-  const openDeleteModal = (id: number, title: string) => {
-    setOpenMenuId(null);
-    setModal({ open: true, type: 'delete', articleId: id, articleTitle: title, loading: false });
   };
 
   const handleViewArticle = (article: ModerationArticle) => {
@@ -389,7 +326,7 @@ export default function ModerationTable({
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    showToast(`✅ ${label} copié`, 'success');
+    toast.success(`${label} copié`);
     setOpenMenuId(null);
   };
 
@@ -411,29 +348,6 @@ export default function ModerationTable({
 
   return (
     <div className="space-y-6">
-      <ConfirmModal
-        isOpen={modal.open}
-        loading={modal.loading}
-        title={modal.type === 'approve' ? 'Approuver l\'article ?' : 'Supprimer définitivement ?'}
-        message={modal.type === 'approve'
-          ? `"${modal.articleTitle}" sera publié et l'auteur en sera notifié.`
-          : `"${modal.articleTitle}" sera supprimé définitivement. Cette action est irréversible.`}
-        confirmLabel={modal.type === 'approve' ? 'Approuver & Publier' : 'Supprimer'}
-        confirmClass={modal.type === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
-        icon={modal.type === 'approve' ? <ThumbsUp size={28} className="text-green-600" /> : <Trash2 size={28} className="text-red-600" />}
-        onConfirm={modal.type === 'approve' ? handleApprove : handleDelete}
-        onCancel={() => setModal({ open: false, type: null, articleId: null, articleTitle: '', loading: false })}
-      />
-
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl animate-slideIn backdrop-blur-sm ${
-          toast.type === 'success' ? 'bg-green-600/95 border border-green-500' : 'bg-red-600/95 border border-red-500'
-        } text-white`}>
-          {toast.type === 'success' ? <CheckCircle size={22} /> : <XCircle size={22} />}
-          <span className="font-medium">{toast.message}</span>
-        </div>
-      )}
-
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
@@ -467,12 +381,12 @@ export default function ModerationTable({
           placeholder="Rechercher par titre, auteur, catégorie, raison..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent"
         />
         <select
           value={categoryFilter}
           onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
-          className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[180px]"
+          className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent min-w-[180px]"
         >
           <option value="">Toutes les catégories</option>
           {allCategories.map((cat) => (
@@ -564,7 +478,7 @@ export default function ModerationTable({
 
                         <td className="px-4 py-3">
                           {mr ? (
-                            <button onClick={() => setExpandedDetailId(expandedDetailId === article.id ? null : article.id)} className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                            <button onClick={() => setExpandedDetailId(expandedDetailId === article.id ? null : article.id)} className="flex items-center gap-1.5 text-xs text-[#168F6F] hover:underline">
                               <Info size={13} /> {Math.round((mr.confidence ?? 0) * 100)}% conf.
                             </button>
                           ) : <span className="text-sm text-gray-400">—</span>}
@@ -590,7 +504,7 @@ export default function ModerationTable({
                                   </p>
                                 </div>
 
-                                <button onClick={() => openApproveModal(article.id, article.title)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-3 transition-colors font-medium">
+                                <button onClick={() => handleApprove(article.id, article.title)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-3 transition-colors font-medium">
                                   <ThumbsUp size={16} className="text-green-500" /> Approuver & Publier
                                 </button>
 
@@ -614,7 +528,7 @@ export default function ModerationTable({
 
                                 <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
 
-                                <button onClick={() => openDeleteModal(article.id, article.title)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors font-medium">
+                                <button onClick={() => handleDelete(article.id, article.title)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors font-medium">
                                   <Trash2 size={16} className="text-red-500" /> Supprimer définitivement
                                 </button>
                               </div>

@@ -3,6 +3,7 @@
 import { getToken } from '../../../services/auth.service';
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { X, FileText, Clock, ChevronRight, Loader2, Trash2, Edit3, AlertCircle } from 'lucide-react';
 import CreateArticleModal from './CreateArticleModal';
 
@@ -75,7 +76,7 @@ export default function DraftArticlesModal({
 
   const handleDeleteDraft = async (e: React.MouseEvent, draftId: number) => {
     e.stopPropagation();
-    if (!window.confirm('Supprimer ce brouillon ?')) return;
+    if (!await confirm('Supprimer ce brouillon ?')) return;
 
     setDeletingId(draftId);
     try {

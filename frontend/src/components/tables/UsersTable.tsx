@@ -4,11 +4,13 @@ import { getToken } from '../../../services/auth.service';
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
+import {
   Trash2, Eye, UserCheck, UserX, Mail, Shield, MoreVertical,
   ChevronLeft, ChevronRight, ArrowUpDown, Send, Power,
-  Loader2, CheckCircle, XCircle
+  Loader2, CheckCircle
 } from 'lucide-react';
+import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import UsersFilter, { FilterValues } from '../Filter/UsersFilter';
 import Avatar from '../ui/avatar/Avatar';
 
@@ -51,7 +53,6 @@ export default function UsersTable({
   const [openRoleMenuId, setOpenRoleMenuId] = useState<string | null>(null);
   const [menuPosition, setMenuPosition] = useState<'top' | 'bottom'>('bottom');
   const [loading, setLoading] = useState<Record<string, boolean>>({});
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const roleMenuRef = useRef<HTMLDivElement>(null);
 
@@ -75,11 +76,6 @@ export default function UsersTable({
     // Si c'est dans les 5 derniers, ouvrir vers le haut, sinon vers le bas
     setMenuPosition(isInLastFive ? 'top' : 'bottom');
     setOpenMenuId(openMenuId === userId ? null : userId);
-  };
-
-  const showToast = (message: string, type: 'success' | 'error') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   const apiCall = async (endpoint: string, method: string = 'POST', body?: any) => {
@@ -110,17 +106,17 @@ export default function UsersTable({
   };
 
   const handleDeleteUser = async (id: string, name: string) => {
-    if (!confirm(`⚠️ Supprimer définitivement ${name} ?\n\nCette action est irréversible.`)) return;
+    if (!await confirm(`Supprimer définitivement ${name} ? Cette action est irréversible.`)) return;
     
     setLoading(prev => ({ ...prev, [id]: true }));
     try {
       await apiCall(`/api/users/admin/${id}`, 'DELETE');
       setUsers(prev => prev.filter(u => u.id !== id));
-      showToast('✅ Utilisateur supprimé avec succès', 'success');
+      toast.success('Utilisateur supprimé avec succès');
       setOpenMenuId(null);
       onRefresh();
     } catch (err: any) {
-      showToast(`❌ ${err.message || 'Erreur suppression'}`, 'error');
+      toast.error(`❌ ${err.message || 'Erreur suppression'}`);
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -135,16 +131,16 @@ export default function UsersTable({
   try {
     await apiCall(endpoint);
     
-    // ✅ MISE À JOUR INSTANTANÉE
+    // MISE À JOUR INSTANTANÉE
     setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus as any } : u));
     
-    showToast(`✅ Compte ${action === 'activer' ? 'activé' : 'désactivé'}`, 'success');
+    toast.success(`Compte ${action === 'activer' ? 'activé' : 'désactivé'}`);
     setOpenMenuId(null);
     
     // 🔄 Optionnel : rafraîchir en arrière-plan pour synchroniser avec le serveur
     // onRefresh(); // <-- À décommenter si vous voulez être sûr
   } catch (err: any) {
-    showToast(`❌ ${err.message || 'Erreur changement statut'}`, 'error');
+    toast.error(`❌ ${err.message || 'Erreur changement statut'}`);
   } finally {
     setLoading(prev => ({ ...prev, [id]: false }));
   }
@@ -160,11 +156,11 @@ export default function UsersTable({
     try {
       await apiCall(`/api/users/admin/users/${id}/role`, 'POST', { role: newRole });
       setUsers(prev => prev.map(u => u.id === id ? { ...u, role: newRole } : u));
-      showToast('✅ Rôle modifié avec succès', 'success');
+      toast.success('Rôle modifié avec succès');
       setOpenRoleMenuId(null);
       setOpenMenuId(null);
     } catch (err: any) {
-      showToast(`❌ ${err.message || 'Erreur changement rôle'}`, 'error');
+      toast.error(`❌ ${err.message || 'Erreur changement rôle'}`);
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -249,12 +245,12 @@ export default function UsersTable({
       description: 'Accès complet au système',
       color: 'text-red-600 dark:text-red-400'
     },
-    { 
-      value: 'EMPLOYEE', 
-      label: 'Employé', 
-      icon: '👤', 
+    {
+      value: 'EMPLOYEE',
+      label: 'Employé',
+      icon: '👤',
       description: 'Accès standard',
-      color: 'text-blue-600 dark:text-blue-400'
+      color: 'text-[#168F6F]'
     }
   ];
 
@@ -269,18 +265,6 @@ export default function UsersTable({
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl animate-slideIn backdrop-blur-sm ${
-          toast.type === 'success' 
-            ? 'bg-green-600/95 border border-green-500' 
-            : 'bg-red-600/95 border border-red-500'
-        } text-white`}>
-          {toast.type === 'success' ? <CheckCircle size={22} /> : <XCircle size={22} />}
-          <span className="font-medium">{toast.message}</span>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -364,7 +348,7 @@ export default function UsersTable({
                           <div className="flex items-center gap-3">
                             <button 
                               onClick={() => navigateToUserProfile(user.id)} 
-                              className="relative group w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-bold hover:scale-110 transition-transform"
+                              className="relative group w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[#168F6F] to-[#0e6b52] flex items-center justify-center text-white font-bold hover:scale-110 transition-transform"
                             >
                               <Avatar
                                 src={user.avatar}
@@ -376,7 +360,7 @@ export default function UsersTable({
                             <div className="flex-1 min-w-0">
                               <button
                                 onClick={() => navigateToUserProfile(user.id)}
-                                className="font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors truncate block"
+                                className="font-medium text-gray-900 dark:text-white hover:text-[#168F6F] transition-colors truncate block"
                               >
                                 {user.name}
                               </button>
@@ -388,7 +372,7 @@ export default function UsersTable({
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             user.role === 'ADMIN' 
                               ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400' 
-                              : 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                              : 'bg-[#168F6F]/10 text-[#168F6F]'
                           }`}>
                             {user.role === 'ADMIN' ? '👑 Administrateur' : '👤 Employé'}
                           </span>
@@ -471,19 +455,19 @@ export default function UsersTable({
                                           key={role.value}
                                           onClick={() => handleChangeRole(user.id, role.value as any, user.role)}
                                           className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                                            user.role === role.value ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                                            user.role === role.value ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20' : ''
                                           }`}
                                         >
                                           <div className="flex items-center gap-3">
                                             <span className="text-2xl">{role.icon}</span>
                                             <div className="flex-1">
-                                              <p className={`font-semibold ${user.role === role.value ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                                              <p className={`font-semibold ${user.role === role.value ? 'text-[#168F6F]' : 'text-gray-900 dark:text-white'}`}>
                                                 {role.label}
                                               </p>
                                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{role.description}</p>
                                             </div>
                                             {user.role === role.value && (
-                                              <CheckCircle size={18} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                              <CheckCircle size={18} className="text-[#168F6F] flex-shrink-0" />
                                             )}
                                           </div>
                                         </button>

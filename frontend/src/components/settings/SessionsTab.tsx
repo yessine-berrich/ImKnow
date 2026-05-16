@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
 import { userService, type Session } from '../../../services/user.service';
+import { confirm } from '@/components/modals/ConfirmModal';
 
 // Custom browser icons
 const ChromeIcon = ({ className }: { className?: string }) => (
@@ -106,7 +107,7 @@ export default function SessionsTab() {
   };
 
   const handleRevokeAllOtherSessions = async () => {
-    if (!confirm(t('sessions.revoke_all_confirm'))) return;
+    if (!await confirm(t('sessions.revoke_all_confirm'))) return;
     
     setRevokingAll(true);
     setError('');

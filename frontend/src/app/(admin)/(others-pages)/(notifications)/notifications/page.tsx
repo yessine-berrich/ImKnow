@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Check, Trash2, Filter, Loader2, Mail, Smartphone, Settings } from 'lucide-react';
 import { fetchCurrentUser, getToken } from '../../../../../../services/auth.service';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { useArticleModal } from '@/context/ArticleModalContext';
 
 const enum NotificationType {
@@ -220,7 +221,7 @@ export default function NotificationsPage() {
   };
 
   const deleteNotification = async (id: number) => {
-    if (!confirm('Supprimer cette notification ?')) return;
+    if (!await confirm('Supprimer cette notification ?')) return;
 
     setDeletingId(id);
     try {

@@ -6,6 +6,7 @@ import { getToken } from '../../../../../../services/auth.service';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { 
   Bookmark,
   ArrowLeft,
@@ -309,7 +310,7 @@ export default function BookmarkedArticlesPage() {
   };
 
   const handleDelete = async (articleId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
     
     console.log('🗑️ Delete article:', articleId);
     try {

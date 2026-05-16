@@ -10,6 +10,7 @@ import CreateArticleModal from '@/components/modals/CreateArticleModal';
 import { useSearchParams } from 'next/navigation';
 import { fetchCurrentUser, isAuthenticated } from '../../../../../../services/auth.service';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { articleService } from '../../../../../../services/article.service';
 
 interface Article {
@@ -259,7 +260,7 @@ function HomePageContent() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
     try {
       await articleService.delete(parseInt(id));
       setArticles(prev => prev.filter(article => article.id !== id));

@@ -38,7 +38,7 @@ function ToastItem({ t, message, type }: { t: Toast; message: string; type: Toas
         minWidth: '260px',
         maxWidth: '420px',
         opacity: t.visible ? 1 : 0,
-        transform: t.visible ? 'translateY(0)' : 'translateY(-8px)',
+        transform: t.visible ? 'translateY(0)' : 'translateY(8px)',
         transition: 'opacity 200ms, transform 200ms',
       }}
     >
@@ -72,8 +72,8 @@ export const toast = {
 export default function ToastContainer() {
   return (
     <Toaster
-      position="top-right"
-      containerStyle={{ top: 20, right: 20, zIndex: 99999 }}
+      position="bottom-right"
+      containerStyle={{ bottom: 20, right: 20, zIndex: 9999999 }}
       toastOptions={{
         style: { padding: 0, background: 'transparent', boxShadow: 'none' },
       }}

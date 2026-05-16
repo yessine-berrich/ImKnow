@@ -8,18 +8,13 @@ import TagsSelector from '../tags/TagsSelector';
 import { articleService } from '../../../services/article.service';
 import type { UpdateArticleDto } from '../../../services/article.service';
 import type { Article } from '../../../services/article.service';
+import { toast } from '@/components/modals/ToastContainer';
 
 interface CreateArticleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
   articleId?: string;
-}
-
-interface Toast {
-  id: string;
-  type: 'success' | 'error' | 'info';
-  message: string;
 }
 
 interface Category {
@@ -53,7 +48,6 @@ export default function CreateArticleModal({
   const [showPreview, setShowPreview] = useState(false);
   const [isSubmittingDraft, setIsSubmittingDraft] = useState(false);
   const [isSubmittingPending, setIsSubmittingPending] = useState(false);
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const [isUploadingImage] = useState(false);
   const [uploadProgress] = useState(0);
@@ -113,7 +107,7 @@ export default function CreateArticleModal({
         setAvailableTags(await tagRes.json());
       }
     } catch {
-      showToast('error', '❌ Erreur lors du chargement des données');
+      toast.error('❌ Erreur lors du chargement des données');
     } finally {
       setIsLoadingData(false);
     }
@@ -183,7 +177,7 @@ export default function CreateArticleModal({
         setSelectedTags(resolvedIds);
       }
     } catch (error: any) {
-      showToast('error', `❌ ${error.message || "Erreur lors du chargement de l'article"}`);
+      toast.error(`❌ ${error.message || "Erreur lors du chargement de l'article"}`);
     } finally {
       setIsLoadingArticle(false);
     }
@@ -205,12 +199,6 @@ export default function CreateArticleModal({
     }
   }, []);
 
-  const showToast = (type: Toast['type'], message: string) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
-  };
-
   const toggleTag = (tagId: number) => {
     setSelectedTags((prev) =>
       prev.includes(tagId) ? prev.filter((t) => t !== tagId) : [...prev, tagId]
@@ -218,9 +206,9 @@ export default function CreateArticleModal({
   };
 
   const validateForm = () => {
-    if (!title.trim()) { showToast('error', 'Le titre est obligatoire'); return false; }
-    if (!category) { showToast('error', 'Veuillez sélectionner une catégorie'); return false; }
-    if (!content.trim()) { showToast('error', 'Le contenu ne peut pas être vide'); return false; }
+    if (!title.trim()) { toast.error( 'Le titre est obligatoire'); return false; }
+    if (!category) { toast.error('Veuillez sélectionner une catégorie'); return false; }
+    if (!content.trim()) { toast.error('Le contenu ne peut pas être vide'); return false; }
     return true;
   };
 
@@ -233,12 +221,12 @@ export default function CreateArticleModal({
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
       if (!validTypes.includes(file.type)) {
-        showToast('error', `Type non supporté: ${file.name}. Utilisez JPG, PNG, GIF, WebP, PDF, TXT, DOC, DOCX.`);
+        toast.error(`Type non supporté: ${file.name}. Utilisez JPG, PNG, GIF, WebP, PDF, TXT, DOC, DOCX.`);
         return;
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        showToast('error', `${file.name} est trop lourd. Maximum 10 MB.`);
+        toast.error(`${file.name} est trop lourd. Maximum 10 MB.`);
         return;
       }
 
@@ -252,7 +240,7 @@ export default function CreateArticleModal({
         insertAtCursor(`\n[${fileName}](${localUrl})\n`);
       }
 
-      showToast('success', `✅ ${file.name} ajouté (envoyé lors de la soumission)`);
+      toast.success(`${file.name} ajouté (envoyé lors de la soumission)`);
     });
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -378,10 +366,10 @@ export default function CreateArticleModal({
     try {
       if (isEditMode && articleId) {
         const updateDto = buildUpdateDto('draft');
-        if (!updateDto?.hasChanges) { showToast('info', 'Aucune modification détectée'); return; }
+        if (!updateDto?.hasChanges) { toast.info('Aucune modification détectée'); return; }
         const { hasChanges, ...dtoToSend } = updateDto;
         await articleService.update(parseInt(articleId), dtoToSend);
-        showToast('success', '✅ Brouillon mis à jour avec succès !');
+        toast.success('Brouillon mis à jour avec succès !');
         setOriginalArticle((prev) =>
           prev
             ? {
@@ -396,11 +384,11 @@ export default function CreateArticleModal({
         );
       } else {
         await handleCreateWithFiles('draft');
-        showToast('success', '✅ Brouillon sauvegardé avec succès !');
+        toast.success('Brouillon sauvegardé avec succès !');
       }
       setTimeout(() => { resetForm(); onSuccess?.(); if (!isEditMode) onClose(); }, 1000);
     } catch (error: any) {
-      showToast('error', `❌ ${error.message || 'Erreur lors de la sauvegarde'}`);
+      toast.error(`❌ ${error.message || 'Erreur lors de la sauvegarde'}`);
     } finally {
       setIsSubmittingDraft(false);
     }
@@ -412,7 +400,7 @@ export default function CreateArticleModal({
     try {
       if (isEditMode && articleId) {
         const updateDto = buildUpdateDto('pending');
-        if (!updateDto) { showToast('error', 'Erreur lors de la construction du DTO'); return; }
+        if (!updateDto) { toast.error('Erreur lors de la construction du DTO'); return; }
 
         const { hasChanges, ...dtoToSend } = updateDto;
         const hasContentChanges = Object.keys(dtoToSend).some(
@@ -431,15 +419,15 @@ export default function CreateArticleModal({
 
         if (updatedArticle.status === 'rejected') {
           const rejectionMessage = (updatedArticle as any).rejectionReason || 'Contenu inapproprié ou doublon détecté';
-          showToast('error', `❌ Article rejeté : ${rejectionMessage}`);
+          toast.error(`❌ Article rejeté : ${rejectionMessage}`);
           setTimeout(() => { onClose(); }, 1500);
           return;
         } else if (updatedArticle.status === 'pending') {
-          showToast('success', '✅ Article soumis pour validation !');
+          toast.success('Article soumis pour validation !');
         } else if (updatedArticle.status === 'published') {
-          showToast('success', '✅ Article publié avec succès !');
+          toast.success('Article publié avec succès !');
         } else {
-          showToast('success', '✅ Article soumis pour validation !');
+          toast.success('Article soumis pour validation !');
         }
 
         setTimeout(() => {
@@ -452,15 +440,15 @@ export default function CreateArticleModal({
 
         if (createdArticle.status === 'rejected') {
           const rejectionMessage = createdArticle.rejectionReason || 'Contenu inapproprié ou doublon détecté';
-          showToast('error', `❌ Article rejeté : ${rejectionMessage}`);
+          toast.error(`❌ Article rejeté : ${rejectionMessage}`);
           setTimeout(() => { onClose(); }, 1500);
           return;
         } else if (createdArticle.status === 'pending') {
-          showToast('success', '✅ Article soumis pour validation !');
+          toast.success('Article soumis pour validation !');
         } else if (createdArticle.status === 'published') {
-          showToast('success', '✅ Article publié avec succès !');
+          toast.success('Article publié avec succès !');
         } else {
-          showToast('success', '✅ Article soumis pour validation !');
+          toast.success('Article soumis pour validation !');
         }
 
         setTimeout(() => {
@@ -470,7 +458,7 @@ export default function CreateArticleModal({
         }, 1000);
       }
     } catch (error: any) {
-      showToast('error', `❌ ${error.message || 'Erreur lors de la soumission'}`);
+      toast.error(`❌ ${error.message || 'Erreur lors de la soumission'}`);
       setTimeout(() => { onClose(); }, 2000);
     } finally {
       setIsSubmittingPending(false);
@@ -514,18 +502,15 @@ export default function CreateArticleModal({
         cur = start + 5;
         break;
       case 'codeblock': {
-        const lang = prompt('Langage du code :', 'javascript') || '';
         const inner = sel || '// Votre code ici';
-        newText = content.substring(0, start) + `\`\`\`${lang}\n${inner}\n\`\`\`\n` + content.substring(end);
-        cur = start + lang.length + inner.length + 8;
+        newText = content.substring(0, start) + `\`\`\`javascript\n${inner}\n\`\`\`\n` + content.substring(end);
+        cur = start + 'javascript'.length + inner.length + 8;
         break;
       }
       case 'link': {
-        const url = prompt('URL du lien :', 'https://');
-        if (!url) return;
         const inner = sel || 'texte du lien';
-        newText = content.substring(0, start) + `[${inner}](${url})` + content.substring(end);
-        cur = start + inner.length + url.length + 4;
+        newText = content.substring(0, start) + `[${inner}](https://)` + content.substring(end);
+        cur = start + inner.length + 'https://'.length + 4;
         break;
       }
       case 'table':
@@ -776,34 +761,11 @@ export default function CreateArticleModal({
         </div>
       </div>
 
-      {/* Toasts */}
-      <div className="fixed bottom-6 right-6 z-[999999] space-y-3">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`flex items-center gap-3 px-5 py-4 rounded-lg shadow-2xl backdrop-blur-sm animate-slideIn ${toast.type === 'success' ? 'bg-green-600 text-white'
-              : toast.type === 'error' ? 'bg-red-600 text-white'
-                : 'bg-blue-600 text-white'
-              }`}
-          >
-            <p className="font-medium">{toast.message}</p>
-            <button
-              onClick={() => setToasts((prev) => prev.filter((t) => t.id !== toast.id))}
-              className="hover:opacity-80 transition-opacity"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        ))}
-      </div>
-
       <style jsx global>{`
         @keyframes slideUp  { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
         @keyframes fadeIn   { from { opacity:0; } to { opacity:1; } }
-        @keyframes slideIn  { from { opacity:0; transform:translateX(100px); } to { opacity:1; transform:translateX(0); } }
         .animate-slideUp  { animation: slideUp  0.3s cubic-bezier(0.16,1,0.3,1); }
         .animate-fadeIn   { animation: fadeIn   0.2s ease-out; }
-        .animate-slideIn  { animation: slideIn  0.3s cubic-bezier(0.16,1,0.3,1); }
         .custom-scrollbar::-webkit-scrollbar { width:8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background:#f1f5f9; border-radius:10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }

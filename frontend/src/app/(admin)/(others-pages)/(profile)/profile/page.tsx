@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '../../../../../../services/auth.service';
 import { useUser } from '@/context/UserContext';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { articleService } from '../../../../../../services/article.service';
 import EditableUserProfileHeader from '@/components/user-profile/EditableUserProfileHeader';
 import EditableUserAboutCard from '@/components/user-profile/EditableUserAboutCard';
@@ -253,7 +254,7 @@ export default function CurrentUserProfilePageWithAPI() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
 
     try {
       await articleService.delete(parseInt(id));

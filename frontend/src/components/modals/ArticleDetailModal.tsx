@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { X, Heart, Eye, Share2, Bookmark, MessageCircle, MoreHorizontal, FileText, Printer, Edit, Trash2, Clock, Flag, User } from 'lucide-react';
 import MarkdownPreview from '../markdoun-editor/MarkdownPreview';
 import CommentsSection from '../comments/commentsSection';
@@ -568,8 +569,8 @@ export default function ArticleDetailModal({
                     
                     {onDelete && (
                       <button
-                        onClick={() => {
-                          if (window.confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
+                        onClick={async () => {
+                          if (await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
                             onDelete(article.id);
                             onClose();
                           }

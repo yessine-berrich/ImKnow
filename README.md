@@ -281,7 +281,7 @@ L'application est disponible sur : **http://localhost:3001**
 
 ## 7. Tests automatisés (Robot Framework)
 
-Le dossier `robot-tests/` contient une suite de **147 tests E2E** couvrant les principaux flux de l'application.
+Le dossier `robot-tests/` contient une suite de **149 tests E2E** couvrant les principaux flux de l'application.
 
 ### 7.1 Installation
 
@@ -291,16 +291,32 @@ pip install -r requirements.txt
 rfbrowser init   # Télécharge les navigateurs Playwright
 ```
 
+> **Windows** — si `rfbrowser` n'est pas reconnu (installation Python en mode utilisateur) :
+> ```bash
+> python -m Browser.entry init
+> ```
+
 ### 7.2 Configuration
 
-Les credentials de test sont définis dans `robot-tests/resources/variables.resource` :
+Les credentials sont définis dans `robot-tests/resources/variables.resource`.
 
+**Compte EMPLOYEE** (tests fonctionnels) :
 ```
 ${VALID_EMAIL}      testuser@imknow.com
 ${VALID_PASSWORD}   Test@1234
 ```
+Le compte doit exister en base avec `status = 'actif'` et `isEmailActive = true`.
 
-Le compte de test doit exister en base avec `status = 'actif'` et `isEmailActive = true`.
+**Compte ADMIN** (tests des pages d'administration) :
+```
+${ADMIN_EMAIL}      admin@imknow.com
+${ADMIN_PASSWORD}   Admin@1234
+```
+Pour créer ce compte s'il n'existe pas :
+```bash
+cd backend
+node create-admin.js
+```
 
 > Pour surcharger les variables sans modifier le fichier :
 > ```bash
@@ -313,38 +329,35 @@ Le compte de test doit exister en base avec `status = 'actif'` et `isEmailActive
 cd robot-tests
 
 # Tous les tests
-robot --outputdir results tests/
+python -m robot --outputdir results tests/
 
 # Tests de fumée uniquement (vérification rapide)
-robot --outputdir results --include smoke tests/
+python -m robot --outputdir results --include smoke tests/
 
 # Par module
-robot --outputdir results tests/01_authentication/
-robot --outputdir results tests/02_home/
-robot --outputdir results tests/03_search/
-robot --outputdir results tests/04_articles/
-robot --outputdir results tests/05_profile/
-robot --outputdir results tests/06_notifications/
-robot --outputdir results tests/07_profile/
-robot --outputdir results tests/08_bookmarks/
-robot --outputdir results tests/09_liked/
-robot --outputdir results tests/10_trending/
-robot --outputdir results tests/11_connections/
-robot --outputdir results tests/12_chat/
-robot --outputdir results tests/13_create_article/
-robot --outputdir results tests/14_admin/
+python -m robot --outputdir results tests/01_authentication/
+python -m robot --outputdir results tests/02_home/
+python -m robot --outputdir results tests/03_search/
+python -m robot --outputdir results tests/04_articles/
+python -m robot --outputdir results tests/05_profile/
+python -m robot --outputdir results tests/06_notifications/
+python -m robot --outputdir results tests/07_profile/
+python -m robot --outputdir results tests/08_bookmarks/
+python -m robot --outputdir results tests/09_liked/
+python -m robot --outputdir results tests/10_trending/
+python -m robot --outputdir results tests/11_connections/
+python -m robot --outputdir results tests/12_chat/
+python -m robot --outputdir results tests/13_create_article/
+python -m robot --outputdir results tests/14_admin/
 
-# Tests admin uniquement (sécurité 403)
-robot --outputdir results --include security tests/14_admin/
+# Tests admin — sécurité 403 uniquement (pas besoin du compte admin)
+python -m robot --outputdir results --include security tests/14_admin/
 
 # Mode headless (pour CI)
-robot --variable HEADLESS:true --outputdir results tests/
-
-# Raccourcis Windows / Linux
-run_tests.bat           # Windows — tous les tests
-run_tests.bat smoke     # Windows — smoke uniquement
-./run_tests.sh          # Linux / macOS
+python -m robot --variable HEADLESS:true --outputdir results tests/
 ```
+
+> **Linux / macOS** — si `robot` est dans le PATH, remplacer `python -m robot` par `robot`.
 
 ### 7.4 Couverture des tests
 
@@ -385,17 +398,38 @@ open results/report.html      # macOS
 xdg-open results/report.html  # Linux
 ```
 
-### 7.6 Intégration CI (GitHub Actions)
+### 7.6 Tags disponibles
+
+| Tag | Portée |
+|-----|--------|
+| `smoke` | Tests critiques uniquement (login, headings) |
+| `regression` | Tests de non-régression |
+| `admin` | Toutes les suites admin |
+| `security` | Vérifications de redirection 403 |
+| `ui` | Présence des éléments d'interface |
+| `interaction` | Tests de clics et interactions |
+
+```bash
+# Exemples
+python -m robot --include smoke --outputdir results tests/
+python -m robot --include admin --outputdir results tests/
+python -m robot --exclude regression --outputdir results tests/
+```
+
+### 7.7 Intégration CI (GitHub Actions)
 
 ```yaml
 - name: Install Robot Framework
   run: pip install -r robot-tests/requirements.txt
 
 - name: Install Playwright browsers
-  run: rfbrowser init
+  run: python -m Browser.entry init
+
+- name: Create admin account
+  run: node backend/create-admin.js
 
 - name: Run tests
-  run: robot --variable HEADLESS:true --outputdir robot-tests/results robot-tests/tests/
+  run: python -m robot --variable HEADLESS:true --outputdir robot-tests/results robot-tests/tests/
 
 - name: Upload results
   uses: actions/upload-artifact@v4

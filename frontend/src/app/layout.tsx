@@ -8,6 +8,7 @@ import AIAssistant from '@/components/ia-assistant/AIAssistant';
 import GoogleAuthProvider from '@/components/auth/GoogleAuthProvider';
 import { ChatProvider } from '@/context/ChatContext';
 import ToastContainer from '@/components/modals/ToastContainer';
+import ConfirmModal from '@/components/modals/ConfirmModal';
 import { UserProvider } from '@/context/UserContext';
 
 const outfit = Outfit({
@@ -30,6 +31,7 @@ export default function RootLayout({
                   <ChatProvider>
                     {children}
                     <ToastContainer />
+                    <ConfirmModal />
                   </ChatProvider>
                 </GoogleAuthProvider>
               </SidebarProvider>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { Heart, MessageCircle, Eye, Share2, Bookmark, MoreHorizontal, Download, Printer, FileText, User, Edit, Trash2, Clock, Flag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ArticleDetailModal from '@/components/modals/ArticleDetailModal';
@@ -451,8 +452,8 @@ export default function ArticleCard({
                   {/* Bouton Supprimer */}
                   {onDelete && (
                     <button
-                      onClick={() => {
-                        if (window.confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
+                      onClick={async () => {
+                        if (await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) {
                           onDelete(article.id);
                           setIsMenuOpen(false);
                         }

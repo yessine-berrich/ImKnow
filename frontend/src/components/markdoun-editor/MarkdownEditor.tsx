@@ -150,16 +150,13 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
         cursorOffset = newText.length;
         break;
       case 'codeblock': {
-        const lang = prompt('Langage du code :', 'javascript') || '';
-        newText = `\`\`\`${lang}\n${selectedText || '// Votre code ici'}\n\`\`\`\n`;
+        newText = `\`\`\`javascript\n${selectedText || '// Votre code ici'}\n\`\`\`\n`;
         cursorOffset = newText.length;
         break;
       }
       case 'link': {
-        const url = prompt('URL du lien :', 'https://') || '';
-        if (!url) return;
         const text = selectedText || 'texte du lien';
-        newText = `[${text}](${url})`;
+        newText = `[${text}](https://)`;
         cursorOffset = newText.length;
         break;
       }

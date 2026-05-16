@@ -12,8 +12,6 @@ import {
   FileText, 
   BarChart2, 
   TrendingUp,
-  ChevronDown,
-  ChevronUp,
   Filter
 } from 'lucide-react';
 import { articleService } from '../../../services/article.service';
@@ -46,7 +44,6 @@ export default function CategoriesManager({
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState<Record<string | number, boolean>>({});
   const [categoryArticles, setCategoryArticles] = useState<Record<string | number, number>>({});
-  const [showStats, setShowStats] = useState(true);
   const [sortBy, setSortBy] = useState<'name' | 'articleCount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -213,111 +210,29 @@ export default function CategoriesManager({
         
         <button
           onClick={onCreateClick}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all flex items-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
+          className="px-6 py-3 bg-[#168F6F] hover:bg-[#0e6b52] text-white rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
         >
           <Plus className="h-5 w-5" />
           Nouvelle catégorie
         </button>
       </div>
 
-      {/* Stats Cards avec toggle */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <button
-          onClick={() => setShowStats(!showStats)}
-          className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-        >
-          <span className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-            <BarChart2 className="h-5 w-5 text-blue-600" />
-            Statistiques
-          </span>
-          {showStats ? (
-            <ChevronUp className="h-5 w-5 text-gray-500" />
-          ) : (
-            <ChevronDown className="h-5 w-5 text-gray-500" />
-          )}
-        </button>
-
-        {showStats && (
-          <div className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-800 rounded-xl p-5 border border-blue-100 dark:border-gray-600">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Catégories</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                      {stats.totalCategories}
-                    </p>
-                  </div>
-                  <div className="w-14 h-14 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                    <Folder className="w-7 h-7 text-blue-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-700 dark:to-gray-800 rounded-xl p-5 border border-green-100 dark:border-gray-600">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-green-600 dark:text-green-400">Articles total</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                      {loading ? (
-                        <span className="inline-block w-8 h-8 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></span>
-                      ) : (
-                        stats.totalArticles
-                      )}
-                    </p>
-                  </div>
-                  <div className="w-14 h-14 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                    <FileText className="w-7 h-7 text-green-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-700 dark:to-gray-800 rounded-xl p-5 border border-purple-100 dark:border-gray-600">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400">Moyenne articles</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                      {loading ? '...' : stats.avgArticles}
-                    </p>
-                  </div>
-                  <div className="w-14 h-14 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                    <BarChart2 className="w-7 h-7 text-purple-600" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-700 dark:to-gray-800 rounded-xl p-5 border border-amber-100 dark:border-gray-600">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Catégories actives</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                      {loading ? '...' : stats.activeCategories}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      sur {stats.totalCategories}
-                    </p>
-                  </div>
-                  <div className="w-14 h-14 rounded-lg bg-white dark:bg-gray-800 flex items-center justify-center shadow-sm">
-                    <TrendingUp className="w-7 h-7 text-amber-600" />
-                  </div>
-                </div>
-              </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total catégories',   value: stats.totalCategories,  gradient: 'from-blue-500 to-blue-600',    icon: <Folder size={18} /> },
+          { label: 'Articles total',      value: loading ? '…' : stats.totalArticles,  gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} /> },
+          { label: 'Moyenne articles',    value: loading ? '…' : stats.avgArticles,    gradient: 'from-purple-500 to-purple-600', icon: <BarChart2 size={18} /> },
+          { label: 'Catégories actives',  value: loading ? '…' : stats.activeCategories, gradient: 'from-amber-500 to-amber-600', icon: <TrendingUp size={18} /> },
+        ].map(({ label, value, gradient, icon }) => (
+          <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+              <span className={`p-1.5 rounded-lg bg-gradient-to-br ${gradient} text-white`}>{icon}</span>
             </div>
-
-            {/* Statistiques additionnelles */}
-            {stats.mostPopularCategory && stats.maxArticles > 0 && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Catégorie la plus populaire :</span>{' '}
-                  <span className="text-blue-600 dark:text-blue-400 font-semibold">
-                    {stats.mostPopularCategory.name}
-                  </span>{' '}
-                  avec {stats.maxArticles} article{stats.maxArticles > 1 ? 's' : ''}
-                </p>
-              </div>
-            )}
+            <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
           </div>
-        )}
+        ))}
       </div>
 
       {/* Barre de recherche, filtres et options de tri */}
@@ -329,7 +244,7 @@ export default function CategoriesManager({
             placeholder="Rechercher une catégorie par nom ou description..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-12 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            className="w-full pl-12 pr-12 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent shadow-sm"
           />
           {searchQuery && (
             <button
@@ -350,7 +265,7 @@ export default function CategoriesManager({
               onClick={() => setFilterStatus('all')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 filterStatus === 'all'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+                  ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#4db896] border border-[#168F6F]/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -385,7 +300,7 @@ export default function CategoriesManager({
               onClick={() => toggleSort('name')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 sortBy === 'name'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+                  ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#4db896] border border-[#168F6F]/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
@@ -395,7 +310,7 @@ export default function CategoriesManager({
               onClick={() => toggleSort('articleCount')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 sortBy === 'articleCount'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800'
+                  ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#4db896] border border-[#168F6F]/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import Link from 'next/link';
 import {
   MessageCircle,
@@ -593,7 +594,7 @@ export default function CommentsSection({
 
   // Delete comment
   const handleDelete = async (commentId: number) => {
-    if (!confirm('Supprimer ce commentaire ?')) return;
+    if (!await confirm('Supprimer ce commentaire ?')) return;
     try {
       await commentService.remove(commentId);
       await fetchComments();

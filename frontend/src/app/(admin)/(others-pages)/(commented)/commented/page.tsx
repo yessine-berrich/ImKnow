@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import ArticleCard from '@/components/article/ArticleCard';
+import { confirm } from '@/components/modals/ConfirmModal';
 import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
 import { commentService } from '../../../../../../services/comment.service';
 import { getToken } from '../../../../../../services/auth.service';
@@ -251,7 +252,7 @@ export default function CommentedArticlesPage() {
   };
 
   const handleDelete = async (articleId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
     
     try {
       await articleService.delete(Number(articleId));

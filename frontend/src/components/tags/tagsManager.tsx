@@ -99,51 +99,20 @@ export default function TagsManager({
   return (
     <div className="space-y-8">
       {/* SECTION 1: STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Tags</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{tags.length}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { label: 'Total Tags',       value: tags.length,         gradient: 'from-blue-500 to-blue-600',   icon: <TagIcon size={18} /> },
+          { label: 'Tags Tendance',    value: trendingTags.length, gradient: 'from-green-500 to-green-600', icon: <TrendingUp size={18} /> },
+          { label: 'Utilisation totale', value: totalUsage,        gradient: 'from-purple-500 to-purple-600', icon: <Hash size={18} /> },
+        ].map(({ label, value, gradient, icon }) => (
+          <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+              <span className={`p-1.5 rounded-lg bg-gradient-to-br ${gradient} text-white`}>{icon}</span>
             </div>
-            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <TagIcon className="w-6 h-6" />
-            </div>
+            <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
           </div>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Tags Tendance</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{trendingTags.length}</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Utilisation Totale</p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{totalUsage}</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
-              <Hash className="w-6 h-6" />
-            </div>
-          </div>
-        </motion.div>
+        ))}
       </div>
 
       {/* SECTION 2: CONTROLS (SEARCH & VIEW) */}
@@ -155,7 +124,7 @@ export default function TagsManager({
             placeholder="Rechercher un tag (ex: #react)..."
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#168F6F] outline-none transition-all shadow-sm"
           />
         </div>
 
@@ -163,14 +132,14 @@ export default function TagsManager({
           <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
             <button
               onClick={() => onViewModeChange("cloud")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "cloud" ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === "cloud" ? "bg-white dark:bg-gray-700 shadow-sm text-[#168F6F]" : "text-gray-500 hover:text-gray-700"}`}
               title="Vue Nuage"
             >
               <Cloud className="w-5 h-5" />
             </button>
             <button
               onClick={() => onViewModeChange("list")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-white dark:bg-gray-700 shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+              className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-white dark:bg-gray-700 shadow-sm text-[#168F6F]" : "text-gray-500 hover:text-gray-700"}`}
               title="Vue Liste"
             >
               <List className="w-5 h-5" />
@@ -179,7 +148,7 @@ export default function TagsManager({
           
           <button
             onClick={onCreateTagClick}
-            className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-5 py-3 bg-[#168F6F] hover:bg-[#0e6b52] text-white rounded-xl font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
           >
             <Plus className="w-5 h-5" />
             Nouveau Tag
@@ -200,7 +169,7 @@ export default function TagsManager({
               </h3>
               <div className="flex flex-wrap gap-2">
                 {trendingTags.slice(0, 5).map(tag => (
-                  <span key={tag.id} className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-xs font-bold text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-900/50">
+                  <span key={tag.id} className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full text-xs font-bold text-[#168F6F] dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-900/50">
                     {tag.name} <span className="ml-1 opacity-60">{tag.count}</span>
                   </span>
                 ))}

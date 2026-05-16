@@ -4,6 +4,7 @@
 import { getToken } from '../../../services/auth.service';
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
+import { confirm } from '@/components/modals/ConfirmModal';
 import { X, Clock, User, RotateCcw, FileText, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -89,7 +90,7 @@ export default function ArticleHistoryModal({
   };
 
   const handleRevert = async (versionNumber: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir revenir à cette version ?')) return;
+    if (!await confirm('Êtes-vous sûr de vouloir revenir à cette version ?')) return;
     
     setIsReverting(true);
     try {
