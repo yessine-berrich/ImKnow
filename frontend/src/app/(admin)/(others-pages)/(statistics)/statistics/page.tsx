@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
 import {
@@ -15,6 +16,7 @@ import {
   DashboardStats, UserActivityStats, ModerationStats,
   EngagementStats, CategoryStats, TagStats, ReportsStats,
 } from '../../../../../../services/stats.service';
+import { getToken } from '../../../../../../services/auth.service';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -145,6 +147,8 @@ const REASON_LABELS: Record<string, string> = {
 type Section = 'users' | 'articles' | 'moderation' | 'tags' | 'reports';
 
 export default function StatisticsPage() {
+  const router = useRouter();
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [activeSection, setActiveSection] = useState<Section>('users');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -191,7 +195,17 @@ export default function StatisticsPage() {
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    try {
+      const token = getToken();
+      if (!token) { router.push('/signin'); return; }
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role !== 'ADMIN') { router.push('/error-403'); return; }
+      setIsCheckingRole(false);
+    } catch { router.push('/signin'); }
+  }, [router]);
+
+  useEffect(() => { if (!isCheckingRole) loadAll(); }, [isCheckingRole, loadAll]);
 
   const navItems: { id: Section; label: string; icon: React.ElementType }[] = [
     { id: 'users',      label: 'Utilisateurs',     icon: Users },
@@ -450,6 +464,8 @@ export default function StatisticsPage() {
       { name: 'Clôturés',   data: [reports?.articles.dismissed ?? 0, reports?.users.dismissed ?? 0] },
     ],
   }), [reports, dark]);
+
+  if (isCheckingRole) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">

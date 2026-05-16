@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Flag, Search, ChevronLeft, ChevronRight,
   AlertTriangle, CheckCircle, XCircle, Eye, EyeOff,
@@ -13,6 +14,7 @@ import {
   ReportedArticleItem, ArticleReportDetail,
   ArticleReportListResponse, RiskLevel, ArticleAction,
 } from '../../../../../../../services/admin-reports.service';
+import { getToken } from '../../../../../../../services/auth.service';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -376,6 +378,8 @@ function ArticleDetailDrawer({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ReportedArticlesPage() {
+  const router = useRouter();
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [data, setData] = useState<ArticleReportListResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -408,7 +412,17 @@ export default function ReportedArticlesPage() {
     }
   }, [statusFilter, riskFilter, search, page]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    try {
+      const token = getToken();
+      if (!token) { router.push('/signin'); return; }
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.role !== 'ADMIN') { router.push('/error-403'); return; }
+      setIsCheckingRole(false);
+    } catch { router.push('/signin'); }
+  }, [router]);
+
+  useEffect(() => { if (!isCheckingRole) load(); }, [isCheckingRole, load]);
 
   const handleSearchChange = (val: string) => {
     setSearchInput(val);
@@ -433,6 +447,8 @@ export default function ReportedArticlesPage() {
   };
 
   const summary = data?.summary;
+
+  if (isCheckingRole) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-8">

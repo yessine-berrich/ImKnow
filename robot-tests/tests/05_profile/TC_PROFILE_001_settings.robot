@@ -76,8 +76,7 @@ TC_PROFILE_001_07 Profile tab first-name field is pre-filled
     ...                populated in the firstName input.
     [Tags]    profile    settings    regression
     Go To    ${SETTINGS_URL}
-    Wait For Load State    domcontentloaded
-    Click    text=Profile
+    Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
     Wait For Elements State    input[name="firstName"], input[placeholder*="first" i]    visible    timeout=${TIMEOUT}
     ${value}=    Get Property    input[name="firstName"], input[placeholder*="first" i]    value
     Should Not Be Empty    ${value}
