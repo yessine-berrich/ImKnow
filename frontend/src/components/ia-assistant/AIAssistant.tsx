@@ -2,7 +2,14 @@
 
 import { getToken } from '../../../services/auth.service';
 import { useState, useEffect, useRef } from 'react';
-import { X, Send, Sparkles, Bot, User, AlertCircle } from 'lucide-react';
+import { X, Send, Sparkles, Bot, User, AlertCircle, BookOpen } from 'lucide-react';
+
+interface RagSource {
+  articleId: number;
+  title: string;
+  chunkIndex: number;
+  similarity: number;
+}
 
 interface Message {
   id: string;
@@ -10,6 +17,7 @@ interface Message {
   role: 'user' | 'assistant';
   timestamp: Date;
   error?: boolean;
+  sources?: RagSource[];
 }
 
 interface AIAssistantProps {
@@ -90,6 +98,7 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
         content: data.answer ?? "Aucune réponse disponible.",
         role: 'assistant',
         timestamp: new Date(),
+        sources: data.sources?.length ? data.sources : undefined,
       };
 
       setMessages((prev) => [...prev, aiResponse]);
@@ -173,16 +182,41 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                     <User className="h-4 w-4" />
                   )}
                 </div>
-                <div
-                  className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                    message.role === 'assistant'
-                      ? message.error
-                        ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-tl-none'
-                        : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-none shadow-sm'
-                      : 'bg-[#168F6F] text-white rounded-tr-none'
-                  }`}
-                >
-                  {message.content}
+                <div className="max-w-[75%] flex flex-col gap-1.5">
+                  <div
+                    className={`rounded-2xl px-4 py-2.5 text-sm ${
+                      message.role === 'assistant'
+                        ? message.error
+                          ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-tl-none'
+                          : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-tl-none shadow-sm'
+                        : 'bg-[#168F6F] text-white rounded-tr-none'
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+
+                  {/* Sources */}
+                  {message.sources && message.sources.length > 0 && (
+                    <div className="flex flex-col gap-1 pl-1">
+                      <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide flex items-center gap-1">
+                        <BookOpen className="h-3 w-3" />
+                        Sources
+                      </span>
+                      {message.sources.map((source) => (
+                        <div
+                          key={`${source.articleId}-${source.chunkIndex}`}
+                          className="flex items-center justify-between gap-2 rounded-lg bg-gray-100 dark:bg-gray-800/60 px-2.5 py-1.5 text-xs"
+                        >
+                          <span className="text-gray-700 dark:text-gray-300 truncate font-medium">
+                            {source.title}
+                          </span>
+                          <span className="text-[#168F6F] font-semibold flex-shrink-0">
+                            {Math.round(source.similarity * 100)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

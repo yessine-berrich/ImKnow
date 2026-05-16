@@ -25,6 +25,7 @@ import { Category } from '../category/entities/category.entity';
 import { Tag } from '../tag/entities/tag.entity';
 import { ArticleReport } from './entities/article-report.entity';
 import { ReportArticleDto } from './dto/report-article.dto';
+import { ArticleChunkService } from './article-chunk.service';
 
 @Injectable()
 export class ArticleService {
@@ -41,6 +42,7 @@ export class ArticleService {
     private readonly moderationService: ContentModerationService,
     private readonly notificationService: NotificationService,
     private readonly articleVersioningService: ArticleVersioningService,
+    private readonly articleChunkService: ArticleChunkService,
   ) { }
 
   async create(
@@ -96,6 +98,7 @@ export class ArticleService {
         'Initial draft creation',
       );
       this.generateAndSaveEmbedding(savedArticle.id).catch(console.error);
+      this.articleChunkService.generateChunks(savedArticle.id).catch(console.error);
       return this.findOne(savedArticle.id);
     }
 
@@ -217,6 +220,7 @@ export class ArticleService {
     );
 
     this.generateAndSaveEmbedding(savedArticle.id).catch(console.error);
+    this.articleChunkService.generateChunks(savedArticle.id).catch(console.error);
 
     return this.findOne(savedArticle.id);
   }
@@ -411,6 +415,7 @@ ${article.content}
       }
       if (articleData.title || articleData.content || articleData.categoryId || articleData.tagIds) {
         this.generateAndSaveEmbedding(article.id).catch(console.error);
+        this.articleChunkService.generateChunks(article.id).catch(console.error);
       }
       return this.findOne(article.id);
     }
@@ -536,6 +541,7 @@ ${article.content}
 
     if (articleData.title || articleData.content || articleData.categoryId || articleData.tagIds) {
       this.generateAndSaveEmbedding(article.id).catch(console.error);
+      this.articleChunkService.generateChunks(article.id).catch(console.error);
     }
 
     return this.findOne(article.id);
@@ -743,6 +749,7 @@ ${article.content}
     const saved = await this.articleRepository.save(article);
 
     this.generateAndSaveEmbedding(saved.id).catch(console.error);
+    this.articleChunkService.generateChunks(saved.id).catch(console.error);
 
     await this.articleVersioningService.createNewVersion(
       saved,                        // article sauvegardé (pas l'ancien objet)
