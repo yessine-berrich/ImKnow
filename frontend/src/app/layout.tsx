@@ -1,6 +1,17 @@
+import type { Metadata } from 'next';
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import "flatpickr/dist/flatpickr.css";
+
+export const metadata: Metadata = {
+  title: 'ImKnow',
+  description: 'Plateforme de gestion de connaissances',
+  icons: {
+    icon: '/images/logo/logo-1.png',
+    shortcut: '/images/logo/logo-1.png',
+    apple: '/images/logo/logo-1.png',
+  },
+};
 import { SidebarProvider } from '@/context/SidebarContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
