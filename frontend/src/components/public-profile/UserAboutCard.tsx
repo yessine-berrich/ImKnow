@@ -49,7 +49,7 @@ export default function UserAboutCard({ user }: UserAboutCardProps) {
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 dark:text-gray-500 mb-0.5">Email</p>
                 <a href={`mailto:${user.email}`}
-                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate block">
+                  className="text-sm text-[#168F6F] hover:underline truncate block">
                   {user.email}
                 </a>
               </div>

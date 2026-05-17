@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Eye, Heart, AlertCircle } from 'lucide-react';
+import { TrendingUp, Eye, Heart, AlertCircle, Flame } from 'lucide-react';
 import { statsService, TrendingArticle } from '../../../services/stats.service';
 import { isAuthenticated } from '../../../services/auth.service';
 import { articleService } from '../../../services/article.service';
@@ -16,14 +16,6 @@ interface TrendingArticlesProps {
   onArticleClick?: (article: any) => void;
 }
 
-interface ArticleWithState extends TrendingArticle {
-  isLiked?: boolean;
-  isBookmarked?: boolean;
-  likesCount?: number;
-  viewsCount?: number;
-  commentsCount?: number;
-}
-
 function useTrendingArticles(limit = 5) {
   const [data, setData] = useState<TrendingArticlesResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +23,6 @@ function useTrendingArticles(limit = 5) {
 
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       setLoading(true);
       setError(null);
@@ -44,7 +35,6 @@ function useTrendingArticles(limit = 5) {
         if (!cancelled) setLoading(false);
       }
     }
-
     load();
     return () => { cancelled = true; };
   }, [limit]);
@@ -52,53 +42,69 @@ function useTrendingArticles(limit = 5) {
   return { data, loading, error };
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-const getRankColor = (rank: number) => {
-  switch (rank) {
-    case 1:
-      return 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg';
-    case 2:
-      return 'bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 text-white';
-    case 3:
-      return 'bg-gradient-to-br from-amber-700 to-amber-800 text-white';
-    default:
-      return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
-  }
-};
-
 const formatNumber = (num: number): string => {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
   return num.toString();
 };
 
-// ── Skeleton ───────────────────────────────────────────────────────────────────
+const RANK_CONFIG: Record<number, { label: string; bg: string; text: string; border: string }> = {
+  1: {
+    label: '1',
+    bg: 'bg-gradient-to-br from-yellow-400 to-amber-500',
+    text: 'text-white',
+    border: 'ring-2 ring-yellow-300/60',
+  },
+  2: {
+    label: '2',
+    bg: 'bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-500 dark:to-slate-600',
+    text: 'text-white',
+    border: 'ring-2 ring-slate-300/50 dark:ring-slate-500/50',
+  },
+  3: {
+    label: '3',
+    bg: 'bg-gradient-to-br from-amber-600 to-orange-700',
+    text: 'text-white',
+    border: 'ring-2 ring-amber-500/50',
+  },
+};
+
+function RankBadge({ rank }: { rank: number }) {
+  const cfg = RANK_CONFIG[rank];
+  if (cfg) {
+    return (
+      <div
+        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${cfg.bg} ${cfg.text} ${cfg.border} font-extrabold text-sm shadow-md transition-transform duration-200 group-hover:scale-110`}
+      >
+        {cfg.label}
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-sm text-gray-500 dark:text-gray-400 transition-transform duration-200 group-hover:scale-105">
+      {rank}
+    </div>
+  );
+}
 
 function SkeletonRow() {
   return (
-    <div className="group p-3 rounded-lg animate-pulse">
-      <div className="flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
-        <div className="flex-1 space-y-2">
-          <div className="h-2.5 w-16 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-full rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-3/4 rounded bg-gray-100 dark:bg-gray-800" />
-          <div className="flex gap-4">
-            <div className="h-2.5 w-14 rounded bg-gray-100 dark:bg-gray-800" />
-            <div className="h-2.5 w-14 rounded bg-gray-100 dark:bg-gray-800" />
-          </div>
+    <div className="flex items-start gap-3 rounded-xl p-3 animate-pulse">
+      <div className="h-9 w-9 rounded-xl bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+      <div className="flex-1 space-y-2 pt-0.5">
+        <div className="h-2.5 w-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-3.5 w-full rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-3.5 w-3/4 rounded-full bg-gray-100 dark:bg-gray-800" />
+        <div className="flex gap-3">
+          <div className="h-2.5 w-16 rounded-full bg-gray-100 dark:bg-gray-800" />
+          <div className="h-2.5 w-16 rounded-full bg-gray-100 dark:bg-gray-800" />
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main Component ──────────────────────────────────────────────────────────────
-
 export default function TrendingArticles({ limit = 5, onArticleClick }: TrendingArticlesProps) {
   const { data, loading, error } = useTrendingArticles(limit);
-  
-  // États pour suivre les likes/bookmarks dans la liste
   const [articlesState, setArticlesState] = useState<Record<number, {
     isLiked: boolean;
     isBookmarked: boolean;
@@ -107,27 +113,15 @@ export default function TrendingArticles({ limit = 5, onArticleClick }: Trending
     views: number;
   }>>({});
 
-  // Récupérer l'utilisateur courant
   const isAuth = isAuthenticated();
 
-  // Récupérer les états des likes/bookmarks pour chaque article
   useEffect(() => {
     const fetchArticleStates = async () => {
       if (!data?.articles || !isAuth) return;
-
-      const states: Record<number, {
-        isLiked: boolean;
-        isBookmarked: boolean;
-        likes: number;
-        comments: number;
-        views: number;
-      }> = {};
-
+      const states: Record<number, { isLiked: boolean; isBookmarked: boolean; likes: number; comments: number; views: number }> = {};
       for (const article of data.articles) {
         try {
-          // Récupérer l'article complet avec ses états
           const fullArticle = await articleService.findOne(article.id);
-          
           states[article.id] = {
             isLiked: fullArticle.isLiked || false,
             isBookmarked: fullArticle.isBookmarked || false,
@@ -135,9 +129,7 @@ export default function TrendingArticles({ limit = 5, onArticleClick }: Trending
             comments: fullArticle.stats?.comments || article.stats.comments,
             views: fullArticle.stats?.views || article.stats.views,
           };
-        } catch (err) {
-          console.error(`Erreur récupération état article ${article.id}:`, err);
-          // En cas d'erreur, utiliser les valeurs par défaut
+        } catch {
           states[article.id] = {
             isLiked: false,
             isBookmarked: false,
@@ -147,16 +139,12 @@ export default function TrendingArticles({ limit = 5, onArticleClick }: Trending
           };
         }
       }
-
       setArticlesState(states);
     };
-
     fetchArticleStates();
   }, [data, isAuth]);
 
-
   const handleArticleClick = async (article: TrendingArticle) => {
-    // Récupérer l'état actuel de l'article
     const currentState = articlesState[article.id] || {
       isLiked: false,
       isBookmarked: false,
@@ -165,7 +153,6 @@ export default function TrendingArticles({ limit = 5, onArticleClick }: Trending
       views: article.stats.views,
     };
 
-    // Fetch full article to get author ID and avatar (not always available in trending response)
     let authorId = (article.author as any).id;
     let authorAvatar: string | null =
       (article.author as any).avatar ?? (article.author as any).profileImage ?? null;
@@ -175,16 +162,10 @@ export default function TrendingArticles({ limit = 5, onArticleClick }: Trending
         const fullArticle = await articleService.findOne(article.id);
         if (!authorId) authorId = fullArticle.author?.id;
         if (!authorAvatar)
-          authorAvatar =
-            fullArticle.author?.profileImage ??
-            fullArticle.author?.avatar ??
-            null;
-      } catch (error) {
-        console.error('Error fetching full article:', error);
-      }
+          authorAvatar = fullArticle.author?.profileImage ?? fullArticle.author?.avatar ?? null;
+      } catch {}
     }
 
-    // Créer l'article au format attendu par le modal
     const modalArticle = {
       id: String(article.id),
       title: article.title,
@@ -197,152 +178,137 @@ export default function TrendingArticles({ limit = 5, onArticleClick }: Trending
         department: article.author.department || '',
         avatar: authorAvatar,
       },
-      category: {
-        name: article.category.name,
-        slug: article.category.slug,
-      },
+      category: { name: article.category.name, slug: article.category.slug },
       tags: article.tags,
       publishedAt: article.publishedAt,
       status: 'published' as const,
-      stats: {
-        likes: currentState.likes,
-        comments: currentState.comments,
-        views: currentState.views,
-      },
+      stats: { likes: currentState.likes, comments: currentState.comments, views: currentState.views },
       isLiked: currentState.isLiked,
       isBookmarked: currentState.isBookmarked,
     };
-    
-    // Appeler la prop passée par le parent
-    if (onArticleClick) {
-      onArticleClick(modalArticle);
-    }
+
+    if (onArticleClick) onArticleClick(modalArticle);
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-md transition-shadow duration-300">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-to-br from-red-100 to-pink-100 dark:from-red-900/30 dark:to-pink-900/30">
-            <TrendingUp className="h-5 w-5 text-red-600 dark:text-red-400" />
+    <div className="relative overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-lg transition-shadow duration-300">
+      {/* Subtle top accent bar */}
+      <div className="h-1 w-full bg-[#168F6F]" />
+
+      <div className="p-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#168F6F] shadow-md shadow-[#168F6F]/25 dark:shadow-[#168F6F]/15">
+              <Flame className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                Articles tendances
+              </h3>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                Les plus populaires cette semaine
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Articles tendances
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Les plus populaires cette semaine
-            </p>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/15 border border-[#168F6F]/20">
+            <TrendingUp className="h-3.5 w-3.5 text-[#168F6F]" />
+            <span className="text-xs font-semibold text-[#168F6F]">Top {limit}</span>
           </div>
         </div>
-        <span className="px-2.5 py-1 text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full">
-          🔥 Tendance
-        </span>
-      </div>
 
-      {/* Articles List */}
-      <div className="space-y-4">
-        {/* Loading */}
-        {loading && Array.from({ length: limit }).map((_, i) => (
-          <SkeletonRow key={i} />
-        ))}
+        {/* List */}
+        <div className="space-y-1">
+          {loading && Array.from({ length: limit }).map((_, i) => <SkeletonRow key={i} />)}
 
-        {/* Error */}
-        {!loading && error && (
-          <div className="flex items-center gap-2 py-6 justify-center text-sm text-red-500 dark:text-red-400">
-            <AlertCircle className="h-4 w-4" />
-            <span>Impossible de charger les articles</span>
-          </div>
-        )}
+          {!loading && error && (
+            <div className="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+              <span>Impossible de charger les articles</span>
+            </div>
+          )}
 
-        {/* Empty */}
-        {!loading && !error && data?.articles.length === 0 && (
-          <p className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">
-            Aucun article publié cette semaine.
-          </p>
-        )}
+          {!loading && !error && data?.articles.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
+              <TrendingUp className="h-6 w-6" />
+              <span>Aucun article publié cette semaine.</span>
+            </div>
+          )}
 
-        {/* Data */}
-        {!loading && !error && data?.articles.map((article) => {
-          const articleState = articlesState[article.id] || {
-            isLiked: false,
-            isBookmarked: false,
-            likes: article.stats.likes,
-            comments: article.stats.comments,
-            views: article.stats.views,
-          };
+          {!loading && !error && data?.articles.map((article, index) => {
+            const articleState = articlesState[article.id] || {
+              isLiked: false,
+              isBookmarked: false,
+              likes: article.stats.likes,
+              comments: article.stats.comments,
+              views: article.stats.views,
+            };
+            const isTop = article.rank <= 3;
 
-          return (
-            <div
-              key={article.id}
-              onClick={() => handleArticleClick(article)}
-              className="group p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 cursor-pointer active:scale-[0.98] select-none"
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleArticleClick(article);
-                }
-              }}
-            >
-              <div className="flex items-start gap-3">
-                {/* Rank Badge */}
-                <div className="flex-shrink-0">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${getRankColor(article.rank)} font-bold text-sm transition-transform group-hover:scale-110`}>
-                    {article.rank}
-                  </div>
-                </div>
+            return (
+              <div
+                key={article.id}
+                onClick={() => handleArticleClick(article)}
+                className={`group relative flex items-start gap-3 rounded-xl px-3 py-3 cursor-pointer transition-all duration-200 select-none
+                  ${isTop
+                    ? 'hover:bg-[#168F6F]/5 dark:hover:bg-[#168F6F]/10'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                  }
+                  active:scale-[0.985]`}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleArticleClick(article); }
+                }}
+              >
+                {/* Rank */}
+                <RankBadge rank={article.rank} />
 
-                {/* Article Content */}
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    {/* ✅ CATÉGORIE AVEC LA COULEUR #00926B */}
-                    <span className="px-2 py-1 text-xs font-medium bg-[#00926B]/10 dark:bg-[#00926B]/20 text-[#00926B] dark:text-[#00B383] rounded-full">
-                      {article.category.name}
-                    </span>
-                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 dark:bg-[#168F6F]/15 text-[#168F6F] border border-[#168F6F]/20 mb-1.5">
+                    {article.category.name}
+                  </span>
 
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed">
+                  <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-snug mb-2 line-clamp-2 group-hover:text-[#168F6F] transition-colors">
                     {article.title}
                   </h4>
 
-                  {/* Stats avec les états mis à jour */}
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
                       <Eye className="h-3.5 w-3.5" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                      <span className="font-medium text-gray-600 dark:text-gray-300">
                         {formatNumber(articleState.views)}
                       </span>
-                      <span>vues</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                      <Heart 
-                        className={`h-3.5 w-3.5 ${
-                          articleState.isLiked 
-                            ? 'fill-red-500 text-red-500' 
-                            : 'text-red-500 dark:text-red-400'
-                        }`} 
+                    <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                      <Heart
+                        className={`h-3.5 w-3.5 transition-colors ${
+                          articleState.isLiked ? 'fill-rose-500 text-rose-500' : 'text-[#168F6F]'
+                        }`}
                       />
-                      <span className="font-medium text-gray-700 dark:text-gray-300">
+                      <span className="font-medium text-gray-600 dark:text-gray-300">
                         {formatNumber(articleState.likes)}
                       </span>
-                      <span>j'aime</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Trending Arrow */}
-                <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <svg className="h-5 w-5 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* Arrow */}
+                <div className="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 translate-x-1 group-hover:translate-x-0 transition-all duration-200">
+                  <svg className="h-4 w-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
+
+                {/* Separator (not last) */}
+                {index < (data?.articles.length ?? 0) - 1 && (
+                  <div className="absolute bottom-0 left-14 right-3 h-px bg-gray-100 dark:bg-gray-800 group-hover:opacity-0 transition-opacity" />
+                )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

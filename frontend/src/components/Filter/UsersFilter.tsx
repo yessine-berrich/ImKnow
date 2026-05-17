@@ -22,6 +22,10 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setSearchValue(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (searchValue !== filters.search) {
         onChange('search', searchValue);
@@ -49,10 +53,10 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
   ];
 
   const statuses = [
-    { value: 'active',           label: 'Actif',                color: 'bg-green-500'  },
-    { value: 'pending',          label: 'En attente d\'activation', color: 'bg-yellow-500' },
-    { value: 'email_unverified', label: 'Email non vérifié',    color: 'bg-orange-400' },
-    { value: 'inactive',         label: 'Inactif (désactivé)',  color: 'bg-red-500'    },
+    { value: 'active', label: 'Actif', color: 'bg-green-500' },
+    { value: 'pending', label: 'En attente d\'activation', color: 'bg-yellow-500' },
+    { value: 'email_unverified', label: 'Email non vérifié', color: 'bg-orange-400' },
+    { value: 'inactive', label: 'Inactif (désactivé)', color: 'bg-red-500' },
   ];
 
   const getSelectedLabel = (type: string, value: string) => {
@@ -89,9 +93,8 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
 
       {/* Role Filter */}
       <div className="relative">
-        <button onClick={() => setOpenDropdown(openDropdown === 'role' ? null : 'role')} className={`flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[180px] justify-between transition-all ${
-          filters.role ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-300 dark:border-gray-700'
-        }`}>
+        <button onClick={() => setOpenDropdown(openDropdown === 'role' ? null : 'role')} className={`flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[180px] justify-between transition-all ${filters.role ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-300 dark:border-gray-700'
+          }`}>
           <span className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-400" />
             <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
@@ -124,9 +127,8 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
 
       {/* Status Filter */}
       <div className="relative">
-        <button onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')} className={`flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[180px] justify-between transition-all ${
-          filters.status ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-300 dark:border-gray-700'
-        }`}>
+        <button onClick={() => setOpenDropdown(openDropdown === 'status' ? null : 'status')} className={`flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-900 border rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 min-w-[180px] justify-between transition-all ${filters.status ? 'border-blue-500 ring-2 ring-blue-500/20' : 'border-gray-300 dark:border-gray-700'
+          }`}>
           <span className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-gray-400" />
             <span className="text-sm text-gray-700 dark:text-gray-300 truncate">
@@ -161,7 +163,7 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
           Réinitialiser
         </button>
       )}
-      
+
       <style jsx global>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.2s ease-out; }

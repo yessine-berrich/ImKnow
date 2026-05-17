@@ -7,8 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   Trash2, Eye, UserCheck, UserX, Mail, Shield, MoreVertical,
   ChevronLeft, ChevronRight, ArrowUpDown, Send, Power,
-  Loader2, CheckCircle,
-  Loader
+  Loader2, CheckCircle
 } from 'lucide-react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
@@ -267,30 +266,50 @@ export default function UsersTable({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">{description}</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{description}</p>
       </div>
 
-      {/* Stats */}
+      {/* Stats — clickable pour filtrer */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {[
-          { label: 'Total',               value: stats.total,          gradient: 'from-blue-500 to-blue-600'   },
-          { label: 'Actifs',              value: stats.active,         gradient: 'from-green-500 to-green-600' },
-          { label: 'En attente',          value: stats.pending,        gradient: 'from-yellow-500 to-yellow-600' },
-          { label: 'Email non vérifié',   value: stats.emailUnverified, gradient: 'from-orange-400 to-orange-500' },
-          { label: 'Inactifs',            value: stats.inactive,       gradient: 'from-red-500 to-red-600'     },
-          { label: 'Employés',            value: stats.employees,      gradient: 'from-purple-500 to-purple-600' },
-        ].map(({ label, value, gradient }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{label}</p>
-            <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-              {value}
-            </p>
-          </div>
-        ))}
+        {([
+          { label: 'Total',             value: stats.total,           gradient: 'from-blue-500 to-blue-600',    filterKey: null     as string | null, filterVal: ''                 },
+          { label: 'Actifs',            value: stats.active,          gradient: 'from-green-500 to-green-600',  filterKey: 'status' as string | null, filterVal: 'active'           },
+          { label: 'En attente',        value: stats.pending,         gradient: 'from-yellow-500 to-yellow-600',filterKey: 'status' as string | null, filterVal: 'pending'          },
+          { label: 'Email non vérifié', value: stats.emailUnverified, gradient: 'from-orange-400 to-orange-500',filterKey: 'status' as string | null, filterVal: 'email_unverified' },
+          { label: 'Inactifs',          value: stats.inactive,        gradient: 'from-red-500 to-red-600',      filterKey: 'status' as string | null, filterVal: 'inactive'         },
+          { label: 'Employés',          value: stats.employees,       gradient: 'from-purple-500 to-purple-600',filterKey: 'role'   as string | null, filterVal: 'EMPLOYEE'         },
+        ]).map(({ label, value, gradient, filterKey, filterVal }) => {
+          const isActive = filterKey !== null && filters[filterKey as keyof typeof filters] === filterVal;
+          return (
+            <button
+              key={label}
+              onClick={() => {
+                if (filterKey === null) {
+                  setFilters({ search: '', role: '', status: '' });
+                  setCurrentPage(1);
+                } else {
+                  setFilters(prev => ({ ...prev, [filterKey]: isActive ? '' : filterVal }));
+                  setCurrentPage(1);
+                }
+              }}
+              className={`text-left bg-white dark:bg-gray-900 rounded-xl border-2 p-5 transition-all cursor-pointer hover:shadow-lg ${
+                isActive
+                  ? 'border-[#168F6F] shadow-md ring-2 ring-[#168F6F]/20'
+                  : 'border-gray-200 dark:border-gray-800'
+              }`}
+            >
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+              <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
+                {value}
+              </p>
+              {isActive && (
+                <p className="text-xs text-[#168F6F] mt-1 font-medium">Filtre actif</p>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Filters */}
@@ -387,7 +406,7 @@ export default function UsersTable({
                             'text-red-500 dark:text-red-400'
                           }`}>
                             {user.status === 'active'           ? <UserCheck size={16} /> :
-                             user.status === 'pending'          ? <Loader size={16} /> :
+                             user.status === 'pending'          ? <Mail size={16} /> :
                              user.status === 'email_unverified' ? <Mail size={16} /> :
                              <UserX size={16} />}
                             <span className="text-sm">

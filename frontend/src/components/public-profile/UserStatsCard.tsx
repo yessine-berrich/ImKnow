@@ -46,8 +46,8 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           Articles
         </span>
       </div>
-       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-800">
-        <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
+        <BookOpen className="h-6 w-6 text-[#168F6F]" />
       </div>
     </div>
   </div>
@@ -63,8 +63,8 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           Commentaires
         </span>
       </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-800">
-              <MessageCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
+              <MessageCircle className="h-6 w-6 text-[#168F6F]" />
       </div>
     </div>
   </div>
@@ -80,8 +80,8 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           J'aime
         </span>
       </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-800">
-              <Heart className="h-6 w-6 text-red-600 dark:text-red-400" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-900/20">
+              <Heart className="h-6 w-6 text-rose-500" />
       </div>
     </div>
   </div>
@@ -97,8 +97,8 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           Vues
         </span>
       </div>
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
-        <Eye className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
+        <Eye className="h-6 w-6 text-[#168F6F]" />
       </div>
     </div>
   </div>
@@ -114,8 +114,8 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
                 Engagement / article
               </p>
               <div className="flex items-center justify-center gap-1">
-                <Award className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-lg font-semibold text-purple-700 dark:text-purple-400">
+                <Award className="h-4 w-4 text-[#168F6F]" />
+                <span className="text-lg font-semibold text-[#168F6F]">
                   {engagementRate}
                 </span>
               </div>
@@ -130,8 +130,8 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
                 Vues / article
               </p>
               <div className="flex items-center justify-center gap-1">
-                <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                <span className="text-lg font-semibold text-yellow-700 dark:text-yellow-400">
+                <Star className="h-4 w-4 text-[#168F6F]" />
+                <span className="text-lg font-semibold text-[#168F6F]">
                   {formatNumber(avgViews)}
                 </span>
               </div>

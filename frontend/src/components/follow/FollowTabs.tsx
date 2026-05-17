@@ -1,446 +1,455 @@
-// components/follow/FollowTabs.tsx - Version corrigée avec couleur #00926B
 'use client';
 
-import { useState, useEffect } from 'react';
-import { 
-  Users, 
-  UserPlus, 
-  UserCheck, 
-  UserX,
-  Heart, 
-  Loader2 
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Users, UserPlus, UserCheck, UserX, Heart,
+  Loader2, Sparkles, UserMinus, ChevronRight,
 } from 'lucide-react';
-
 import { useRouter } from 'next/navigation';
-import { FollowRelationshipDto, followService, FriendSuggestionDto, UserBriefDto, StatusResponseDto } from '../../../services/follow.service';
+import {
+  FollowRelationshipDto,
+  followService,
+  FriendSuggestionDto,
+  UserBriefDto,
+} from '../../../services/follow.service';
 import Avatar from '../ui/avatar/Avatar';
+
+// ── Types ──────────────────────────────────────────────────────────────────────
 
 interface FollowTabsProps {
   userId: number;
+  currentUserId?: number | null;
   isCurrentUser?: boolean;
   onClose?: () => void;
-  initialTab?: 'followers' | 'following' | 'friends' | 'suggestions';
+  initialTab?: TabType;
 }
 
 type TabType = 'followers' | 'following' | 'friends' | 'suggestions';
 
-export default function FollowTabs({ 
-  userId, 
-  isCurrentUser = false, 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+const fmtDate = (d?: string) => {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const fullName = (u: UserBriefDto) =>
+  u.fullName || `${u.firstName} ${u.lastName}`.trim() || 'Utilisateur';
+
+// ── Skeleton ───────────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 animate-pulse">
+      <div className="h-11 w-11 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 w-32 rounded-full bg-gray-200 dark:bg-gray-700" />
+        <div className="h-2.5 w-24 rounded-full bg-gray-100 dark:bg-gray-800" />
+      </div>
+      <div className="h-8 w-20 rounded-lg bg-gray-200 dark:bg-gray-700" />
+    </div>
+  );
+}
+
+// ── Tab button ─────────────────────────────────────────────────────────────────
+
+function TabBtn({
+  active, onClick, icon, label, count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+        active
+          ? 'border-[#168F6F] text-[#168F6F]'
+          : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+      <span className={`ml-0.5 min-w-[20px] rounded-full px-1.5 py-0.5 text-xs font-semibold ${
+        active
+          ? 'bg-[#168F6F]/10 text-[#168F6F]'
+          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+      }`}>
+        {count}
+      </span>
+    </button>
+  );
+}
+
+// ── Action button ──────────────────────────────────────────────────────────────
+
+function ActionBtn({
+  loading, onClick, variant, children,
+}: {
+  loading: boolean;
+  onClick: () => void;
+  variant: 'primary' | 'secondary' | 'danger' | 'ghost';
+  children: React.ReactNode;
+}) {
+  const styles = {
+    primary:   'bg-[#168F6F] text-white hover:bg-[#127a5f]',
+    secondary: 'bg-[#168F6F]/10 dark:bg-[#168F6F]/15 text-[#168F6F] border border-[#168F6F]/30 hover:bg-[#168F6F]/20',
+    danger:    'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30',
+    ghost:     'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700',
+  };
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50 ${styles[variant]}`}
+    >
+      {loading ? <Loader2 size={13} className="animate-spin" /> : children}
+    </button>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
+
+export default function FollowTabs({
+  userId,
+  currentUserId,
+  isCurrentUser = false,
   onClose,
-  initialTab = 'followers'
+  initialTab = 'followers',
 }: FollowTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
-  const [followers, setFollowers] = useState<FollowRelationshipDto[]>([]);
-  const [following, setFollowing] = useState<FollowRelationshipDto[]>([]);
-  const [friends, setFriends] = useState<FollowRelationshipDto[]>([]);
-  const [suggestions, setSuggestions] = useState<FriendSuggestionDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
-  // Track follow status for each user (for followers tab)
-  const [followStatusMap, setFollowStatusMap] = useState<Record<number, boolean>>({});
-  
   const router = useRouter();
 
-  useEffect(() => {
-    loadData();
-  }, [userId, activeTab]);
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [followers,   setFollowers]   = useState<FollowRelationshipDto[]>([]);
+  const [following,   setFollowing]   = useState<FollowRelationshipDto[]>([]);
+  const [friends,     setFriends]     = useState<FollowRelationshipDto[]>([]);
+  const [suggestions, setSuggestions] = useState<FriendSuggestionDto[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
-  const loadData = async () => {
+  // Maps userId → { isFollowing, isFriend }
+  const [statusMap, setStatusMap] = useState<Record<number, { isFollowing: boolean; isFriend: boolean }>>({});
+
+  // ── Data loading ────────────────────────────────────────────────────────────
+
+  const loadStatuses = useCallback(async (users: UserBriefDto[]) => {
+    const map: Record<number, { isFollowing: boolean; isFriend: boolean }> = {};
+    await Promise.all(
+      users.map(async (u) => {
+        try {
+          const s = await followService.getStatus(u.id);
+          map[u.id] = { isFollowing: s.isFollowing, isFriend: s.isFriend };
+        } catch {
+          map[u.id] = { isFollowing: false, isFriend: false };
+        }
+      })
+    );
+    setStatusMap((prev) => ({ ...prev, ...map }));
+  }, []);
+
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // Charger les données en fonction de l'onglet actif
-      if (activeTab === 'followers') {
-        const data = isCurrentUser 
-          ? await followService.getFollowers()
-          : await followService.getUserFollowers(Number(userId));
-        setFollowers(data);
-        
-        // Check follow status for each follower (if current user is following them back)
-        if (isCurrentUser) {
-          const statusMap: Record<number, boolean> = {};
-          await Promise.all(
-            data.map(async (follower) => {
-              try {
-                const status = await followService.getStatus(follower.user.id);
-                statusMap[follower.user.id] = status.isFollowing;
-              } catch (e) {
-                statusMap[follower.user.id] = false;
-              }
-            })
-          );
-          setFollowStatusMap(statusMap);
-        }
-      } else if (activeTab === 'following') {
-        const data = isCurrentUser 
-          ? await followService.getFollowing()
-          : await followService.getUserFollowing(Number(userId));
-        setFollowing(data);
-      } else if (activeTab === 'friends') {
-        const data = isCurrentUser 
-          ? await followService.getFriends()
-          : await followService.getUserFriends(Number(userId));
-        setFriends(data);
-      } else if (activeTab === 'suggestions' && isCurrentUser) {
-        const suggestionsData = await followService.getFriendSuggestions(20);
-        setSuggestions(suggestionsData);
+      const [fwrs, fwing, frds] = await Promise.all([
+        isCurrentUser ? followService.getFollowers()         : followService.getUserFollowers(userId),
+        isCurrentUser ? followService.getFollowing()         : followService.getUserFollowing(userId),
+        isCurrentUser ? followService.getFriends()           : followService.getUserFriends(userId),
+      ]);
+
+      setFollowers(fwrs);
+      setFollowing(fwing);
+      setFriends(frds);
+
+      const allUsers = [
+        ...fwrs.map((d) => d.user),
+        ...fwing.map((d) => d.user),
+        ...frds.map((d) => d.user),
+      ];
+      // Deduplicate by id before fetching statuses
+      const unique = Array.from(new Map(allUsers.map((u) => [u.id, u])).values());
+      await loadStatuses(unique);
+
+      if (isCurrentUser) {
+        const sugs = await followService.getFriendSuggestions(20);
+        setSuggestions(sugs);
       }
-    } catch (error) {
-      console.error('Error loading follow data:', error);
+    } catch (err) {
+      console.error('FollowTabs loadData error:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [isCurrentUser, userId, loadStatuses]);
 
-  const handleFollow = async (targetUserId: number) => {
-    setActionLoading(targetUserId);
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
+
+  const act = async (uid: number, fn: () => Promise<unknown>) => {
+    setActionLoading(uid);
     try {
-      await followService.follow(targetUserId);
-      // Update local state to show "Ami" badge immediately
-      setFollowStatusMap(prev => ({ ...prev, [targetUserId]: true }));
+      await fn();
       await loadData();
-    } catch (error) {
-      console.error('Error following user:', error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleUnfollow = async (targetUserId: number) => {
-    setActionLoading(targetUserId);
-    try {
-      await followService.unfollow(targetUserId);
-      await loadData();
-    } catch (error) {
-      console.error('Error unfollowing user:', error);
-    } finally {
-      setActionLoading(null);
+  const handleFollow         = (uid: number) => act(uid, () => followService.follow(uid));
+  const handleUnfollow       = (uid: number) => act(uid, () => followService.unfollow(uid));
+  const handleRemoveFollower = (uid: number) => act(uid, () => followService.removeFollower(uid));
+
+  const navigate = (uid: number) => {
+    onClose?.();
+    router.push(`/profile/${uid}`);
+  };
+
+  // ── Current data ────────────────────────────────────────────────────────────
+
+  const currentData = (): (FollowRelationshipDto | FriendSuggestionDto)[] => {
+    switch (activeTab) {
+      case 'followers':   return followers;
+      case 'following':   return following;
+      case 'friends':     return friends;
+      case 'suggestions': return suggestions;
     }
   };
 
-  const handleRemoveFollower = async (followerId: number) => {
-    setActionLoading(followerId);
-    try {
-      await followService.removeFollower(followerId);
-      await loadData();
-    } catch (error) {
-      console.error('Error removing follower:', error);
-    } finally {
-      setActionLoading(null);
+  const count = (tab: TabType) => {
+    switch (tab) {
+      case 'followers':   return followers.length;
+      case 'following':   return following.length;
+      case 'friends':     return friends.length;
+      case 'suggestions': return suggestions.length;
     }
   };
 
-  const navigateToProfile = (profileUserId: number) => {
-    if (onClose) onClose();
-    router.push(`/profile/${profileUserId}`);
+  const emptyMsg = () => {
+    if (isCurrentUser) {
+      switch (activeTab) {
+        case 'followers':   return { title: 'Aucun abonné',      sub: 'Personne ne vous suit encore.' };
+        case 'following':   return { title: 'Aucun abonnement',  sub: 'Vous ne suivez personne.' };
+        case 'friends':     return { title: 'Aucun ami',         sub: 'Abonnez-vous mutuellement pour devenir amis.' };
+        case 'suggestions': return { title: 'Aucune suggestion', sub: 'Revenez plus tard.' };
+      }
+    }
+    switch (activeTab) {
+      case 'followers':   return { title: 'Aucun abonné',      sub: 'Cet utilisateur n\'a pas encore d\'abonnés.' };
+      case 'following':   return { title: 'Aucun abonnement',  sub: 'Cet utilisateur ne suit personne.' };
+      case 'friends':     return { title: 'Aucun ami',         sub: 'Cet utilisateur n\'a pas encore d\'amis.' };
+      case 'suggestions': return { title: '', sub: '' };
+    }
   };
 
-  const renderUserCard = (item: FollowRelationshipDto | FriendSuggestionDto, type: 'follower' | 'following' | 'friend' | 'suggestion') => {
-    const isSuggestion = type === 'suggestion';
-    
-    // Extract user data from nested structure
-    const userData: UserBriefDto | undefined = isSuggestion 
-      ? (item as FriendSuggestionDto).user 
+  // ── Render a user card ──────────────────────────────────────────────────────
+
+  const renderCard = (item: FollowRelationshipDto | FriendSuggestionDto) => {
+    const isSuggestion = 'mutualFriendsCount' in item;
+    const userData     = isSuggestion
+      ? (item as FriendSuggestionDto).user
       : (item as FollowRelationshipDto).user;
-    
-    const userIdNum = userData?.id || 0;
-    const name = userData ? `${userData.firstName} ${userData.lastName}` : 'Utilisateur';
-    const suggestion = item as FriendSuggestionDto;
+    const rel          = item as FollowRelationshipDto;
+    const sug          = item as FriendSuggestionDto;
+    const uid          = userData.id;
+    const name         = fullName(userData);
+    const isSelf       = currentUserId != null && uid === currentUserId;
+    const status       = statusMap[uid];
+    const isFollowing  = status?.isFollowing ?? false;
+    const isFriend     = status?.isFriend    ?? false;
+    const busy         = actionLoading === uid;
+    const date         = fmtDate(rel.followedAt);
 
     return (
-      <div key={userIdNum} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg transition-colors">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <button
-            onClick={() => navigateToProfile(userIdNum)}
-            className="flex-shrink-0"
-          >
-            <Avatar
-              src={userData?.profileImage}
-              alt={name}
-              size="medium"
-              className="!w-12 !h-12"
-            />
-          </button>
-          
-          <div className="flex-1 min-w-0">
-            <button
-              onClick={() => navigateToProfile(userIdNum)}
-              className="text-left"
-            >
-              <h4 className="font-semibold text-gray-900 dark:text-white truncate hover:text-[#00926B] dark:hover:text-[#00B383]">
+      <div
+        key={uid}
+        className="group flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-[#168F6F]/5 dark:hover:bg-[#168F6F]/10 transition-colors"
+      >
+        {/* Avatar */}
+        <button onClick={() => navigate(uid)} className="flex-shrink-0">
+          <Avatar
+            src={userData.profileImage}
+            alt={name}
+            size="medium"
+            className="!h-11 !w-11 transition-transform duration-200 group-hover:scale-105"
+          />
+        </button>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <button onClick={() => navigate(uid)} className="text-left block w-full">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-semibold text-gray-900 dark:text-white truncate hover:text-[#168F6F] transition-colors">
                 {name}
-              </h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {userData?.department || ''}
-              </p>
-              {isSuggestion && suggestion.mutualFriendsCount > 0 && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  {suggestion.mutualFriendsCount} ami{suggestion.mutualFriendsCount > 1 ? 's' : ''} en commun
-                </p>
+              </span>
+              {isFriend && activeTab !== 'friends' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 text-[#168F6F]">
+                  <Heart size={9} className="fill-[#168F6F]" /> Ami
+                </span>
               )}
-            </button>
-          </div>
+              {activeTab === 'friends' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 text-[#168F6F]">
+                  <Heart size={9} className="fill-[#168F6F]" /> Amis
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
+              {userData.department || ''}
+              {userData.department && date ? ' · ' : ''}
+              {date ? `Depuis ${date}` : ''}
+            </p>
+            {isSuggestion && sug.mutualFriendsCount > 0 && (
+              <p className="text-[11px] text-[#168F6F] mt-0.5">
+                {sug.mutualFriendsCount} ami{sug.mutualFriendsCount > 1 ? 's' : ''} en commun
+              </p>
+            )}
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {isCurrentUser && (
+        {/* Actions */}
+        <div className="flex-shrink-0 flex items-center gap-1.5">
+
+          {/* ── Current user viewing their own relations ── */}
+          {!isSelf && isCurrentUser && (
             <>
-              {type === 'suggestion' && (
-                <button
-                  onClick={() => handleFollow(userIdNum)}
-                  disabled={actionLoading === userIdNum}
-                  className="px-3 py-1.5 bg-[#00926B] text-white text-sm rounded-lg hover:bg-[#00B383] transition-colors disabled:opacity-50 flex items-center gap-1"
-                >
-                  {actionLoading === userIdNum ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <UserPlus size={14} />
-                  )}
-                  <span>Suivre</span>
-                </button>
+              {/* Suggestions: Suivre */}
+              {activeTab === 'suggestions' && (
+                <ActionBtn loading={busy} onClick={() => handleFollow(uid)} variant="primary">
+                  <UserPlus size={13} /><span>Suivre</span>
+                </ActionBtn>
               )}
 
-              {type === 'follower' && (
-                <div className="flex gap-1">
-                  {/* Show "Suivre en retour" only if not already following */}
-                  {!followStatusMap[userIdNum] && (
-                    <button
-                      onClick={() => handleFollow(userIdNum)}
-                      disabled={actionLoading === userIdNum}
-                      className="px-3 py-1.5 bg-[#00926B] text-white text-sm rounded-lg hover:bg-[#00B383] transition-colors disabled:opacity-50 flex items-center gap-1"
-                      title="Suivre en retour"
-                    >
-                      {actionLoading === userIdNum ? (
-                        <Loader2 size={14} className="animate-spin" />
-                      ) : (
-                        <><UserPlus size={14} /><span>Suivre</span></>
-                      )}
-                    </button>
+              {/* Followers: Suivre en retour / badge Ami + Supprimer */}
+              {activeTab === 'followers' && (
+                <>
+                  {!isFollowing && (
+                    <ActionBtn loading={busy} onClick={() => handleFollow(uid)} variant="primary">
+                      <UserPlus size={13} /><span>Suivre</span>
+                    </ActionBtn>
                   )}
-                  {/* Show "Ami" badge if already following (mutual follow) */}
-                  {followStatusMap[userIdNum] && (
-                    <span className="px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-sm rounded-lg flex items-center gap-1">
-                      <UserCheck size={14} />
-                      <span>Ami</span>
+                  {isFollowing && !isFriend && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#168F6F]/10 text-[#168F6F] border border-[#168F6F]/20">
+                      <UserCheck size={13} /> Abonné
                     </span>
                   )}
-                  {/* Show "Supprimer" only for current user's own followers */}
-                  {isCurrentUser && (
-                    <button
-                      onClick={() => handleRemoveFollower(userIdNum)}
-                      disabled={actionLoading === userIdNum}
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      title="Supprimer"
-                    >
-                      <UserX size={18} />
-                    </button>
+                  {isFriend && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#168F6F]/10 text-[#168F6F] border border-[#168F6F]/20">
+                      <Heart size={13} className="fill-[#168F6F]" /> Ami
+                    </span>
                   )}
-                </div>
+                  <ActionBtn loading={busy} onClick={() => handleRemoveFollower(uid)} variant="danger">
+                    <UserX size={13} />
+                  </ActionBtn>
+                </>
               )}
 
-              {type === 'following' && (
-                <button
-                  onClick={() => handleUnfollow(userIdNum)}
-                  disabled={actionLoading === userIdNum}
-                  className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                >
-                  {actionLoading === userIdNum ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    'Ne plus suivre'
-                  )}
-                </button>
+              {/* Following: Ne plus suivre */}
+              {activeTab === 'following' && (
+                <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="ghost">
+                  <UserMinus size={13} /><span>Ne plus suivre</span>
+                </ActionBtn>
               )}
 
-              {type === 'friend' && (
-                <button
-                  onClick={() => handleUnfollow(userIdNum)}
-                  disabled={actionLoading === userIdNum}
-                  className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                >
-                  {actionLoading === userIdNum ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    'Ne plus suivre'
-                  )}
-                </button>
+              {/* Friends: Ne plus suivre */}
+              {activeTab === 'friends' && (
+                <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="ghost">
+                  <UserMinus size={13} /><span>Ne plus suivre</span>
+                </ActionBtn>
               )}
             </>
           )}
 
-          {!isCurrentUser && type === 'following' && (
-            <button
-              onClick={() => handleUnfollow(userIdNum)}
-              disabled={actionLoading === userIdNum}
-              className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-            >
-              {actionLoading === userIdNum ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                'Ne plus suivre'
+          {/* ── Viewing another user's relations ── */}
+          {!isSelf && !isCurrentUser && (
+            <>
+              {isFollowing && !isFriend && (
+                <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="secondary">
+                  <UserCheck size={13} /><span>Abonné</span>
+                </ActionBtn>
               )}
-            </button>
+              {isFriend && (
+                <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="secondary">
+                  <Heart size={13} className="fill-[#168F6F]" /><span>Ami</span>
+                </ActionBtn>
+              )}
+              {!isFollowing && (
+                <ActionBtn loading={busy} onClick={() => handleFollow(uid)} variant="primary">
+                  <UserPlus size={13} /><span>Suivre</span>
+                </ActionBtn>
+              )}
+            </>
           )}
+
+          {/* Navigate arrow */}
+          <button
+            onClick={() => navigate(uid)}
+            className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 dark:text-gray-600"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
       </div>
     );
   };
 
-  const getCurrentData = () => {
-    switch (activeTab) {
-      case 'followers':
-        return followers;
-      case 'following':
-        return following;
-      case 'friends':
-        return friends;
-      case 'suggestions':
-        return suggestions;
-      default:
-        return [];
-    }
-  };
+  // ── Render ──────────────────────────────────────────────────────────────────
 
-  const getTabCount = (tab: TabType) => {
-    switch (tab) {
-      case 'followers':
-        return followers.length;
-      case 'following':
-        return following.length;
-      case 'friends':
-        return friends.length;
-      case 'suggestions':
-        return suggestions.length;
-      default:
-        return 0;
-    }
-  };
+  const tabs: { key: TabType; label: string; icon: React.ReactNode; show: boolean }[] = [
+    { key: 'followers',   label: 'Abonnés',      icon: <Users size={15} />,    show: true },
+    { key: 'following',   label: 'Abonnements',  icon: <UserCheck size={15} />, show: true },
+    { key: 'friends',     label: 'Amis',         icon: <Heart size={15} />,    show: true },
+    { key: 'suggestions', label: 'Suggestions',  icon: <Sparkles size={15} />, show: isCurrentUser },
+  ];
 
-  const getEmptyMessage = () => {
-    switch (activeTab) {
-      case 'followers':
-        return "Aucun abonné pour le moment";
-      case 'following':
-        return "Vous ne suivez personne pour le moment";
-      case 'friends':
-        return "Aucun ami pour le moment";
-      case 'suggestions':
-        return "Aucune suggestion pour le moment";
-    }
-  };
+  const data = currentData();
+  const { title, sub } = emptyMsg();
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+      <div className="px-5 pt-5 pb-0">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">
           {isCurrentUser ? 'Mes relations' : 'Relations'}
         </h3>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
-        <button
-          onClick={() => setActiveTab('followers')}
-          className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-            activeTab === 'followers'
-              ? 'border-[#00926B] text-[#00926B] dark:border-[#00B383] dark:text-[#00B383]'
-              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-          }`}
-        >
-          <Users size={18} />
-          <span>Abonnés</span>
-          <span className={`text-sm px-2 py-0.5 rounded-full ${
-            activeTab === 'followers'
-              ? 'bg-[#00926B]/10 text-[#00926B] dark:bg-[#00926B]/20 dark:text-[#00B383]'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-          }`}>
-            {getTabCount('followers')}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('following')}
-          className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-            activeTab === 'following'
-              ? 'border-[#00926B] text-[#00926B] dark:border-[#00B383] dark:text-[#00B383]'
-              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-          }`}
-        >
-          <UserCheck size={18} />
-          <span>Abonnements</span>
-          <span className={`text-sm px-2 py-0.5 rounded-full ${
-            activeTab === 'following'
-              ? 'bg-[#00926B]/10 text-[#00926B] dark:bg-[#00926B]/20 dark:text-[#00B383]'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-          }`}>
-            {getTabCount('following')}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('friends')}
-          className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-            activeTab === 'friends'
-              ? 'border-[#00926B] text-[#00926B] dark:border-[#00B383] dark:text-[#00B383]'
-              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-          }`}
-        >
-          <Heart size={18} />
-          <span>Amis</span>
-          <span className={`text-sm px-2 py-0.5 rounded-full ${
-            activeTab === 'friends'
-              ? 'bg-[#00926B]/10 text-[#00926B] dark:bg-[#00926B]/20 dark:text-[#00B383]'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-          }`}>
-            {getTabCount('friends')}
-          </span>
-        </button>
-
-        {isCurrentUser && (
-          <button
-            onClick={() => setActiveTab('suggestions')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 ${
-              activeTab === 'suggestions'
-                ? 'border-[#00926B] text-[#00926B] dark:border-[#00B383] dark:text-[#00B383]'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
-            }`}
-          >
-            <UserPlus size={18} />
-            <span>Suggestions</span>
-            <span className={`text-sm px-2 py-0.5 rounded-full ${
-              activeTab === 'suggestions'
-                ? 'bg-[#00926B]/10 text-[#00926B] dark:bg-[#00926B]/20 dark:text-[#00B383]'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            }`}>
-              {getTabCount('suggestions')}
-            </span>
-          </button>
-        )}
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 dark:border-gray-800 overflow-x-auto gap-1">
+          {tabs.filter((t) => t.show).map((t) => (
+            <TabBtn
+              key={t.key}
+              active={activeTab === t.key}
+              onClick={() => setActiveTab(t.key)}
+              icon={t.icon}
+              label={t.label}
+              count={count(t.key)}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Content */}
-      <div className="p-4 max-h-[500px] overflow-y-auto">
+      <div className="py-2 max-h-[520px] overflow-y-auto">
         {loading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-[#00926B]" />
+          <div className="space-y-1 px-1 pt-1">
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-14 text-center px-6">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800">
+              <Users size={24} className="text-gray-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{sub}</p>
+            </div>
           </div>
         ) : (
-          <div className="space-y-2">
-            {getCurrentData().length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 dark:text-gray-400">
-                  {getEmptyMessage()}
-                </p>
-              </div>
-            ) : (
-              getCurrentData().map((item) => 
-                renderUserCard(item, activeTab === 'suggestions' ? 'suggestion' : 
-                  activeTab === 'followers' ? 'follower' :
-                  activeTab === 'following' ? 'following' : 'friend')
-              )
-            )}
+          <div className="space-y-0.5 px-1 pt-1">
+            {data.map((item) => renderCard(item))}
           </div>
         )}
       </div>

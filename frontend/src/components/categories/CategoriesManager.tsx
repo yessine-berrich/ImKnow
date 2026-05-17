@@ -2,17 +2,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Search, 
-  Folder, 
-  FileText, 
-  BarChart2, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Search,
+  Folder,
+  FileText,
+  BarChart2,
   TrendingUp,
-  Filter
+  Filter,
 } from 'lucide-react';
 import { articleService } from '../../../services/article.service';
 
@@ -197,42 +197,39 @@ export default function CategoriesManager({
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec titre et statistiques */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Gestion des catégories
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {categories.length} catégorie{categories.length > 1 ? 's' : ''} au total
-          </p>
-        </div>
-        
-        <button
-          onClick={onCreateClick}
-          className="px-6 py-3 bg-[#168F6F] hover:bg-[#0e6b52] text-white rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-lg whitespace-nowrap"
-        >
-          <Plus className="h-5 w-5" />
-          Nouvelle catégorie
-        </button>
-      </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards — clickable pour filtrer */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total catégories',   value: stats.totalCategories,  gradient: 'from-blue-500 to-blue-600',    icon: <Folder size={18} /> },
-          { label: 'Articles total',      value: loading ? '…' : stats.totalArticles,  gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} /> },
-          { label: 'Moyenne articles',    value: loading ? '…' : stats.avgArticles,    gradient: 'from-purple-500 to-purple-600', icon: <BarChart2 size={18} /> },
-          { label: 'Catégories actives',  value: loading ? '…' : stats.activeCategories, gradient: 'from-amber-500 to-amber-600', icon: <TrendingUp size={18} /> },
-        ].map(({ label, value, gradient, icon }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-              <span className={`p-1.5 rounded-lg bg-gradient-to-br ${gradient} text-white`}>{icon}</span>
-            </div>
-            <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
-          </div>
-        ))}
+        {([
+          { label: 'Total catégories',  value: stats.totalCategories,               gradient: 'from-blue-500 to-blue-600',    icon: <Folder size={18} />,    filter: 'all'    as FilterStatus | null },
+          { label: 'Articles total',    value: loading ? '…' : stats.totalArticles, gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} />,  filter: null     as FilterStatus | null },
+          { label: 'Moyenne articles',  value: loading ? '…' : stats.avgArticles,   gradient: 'from-purple-500 to-purple-600',icon: <BarChart2 size={18} />, filter: null     as FilterStatus | null },
+          { label: 'Catégories actives',value: loading ? '…' : stats.activeCategories, gradient: 'from-amber-500 to-amber-600', icon: <TrendingUp size={18} />, filter: 'active' as FilterStatus | null },
+        ]).map(({ label, value, gradient, icon, filter }) => {
+          const isActive = filter !== null && filterStatus === filter;
+          return (
+            <button
+              key={label}
+              onClick={() => { if (filter !== null) setFilterStatus(isActive ? 'all' : filter); }}
+              className={`text-left bg-white dark:bg-gray-900 rounded-xl border-2 p-5 transition-all ${
+                filter !== null ? 'cursor-pointer hover:shadow-lg' : 'cursor-default'
+              } ${
+                isActive
+                  ? 'border-[#168F6F] shadow-md ring-2 ring-[#168F6F]/20'
+                  : 'border-gray-200 dark:border-gray-800'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+                <span className={`p-1.5 rounded-lg bg-gradient-to-br ${gradient} text-white`}>{icon}</span>
+              </div>
+              <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
+              {isActive && (
+                <p className="text-xs text-[#168F6F] mt-1 font-medium">Filtre actif</p>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Barre de recherche, filtres et options de tri */}
@@ -257,7 +254,7 @@ export default function CategoriesManager({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Filtres de statut */}
+            {/* Filtres de statut */}
           <div className="flex items-center gap-2 border-l pl-3 border-gray-200 dark:border-gray-700">
             <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
             <span className="text-sm text-gray-500 dark:text-gray-400 mr-1">Filtre:</span>
@@ -293,7 +290,7 @@ export default function CategoriesManager({
             </button>
           </div>
 
-          {/* Options de tri */}
+           {/* Options de tri */}
           <div className="flex items-center gap-2 border-l pl-3 border-gray-200 dark:border-gray-700">
             <span className="text-sm text-gray-500 dark:text-gray-400">Trier:</span>
             <button
@@ -317,6 +314,14 @@ export default function CategoriesManager({
               Articles {sortBy === 'articleCount' && (sortOrder === 'asc' ? '↑' : '↓')}
             </button>
           </div>
+          {/* Nouvelle catégorie */}
+          <button
+            onClick={onCreateClick}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#168F6F] hover:bg-[#0e6b52] text-white rounded-xl font-medium transition-all shadow-md hover:shadow-lg active:scale-95 text-sm whitespace-nowrap ml-auto"
+          >
+            <Plus className="h-4 w-4" />
+            Nouvelle catégorie
+          </button>
         </div>
       </div>
 

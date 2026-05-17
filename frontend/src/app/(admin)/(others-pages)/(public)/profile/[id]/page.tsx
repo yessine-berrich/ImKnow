@@ -88,8 +88,7 @@ export default function PublicProfilePage() {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [friendsCount, setFriendsCount] = useState(0);
-  const [showFollowSection, setShowFollowSection] = useState(false);
-  const [followSectionTab, setFollowSectionTab] = useState<'followers' | 'following' | 'friends'>('followers');
+  const [relationsTab, setRelationsTab] = useState<'followers' | 'following' | 'friends' | 'suggestions'>('followers');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -462,18 +461,9 @@ export default function PublicProfilePage() {
           followersCount={followersCount}
           followingCount={followingCount}
           friendsCount={friendsCount}
-          onFollowersClick={() => {
-            setFollowSectionTab('followers');
-            setShowFollowSection(true);
-          }}
-          onFollowingClick={() => {
-            setFollowSectionTab('following');
-            setShowFollowSection(true);
-          }}
-          onFriendsClick={() => {
-            setFollowSectionTab('friends');
-            setShowFollowSection(true);
-          }}
+          onFollowersClick={() => { setRelationsTab('followers'); setActiveTab('relations'); }}
+          onFollowingClick={() => { setRelationsTab('following'); setActiveTab('relations'); }}
+          onFriendsClick={() => { setRelationsTab('friends'); setActiveTab('relations'); }}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -484,28 +474,6 @@ export default function PublicProfilePage() {
 
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-              {showFollowSection ? (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={() => setShowFollowSection(false)}
-                      className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                      <span>Retour au profil</span>
-                    </button>
-                  </div>
-                  <FollowTabs
-                    userId={Number(userId)}
-                    isCurrentUser={currentUserId === Number(userId)}
-                    onClose={() => setShowFollowSection(false)}
-                    initialTab={followSectionTab}
-                  />
-                </>
-              ) : (
-                <>
                   <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6">
                     <button
                       onClick={() => setActiveTab('articles')}
@@ -561,16 +529,15 @@ export default function PublicProfilePage() {
                         </div>
                       )
                     ) : (
-                      // ✅ Onglet Relations - Affiche FollowTabs directement
                       <FollowTabs
+                        key={relationsTab}
                         userId={Number(userId)}
+                        currentUserId={currentUserId}
                         isCurrentUser={currentUserId === Number(userId)}
-                        initialTab="followers"
+                        initialTab={relationsTab}
                       />
                     )}
                   </div>
-                </>
-              )}
             </div>
           </div>
         </div>

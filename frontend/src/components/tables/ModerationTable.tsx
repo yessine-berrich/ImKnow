@@ -154,6 +154,7 @@ export default function ModerationTable({
   const [articles, setArticles] = useState(initialArticles);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [highSeverityFilter, setHighSeverityFilter] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -251,9 +252,10 @@ export default function ModerationTable({
         if (!match) return false;
       }
       if (categoryFilter && !a.moderationResult?.categories?.includes(categoryFilter)) return false;
+      if (highSeverityFilter && (a.moderationScore ?? 0) < 0.8) return false;
       return true;
     });
-  }, [articles, search, categoryFilter]);
+  }, [articles, search, categoryFilter, highSeverityFilter]);
 
   const sortedArticles = useMemo(() => {
     if (!sortConfig) return filteredArticles;
@@ -359,18 +361,29 @@ export default function ModerationTable({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total rejetés', value: stats.total, gradient: 'from-red-500 to-red-600', icon: <Shield size={18} /> },
-          { label: 'Score moyen IA', value: `${Math.round(stats.avgScore * 100)}%`, gradient: 'from-orange-500 to-orange-600', icon: <BarChart2 size={18} /> },
-          { label: 'Haute sévérité (≥80%)', value: stats.highSeverity, gradient: 'from-rose-500 to-rose-600', icon: <AlertTriangle size={18} /> },
-          { label: 'Catégorie principale', value: stats.topCategory ? getCategoryMeta(stats.topCategory).label : '—', gradient: 'from-purple-500 to-purple-600', icon: <Brain size={18} />, small: true },
-        ].map(({ label, value, gradient, icon, small }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
+        {([
+          { label: 'Total rejetés',         value: stats.total,                                                             gradient: 'from-red-500 to-red-600',     icon: <Shield size={18} />,       small: false, onClick: (() => { setHighSeverityFilter(false); setCategoryFilter(''); setSearch(''); setCurrentPage(1); }) as (() => void) | null, isActive: false },
+          { label: 'Score moyen IA',        value: `${Math.round(stats.avgScore * 100)}%`,                                 gradient: 'from-orange-500 to-orange-600',icon: <BarChart2 size={18} />,    small: false, onClick: null as (() => void) | null, isActive: false },
+          { label: 'Haute sévérité (≥80%)', value: stats.highSeverity,                                                     gradient: 'from-rose-500 to-rose-600',   icon: <AlertTriangle size={18} />, small: false, onClick: (() => { setHighSeverityFilter(v => !v); setCurrentPage(1); }) as (() => void) | null, isActive: highSeverityFilter },
+          { label: 'Catégorie principale',  value: stats.topCategory ? getCategoryMeta(stats.topCategory).label : '—',     gradient: 'from-purple-500 to-purple-600',icon: <Brain size={18} />,        small: true,  onClick: stats.topCategory ? (() => { setCategoryFilter(stats.topCategory!); setCurrentPage(1); }) : null, isActive: !!stats.topCategory && categoryFilter === stats.topCategory },
+        ]).map(({ label, value, gradient, icon, small, onClick, isActive }) => (
+          <div
+            key={label}
+            onClick={onClick ?? undefined}
+            className={`bg-white dark:bg-gray-900 rounded-xl border-2 p-5 transition-all ${
+              onClick ? 'cursor-pointer hover:shadow-lg' : 'cursor-default'
+            } ${
+              isActive
+                ? 'border-[#168F6F] shadow-md ring-2 ring-[#168F6F]/20'
+                : 'border-gray-200 dark:border-gray-800'
+            }`}
+          >
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
               <span className={`p-1.5 rounded-lg bg-gradient-to-br ${gradient} text-white`}>{icon}</span>
             </div>
             <p className={`font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent ${small ? 'text-lg leading-tight' : 'text-3xl'}`}>{value}</p>
+            {isActive && <p className="text-xs text-[#168F6F] mt-1 font-medium">Filtre actif</p>}
           </div>
         ))}
       </div>
@@ -392,6 +405,20 @@ export default function ModerationTable({
           {allCategories.map((cat) => (
             <option key={cat} value={cat}>{getCategoryMeta(cat).label}</option>
           ))}
+        </select>
+
+        {/* Severity filter — bound to same state as "Haute sévérité" stat card */}
+        <select
+          value={highSeverityFilter ? "high" : "all"}
+          onChange={(e) => { setHighSeverityFilter(e.target.value === "high"); setCurrentPage(1); }}
+          className={`px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent transition-all ${
+            highSeverityFilter
+              ? "bg-rose-50 dark:bg-rose-900/20 border-2 border-rose-400 text-rose-700 dark:text-rose-300 font-medium"
+              : "bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white"
+          }`}
+        >
+          <option value="all">Toutes les sévérités</option>
+          <option value="high">Haute sévérité (≥80%)</option>
         </select>
       </div>
 

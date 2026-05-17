@@ -214,7 +214,7 @@ export default function UserProfileHeader({
     }
     if (followStatus === 'follower') {
       return (
-        <button onClick={handleFollow} className={`${baseButtonStyle} bg-blue-600 text-white hover:bg-blue-500`}>
+        <button onClick={handleFollow} className={`${baseButtonStyle} bg-[#168F6F] text-white hover:bg-[#127a5f]`}>
           <UserRoundCheck size={15} /><span>Suivre en retour</span>
         </button>
       );
@@ -225,7 +225,7 @@ export default function UserProfileHeader({
           onClick={() => !hideUnfollow && setShowOptions((v) => !v)}
           className={`${baseButtonStyle} ${
             followStatus === 'mutual'
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+              ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] border border-[#168F6F]/30 dark:border-[#168F6F]/30 hover:bg-[#168F6F]/20'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200'
           }`}
         >

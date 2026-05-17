@@ -9,7 +9,7 @@ import {
   TrendingUp, TrendingDown, Minus, Eye,
   Heart, Bookmark, MessageSquare, ShieldAlert,
   AlertTriangle, CheckCircle, Clock, XCircle,
-  RefreshCw, Layers,
+  RefreshCw, Layers, Download,
 } from 'lucide-react';
 import {
   statsService,
@@ -465,6 +465,61 @@ export default function StatisticsPage() {
     ],
   }), [reports, dark]);
 
+  const handleExport = (format: 'csv' | 'json' | 'pdf') => {
+    if (format === 'pdf') { window.print(); return; }
+
+    let content = '';
+    let filename = `statistiques-${activeSection}`;
+
+    if (format === 'json') {
+      const dataMap: Record<Section, unknown> = {
+        users:      { kpi: { totalUsers: dashboard?.totalUsers, newUsersThisMonth: dashboard?.newUsersThisMonth }, history: userActivity?.history },
+        articles:   { kpi: { totalArticles: dashboard?.totalArticles, totalLikes: engagement?.totalLikes, totalBookmarks: engagement?.totalBookmarks, totalComments: dashboard?.totalComments }, mostLiked: engagement?.mostLikedArticles, mostBookmarked: engagement?.mostBookmarkedArticles },
+        moderation: { statusBreakdown: moderation?.statusBreakdown, dailyTrend: moderation?.dailyTrend, rejectionRate: moderation?.rejectionRate, autoModerationRate: moderation?.autoModerationRate },
+        tags:       { tags: tags?.mostUsed, trending: tags?.topTrending, unusedTags: tags?.unusedTags, categories: categories?.categories },
+        reports:    { articles: reports?.articles, users: reports?.users },
+      };
+      content = JSON.stringify(dataMap[activeSection], null, 2);
+      filename += '.json';
+    } else {
+      const rows: string[][] = [];
+      if (activeSection === 'users') {
+        rows.push(['Mois', 'Nouveaux utilisateurs', 'Utilisateurs actifs', 'Articles publiés']);
+        (userActivity?.history ?? []).forEach(m => rows.push([m.month, String(m.newUsers), String(m.activeUsers), String(m.articlesPublished)]));
+      } else if (activeSection === 'articles') {
+        rows.push(['Titre', 'Likes', 'Favoris']);
+        const bookmarkMap = new Map((engagement?.mostBookmarkedArticles ?? []).map(a => [a.id, a.bookmarksCount]));
+        (engagement?.mostLikedArticles ?? []).forEach(a => rows.push([`"${a.title.replace(/"/g, '""')}"`, String(a.likesCount), String(bookmarkMap.get(a.id) ?? '')]));
+      } else if (activeSection === 'moderation') {
+        rows.push(['Statut', 'Nombre', 'Pourcentage']);
+        (moderation?.statusBreakdown ?? []).forEach(s => rows.push([s.status, String(s.count), `${s.percentage}%`]));
+        rows.push([], ['Date', 'Approuvés', 'Rejetés', 'En attente']);
+        (moderation?.dailyTrend ?? []).forEach(d => rows.push([d.date, String(d.approved), String(d.rejected), String(d.pending)]));
+      } else if (activeSection === 'tags') {
+        rows.push(['Tag', 'Articles']);
+        (tags?.mostUsed ?? []).forEach(t => rows.push([t.name, String(t.articleCount)]));
+        rows.push([], ['Catégorie', 'Articles', 'Vues']);
+        (categories?.categories ?? []).forEach(c => rows.push([`"${c.name.replace(/"/g, '""')}"`, String(c.articleCount), String(c.totalViews)]));
+      } else if (activeSection === 'reports') {
+        rows.push(['Type', 'Total', 'En attente', 'Examinés', 'Clôturés']);
+        rows.push(['Articles', String(reports?.articles.total ?? 0), String(reports?.articles.pending ?? 0), String(reports?.articles.reviewed ?? 0), String(reports?.articles.dismissed ?? 0)]);
+        rows.push(['Utilisateurs', String(reports?.users.total ?? 0), String(reports?.users.pending ?? 0), String(reports?.users.reviewed ?? 0), String(reports?.users.dismissed ?? 0)]);
+        rows.push([], ['Motif (articles)', 'Nombre']);
+        (reports?.articles.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
+        rows.push([], ['Motif (utilisateurs)', 'Nombre']);
+        (reports?.users.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
+      }
+      content = rows.map(r => r.join(',')).join('\n');
+      filename += '.csv';
+    }
+
+    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isCheckingRole) return null;
 
   return (
@@ -482,12 +537,29 @@ export default function StatisticsPage() {
                 <p className="text-xs text-gray-400">Mise à jour : {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             </div>
-            <button
-              onClick={loadAll} disabled={loading}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Actualiser
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Export dropdown */}
+              <div className="relative group">
+                <button
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  <Download size={14} /> Exporter
+                </button>
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 hidden group-hover:block z-20 min-w-[110px]">
+                  <button onClick={() => handleExport('csv')}  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">CSV</button>
+                  <button onClick={() => handleExport('json')} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">JSON</button>
+                  <button onClick={() => handleExport('pdf')}  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">PDF</button>
+                </div>
+              </div>
+
+              <button
+                onClick={loadAll} disabled={loading}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Actualiser
+              </button>
+            </div>
           </div>
 
           {/* Tabs */}
