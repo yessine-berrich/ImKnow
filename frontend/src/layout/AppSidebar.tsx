@@ -712,40 +712,33 @@ const AppSidebar: React.FC = () => {
       <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar flex-1">
         <nav className="mb-6">
           <div className="flex flex-col gap-4">
-            {/* Menu principal */}
-            <div>
-              <h2
-                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered
-                    ? "lg:justify-center"
-                    : "justify-start"
-                  }`}
-              >
-                {isExpanded || isHovered || isMobileOpen ? (
-                  "Menu"
-                ) : (
-                  <HorizontaLDots />
-                )}
-              </h2>
-              {renderMenuItems(navItems, "main")}
-            </div>
-
-            {/* Section Catégories - toujours afficher (mode réduit = icône seulement) */}
-            {renderCategories()}
-
-            {/* Section Tags tendances - toujours afficher (mode réduit = icône seulement) */}
-            {renderTrendingTags()}
-
-            {/* Autres menus (admin seulement) */}
-            {isAdmin && (isExpanded || isHovered || isMobileOpen) && (
-              <div className="mt-4">
+            {/* Section Administration (admin seulement) — en haut */}
+            {isAdmin && (
+              <div>
                 <h2
-                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 justify-start`}
+                  className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
                 >
-                  Administration
+                  {isExpanded || isHovered || isMobileOpen ? "Administration" : <HorizontaLDots />}
                 </h2>
                 {renderMenuItems(othersItems, "others")}
               </div>
             )}
+
+            {/* Menu principal */}
+            <div>
+              <h2
+                className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
+              >
+                {isExpanded || isHovered || isMobileOpen ? "Menu" : <HorizontaLDots />}
+              </h2>
+              {renderMenuItems(navItems, "main")}
+            </div>
+
+            {/* Section Catégories */}
+            {renderCategories()}
+
+            {/* Section Tags tendances */}
+            {renderTrendingTags()}
           </div>
         </nav>
       </div>

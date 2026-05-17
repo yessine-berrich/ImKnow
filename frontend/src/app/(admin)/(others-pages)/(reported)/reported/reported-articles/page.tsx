@@ -389,8 +389,18 @@ export default function ReportedArticlesPage() {
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toastTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const searchTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exportRef    = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -432,18 +442,45 @@ export default function ReportedArticlesPage() {
 
   const resetFilters = () => { setStatusFilter('all'); setRiskFilter('all'); setSearch(''); setSearchInput(''); setPage(1); };
 
-  const handleExport = async (format: 'csv' | 'json') => {
-    try {
-      const blob = await adminReportsService.exportReports('articles', format);
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `reports-articles.${format}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      showToast('Erreur lors de l\'export', false);
+  const handleExport = (format: 'csv' | 'json' | 'pdf') => {
+    if (format === 'pdf') { window.print(); return; }
+
+    const items = data?.items ?? [];
+    const RISK_LABELS: Record<string, string>   = { critical: 'Critique', high: 'Élevé', medium: 'Modéré', low: 'Faible' };
+    const STATUS_LABELS: Record<string, string> = { published: 'Publié', pending: 'En attente', rejected: 'Rejeté', draft: 'Brouillon' };
+    const TREND_LABELS: Record<string, string>  = { up: 'Hausse', down: 'Baisse', stable: 'Stable' };
+
+    let content: string;
+    let filename: string;
+
+    if (format === 'json') {
+      content  = JSON.stringify({ exportedAt: new Date().toISOString(), total: data?.total ?? 0, summary: data?.summary, items }, null, 2);
+      filename = 'signalements-articles.json';
+    } else {
+      const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+      const header = ['ID', 'Titre', 'Auteur', 'Niveau de risque', 'Score', 'Signalements', 'En attente', 'Motif principal', 'Statut', 'Tendance', 'Dernier signalement'];
+      const rows = items.map(item => [
+        String(item.articleId),
+        esc(item.title),
+        esc(item.authorName),
+        RISK_LABELS[item.riskLevel]     ?? item.riskLevel,
+        String(item.riskScore),
+        String(item.reportCount),
+        String(item.pendingCount),
+        item.topReason ? esc(REASON_LABELS[item.topReason] ?? item.topReason) : '',
+        STATUS_LABELS[item.articleStatus] ?? item.articleStatus,
+        TREND_LABELS[item.trend]        ?? item.trend,
+        item.lastReportAt ? new Date(item.lastReportAt).toLocaleDateString('fr-FR') : '',
+      ]);
+      content  = [header, ...rows].map(r => r.join(',')).join('\n');
+      filename = 'signalements-articles.csv';
     }
+
+    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const summary = data?.summary;
@@ -460,37 +497,34 @@ export default function ReportedArticlesPage() {
         />
       )}
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 sm:px-6 lg:px-8 py-5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-              <FileText size={18} className="text-red-500" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Articles signalés</h1>
-              <p className="text-xs text-gray-400">{data?.total ?? 0} article(s) signalé(s)</p>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+        {/* ── Header ───────────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Articles signalés</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{data?.total ?? 0} article(s) signalé(s)</p>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Export buttons */}
-            <div className="relative group">
-              <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => setExportOpen(o => !o)}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
                 <Download size={13} /> Export
               </button>
-              <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 hidden group-hover:block z-10 min-w-[100px]">
-                <button onClick={() => handleExport('csv')} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">CSV</button>
-                <button onClick={() => handleExport('json')} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">JSON</button>
-              </div>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 z-20 min-w-[100px]">
+                  <button onClick={() => { handleExport('csv');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">CSV</button>
+                  <button onClick={() => { handleExport('json'); setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">JSON</button>
+                  <button onClick={() => { handleExport('pdf');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">PDF</button>
+                </div>
+              )}
             </div>
-            <button onClick={load} disabled={loading} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors disabled:opacity-50">
-              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+            <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
+              <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> Actualiser
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         {toast && (
           <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.ok ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
             {toast.ok ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
@@ -499,18 +533,27 @@ export default function ReportedArticlesPage() {
           </div>
         )}
 
-        {/* ── Summary ──────────────────────────────────────────────────────── */}
+        {/* ── Summary — clickable pour filtrer ─────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {[
-            { label: 'Critique', value: summary?.critical ?? 0, color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20', click: () => { setRiskFilter('critical'); setPage(1); } },
-            { label: 'Élevé', value: summary?.high ?? 0, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20', click: () => { setRiskFilter('high'); setPage(1); } },
-            { label: 'Modéré', value: summary?.medium ?? 0, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', click: () => { setRiskFilter('medium'); setPage(1); } },
-            { label: 'Faible', value: summary?.low ?? 0, color: 'text-gray-500 dark:text-gray-400', bg: 'bg-gray-100 dark:bg-gray-800', click: () => { setRiskFilter('low'); setPage(1); } },
-            { label: 'En attente', value: summary?.totalPending ?? 0, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', click: () => { setStatusFilter('pending'); setPage(1); } },
-          ].map(({ label, value, color, bg, click }) => (
-            <button key={label} onClick={click} className={`${bg} rounded-2xl p-4 text-left transition-all hover:opacity-80 border border-transparent hover:border-current/20`}>
+          {([
+            { label: 'Critique',   value: summary?.critical ?? 0,    color: 'text-red-600 dark:text-red-400',     bg: 'bg-red-50 dark:bg-red-900/20',     ring: 'ring-red-400',    isActive: riskFilter === 'critical',   click: () => { setRiskFilter(riskFilter === 'critical' ? 'all' : 'critical'); setPage(1); } },
+            { label: 'Élevé',     value: summary?.high ?? 0,         color: 'text-orange-600 dark:text-orange-400',bg: 'bg-orange-50 dark:bg-orange-900/20',ring: 'ring-orange-400', isActive: riskFilter === 'high',        click: () => { setRiskFilter(riskFilter === 'high' ? 'all' : 'high'); setPage(1); } },
+            { label: 'Modéré',    value: summary?.medium ?? 0,       color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20',  ring: 'ring-amber-400',  isActive: riskFilter === 'medium',      click: () => { setRiskFilter(riskFilter === 'medium' ? 'all' : 'medium'); setPage(1); } },
+            { label: 'Faible',    value: summary?.low ?? 0,          color: 'text-gray-500 dark:text-gray-400',   bg: 'bg-gray-100 dark:bg-gray-800',      ring: 'ring-gray-400',   isActive: riskFilter === 'low',         click: () => { setRiskFilter(riskFilter === 'low' ? 'all' : 'low'); setPage(1); } },
+            { label: 'En attente',value: summary?.totalPending ?? 0, color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-900/20',    ring: 'ring-blue-400',   isActive: statusFilter === 'pending',   click: () => { setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending'); setPage(1); } },
+          ] as const).map(({ label, value, color, bg, ring, isActive, click }) => (
+            <button
+              key={label}
+              onClick={click}
+              className={`${bg} rounded-2xl p-4 text-left transition-all border-2 cursor-pointer ${
+                isActive
+                  ? `border-current ring-2 ${ring}/40 shadow-md`
+                  : 'border-transparent hover:border-current/20 hover:opacity-90'
+              }`}
+            >
               <p className={`text-2xl font-bold ${color}`}>{value}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{label}</p>
+              {isActive && <p className={`text-xs mt-1 font-medium ${color} opacity-80`}>Filtre actif</p>}
             </button>
           ))}
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ApexOptions } from 'apexcharts';
@@ -154,6 +154,16 @@ export default function StatisticsPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [dark, setDark] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const [dashboard, setDashboard] = useState<DashboardStats | null>(null);
   const [userActivity, setUserActivity] = useState<UserActivityStats | null>(null);
@@ -468,55 +478,58 @@ export default function StatisticsPage() {
   const handleExport = (format: 'csv' | 'json' | 'pdf') => {
     if (format === 'pdf') { window.print(); return; }
 
-    let content = '';
-    let filename = `statistiques-${activeSection}`;
+    const esc  = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
+    const rows: string[][] = [];
+    let jsonData: unknown;
 
-    if (format === 'json') {
-      const dataMap: Record<Section, unknown> = {
-        users:      { kpi: { totalUsers: dashboard?.totalUsers, newUsersThisMonth: dashboard?.newUsersThisMonth }, history: userActivity?.history },
-        articles:   { kpi: { totalArticles: dashboard?.totalArticles, totalLikes: engagement?.totalLikes, totalBookmarks: engagement?.totalBookmarks, totalComments: dashboard?.totalComments }, mostLiked: engagement?.mostLikedArticles, mostBookmarked: engagement?.mostBookmarkedArticles },
-        moderation: { statusBreakdown: moderation?.statusBreakdown, dailyTrend: moderation?.dailyTrend, rejectionRate: moderation?.rejectionRate, autoModerationRate: moderation?.autoModerationRate },
-        tags:       { tags: tags?.mostUsed, trending: tags?.topTrending, unusedTags: tags?.unusedTags, categories: categories?.categories },
-        reports:    { articles: reports?.articles, users: reports?.users },
-      };
-      content = JSON.stringify(dataMap[activeSection], null, 2);
-      filename += '.json';
+    if (activeSection === 'users') {
+      jsonData = { exportedAt: new Date().toISOString(), kpi: { totalUsers: dashboard?.totalUsers, newUsersThisMonth: dashboard?.newUsersThisMonth, activeUsersThisMonth: userActivity?.currentMonth.activeUsers, articlesThisMonth: userActivity?.currentMonth.articlesPublished }, history: userActivity?.history };
+      rows.push(['Mois', 'Nouveaux utilisateurs', 'Utilisateurs actifs', 'Articles publiés']);
+      (userActivity?.history ?? []).forEach(m => rows.push([m.month, String(m.newUsers), String(m.activeUsers), String(m.articlesPublished)]));
+
+    } else if (activeSection === 'articles') {
+      jsonData = { exportedAt: new Date().toISOString(), kpi: { totalArticles: dashboard?.totalArticles, totalLikes: engagement?.totalLikes, totalBookmarks: engagement?.totalBookmarks, totalComments: dashboard?.totalComments }, mostLiked: engagement?.mostLikedArticles, mostBookmarked: engagement?.mostBookmarkedArticles };
+      rows.push(['Articles les plus likés', '']);
+      rows.push(['Titre', 'Likes']);
+      (engagement?.mostLikedArticles ?? []).forEach(a => rows.push([esc(a.title), String(a.likesCount)]));
+      rows.push([], ['Articles les plus mis en favoris', '']);
+      rows.push(['Titre', 'Favoris']);
+      (engagement?.mostBookmarkedArticles ?? []).forEach(a => rows.push([esc(a.title), String(a.bookmarksCount)]));
+
+    } else if (activeSection === 'moderation') {
+      jsonData = { exportedAt: new Date().toISOString(), statusBreakdown: moderation?.statusBreakdown, rejectionRate: moderation?.rejectionRate, autoModerationRate: moderation?.autoModerationRate, dailyTrend: moderation?.dailyTrend };
+      rows.push(['Statut', 'Nombre', 'Pourcentage']);
+      (moderation?.statusBreakdown ?? []).forEach(s => rows.push([s.status, String(s.count), `${s.percentage}%`]));
+      rows.push([], ['Date', 'Approuvés', 'Rejetés', 'En attente']);
+      (moderation?.dailyTrend ?? []).forEach(d => rows.push([d.date, String(d.approved), String(d.rejected), String(d.pending)]));
+
+    } else if (activeSection === 'tags') {
+      jsonData = { exportedAt: new Date().toISOString(), tags: tags?.mostUsed, trending: tags?.topTrending, unusedTags: tags?.unusedTags, categories: categories?.categories };
+      rows.push(['Tag', 'Articles']);
+      (tags?.mostUsed ?? []).forEach(t => rows.push([esc(t.name), String(t.articleCount)]));
+      rows.push([], ['Catégorie', 'Articles', 'Vues']);
+      (categories?.categories ?? []).forEach(c => rows.push([esc(c.name), String(c.articleCount), String(c.totalViews)]));
+
     } else {
-      const rows: string[][] = [];
-      if (activeSection === 'users') {
-        rows.push(['Mois', 'Nouveaux utilisateurs', 'Utilisateurs actifs', 'Articles publiés']);
-        (userActivity?.history ?? []).forEach(m => rows.push([m.month, String(m.newUsers), String(m.activeUsers), String(m.articlesPublished)]));
-      } else if (activeSection === 'articles') {
-        rows.push(['Titre', 'Likes', 'Favoris']);
-        const bookmarkMap = new Map((engagement?.mostBookmarkedArticles ?? []).map(a => [a.id, a.bookmarksCount]));
-        (engagement?.mostLikedArticles ?? []).forEach(a => rows.push([`"${a.title.replace(/"/g, '""')}"`, String(a.likesCount), String(bookmarkMap.get(a.id) ?? '')]));
-      } else if (activeSection === 'moderation') {
-        rows.push(['Statut', 'Nombre', 'Pourcentage']);
-        (moderation?.statusBreakdown ?? []).forEach(s => rows.push([s.status, String(s.count), `${s.percentage}%`]));
-        rows.push([], ['Date', 'Approuvés', 'Rejetés', 'En attente']);
-        (moderation?.dailyTrend ?? []).forEach(d => rows.push([d.date, String(d.approved), String(d.rejected), String(d.pending)]));
-      } else if (activeSection === 'tags') {
-        rows.push(['Tag', 'Articles']);
-        (tags?.mostUsed ?? []).forEach(t => rows.push([t.name, String(t.articleCount)]));
-        rows.push([], ['Catégorie', 'Articles', 'Vues']);
-        (categories?.categories ?? []).forEach(c => rows.push([`"${c.name.replace(/"/g, '""')}"`, String(c.articleCount), String(c.totalViews)]));
-      } else if (activeSection === 'reports') {
-        rows.push(['Type', 'Total', 'En attente', 'Examinés', 'Clôturés']);
-        rows.push(['Articles', String(reports?.articles.total ?? 0), String(reports?.articles.pending ?? 0), String(reports?.articles.reviewed ?? 0), String(reports?.articles.dismissed ?? 0)]);
-        rows.push(['Utilisateurs', String(reports?.users.total ?? 0), String(reports?.users.pending ?? 0), String(reports?.users.reviewed ?? 0), String(reports?.users.dismissed ?? 0)]);
-        rows.push([], ['Motif (articles)', 'Nombre']);
-        (reports?.articles.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
-        rows.push([], ['Motif (utilisateurs)', 'Nombre']);
-        (reports?.users.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
-      }
-      content = rows.map(r => r.join(',')).join('\n');
-      filename += '.csv';
+      jsonData = { exportedAt: new Date().toISOString(), articles: reports?.articles, users: reports?.users };
+      rows.push(['Type', 'Total', 'En attente', 'Examinés', 'Clôturés']);
+      rows.push(['Articles',      String(reports?.articles.total ?? 0), String(reports?.articles.pending ?? 0), String(reports?.articles.reviewed ?? 0), String(reports?.articles.dismissed ?? 0)]);
+      rows.push(['Utilisateurs',  String(reports?.users.total ?? 0),    String(reports?.users.pending ?? 0),    String(reports?.users.reviewed ?? 0),    String(reports?.users.dismissed ?? 0)]);
+      rows.push([], ['Motif (articles)', 'Nombre']);
+      (reports?.articles.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
+      rows.push([], ['Motif (utilisateurs)', 'Nombre']);
+      (reports?.users.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
     }
 
-    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
+    const isJson  = format === 'json';
+    const content = isJson ? JSON.stringify(jsonData, null, 2) : rows.map(r => r.join(',')).join('\n');
+    const mime    = isJson ? 'application/json' : 'text/csv;charset=utf-8;';
+    const ext     = isJson ? 'json' : 'csv';
+
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `statistiques-${activeSection}.${ext}`; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -524,64 +537,60 @@ export default function StatisticsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#00926B]/10 flex items-center justify-center">
-                <BarChart2 size={18} className="text-[#00926B]" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white">Statistiques</h1>
-                <p className="text-xs text-gray-400">Mise à jour : {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Export dropdown */}
-              <div className="relative group">
-                <button
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  <Download size={14} /> Exporter
-                </button>
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 hidden group-hover:block z-20 min-w-[110px]">
-                  <button onClick={() => handleExport('csv')}  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">CSV</button>
-                  <button onClick={() => handleExport('json')} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">JSON</button>
-                  <button onClick={() => handleExport('pdf')}  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">PDF</button>
-                </div>
-              </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Statistiques</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Mise à jour : {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="relative" ref={exportRef}>
               <button
-                onClick={loadAll} disabled={loading}
+                onClick={() => setExportOpen(o => !o)}
+                disabled={loading}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Actualiser
+                <Download size={14} /> Exporter
               </button>
+              {exportOpen && (
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 z-20 min-w-[110px]">
+                  <button onClick={() => { handleExport('csv');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">CSV</button>
+                  <button onClick={() => { handleExport('json'); setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">JSON</button>
+                  <button onClick={() => { handleExport('pdf');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">PDF</button>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-1 overflow-x-auto pb-px">
-            {navItems.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id} onClick={() => setActiveSection(id)}
-                className={`flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-all ${
-                  activeSection === id
-                    ? 'border-[#00926B] text-[#00926B]'
-                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
-                }`}
-              >
-                <Icon size={14} />{label}
-              </button>
-            ))}
+            <button
+              onClick={loadAll} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Actualiser
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* ── Content ──────────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* ── Tabs ───────────────────────────────────────────────────────────── */}
+        <div className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
+          {navItems.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id} onClick={() => setActiveSection(id)}
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-all ${
+                activeSection === id
+                  ? 'border-[#00926B] text-[#00926B]'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+              }`}
+            >
+              <Icon size={14} />{label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Content ────────────────────────────────────────────────────────── */}
+        <div className="space-y-8">
         {error && (
           <div className="flex items-center gap-2 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-sm text-red-600 dark:text-red-400">
             <AlertTriangle size={16} className="flex-shrink-0" />{error}
@@ -955,7 +964,8 @@ export default function StatisticsPage() {
             )}
           </>
         )}
-      </div>
+        </div>{/* end space-y-8 */}
+      </div>{/* end max-w-7xl */}
     </div>
   );
 }
