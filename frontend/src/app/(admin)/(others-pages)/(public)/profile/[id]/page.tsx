@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslation } from '@/context/LanguageContext';
 import ArticleCard from '@/components/article/ArticleCard';
 import { FileText, ChevronLeft, Heart, Eye, Users, UserCheck, UserPlus } from 'lucide-react';
 import UserAboutCard from '@/components/public-profile/UserAboutCard';
@@ -75,6 +76,7 @@ export default function PublicProfilePage() {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
+  const { t, language } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<'articles' | 'relations'>('articles');
   const [user, setUser] = useState<User | null>(null);
@@ -145,7 +147,7 @@ export default function PublicProfilePage() {
 
             const authorName = article.author
               ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim()
-              : 'Utilisateur';
+              : t('public_profile.default_author');
 
             const initials = authorName
               .split(' ')
@@ -186,7 +188,7 @@ export default function PublicProfilePage() {
               );
             }
 
-            const articleDepartment = article.author?.department || 'Membre';
+            const articleDepartment = article.author?.department || t('public_profile.default_department');
 
             return {
               id: String(article.id),
@@ -201,7 +203,7 @@ export default function PublicProfilePage() {
                 avatar: article.author?.avatar || article.author?.profileImage || undefined
               },
               category: {
-                name: article.category?.name || 'Non classé',
+                name: article.category?.name || t('public_profile.uncategorized'),
                 slug: article.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'non-classe'
               },
               tags: tags,
@@ -230,9 +232,9 @@ export default function PublicProfilePage() {
       } catch (err: any) {
         console.error('Erreur:', err);
         if (err.message?.includes('404') || err.message?.includes('non trouvé')) {
-          setError('Utilisateur non trouvé');
+          setError(t('public_profile.profile_not_found'));
         } else {
-          setError('Impossible de charger les données du profil');
+          setError(t('public_profile.user_not_found'));
         }
       } finally {
         setLoading(false);
@@ -246,7 +248,7 @@ export default function PublicProfilePage() {
 
   const handleLike = async (id: string) => {
     if (!isAuthenticated()) {
-      toast.info('Veuillez vous connecter pour liker un article');
+      toast.info(t('public_profile.login_to_like'));
       return;
     }
 
@@ -284,13 +286,13 @@ export default function PublicProfilePage() {
 
     } catch (err) {
       console.error('Erreur like:', err);
-      toast.error('Erreur lors du like');
+      toast.error(t('public_profile.like_error'));
     }
   };
 
   const handleBookmark = async (id: string) => {
     if (!isAuthenticated()) {
-      toast.info('Veuillez vous connecter pour sauvegarder un article');
+      toast.info(t('public_profile.login_to_save'));
       return;
     }
 
@@ -319,18 +321,18 @@ export default function PublicProfilePage() {
 
     } catch (err) {
       console.error('Erreur bookmark:', err);
-      toast.error('Erreur lors du bookmark');
+      toast.error(t('public_profile.bookmark_error'));
     }
   };
 
   const handleShare = (id: string) => {
     const url = `${window.location.origin}/articles/${id}`;
     navigator.clipboard.writeText(url);
-    toast.success('Lien copié !');
+    toast.success(t('public_profile.link_copied'));
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return new Date(dateString).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -344,7 +346,7 @@ export default function PublicProfilePage() {
       lastName: user.lastName,
       profileImage: user.profileImage || user.avatar || undefined,
       role: user.role,
-      department: user.department ?? 'Membre',
+      department: user.department ?? t('public_profile.default_department'),
       email: user.email,
       isOnline: user.isOnline || false,
       lastSeenAt: user.lastSeenAt || null,
@@ -354,7 +356,7 @@ export default function PublicProfilePage() {
   const formatUserForAbout = (user: User) => {
     const location = [user.city, user.state, user.country]
       .filter(Boolean)
-      .join(', ') || 'Localisation non spécifiée';
+      .join(', ') || t('public_profile.location_unspecified');
 
     return {
       email: user.email,
@@ -387,7 +389,7 @@ export default function PublicProfilePage() {
             className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 transition-colors"
           >
             <ChevronLeft size={20} />
-            Retour
+            {t('public_profile.back')}
           </button>
           <div className="mb-8 animate-pulse">
             <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -417,7 +419,7 @@ export default function PublicProfilePage() {
             className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 transition-colors"
           >
             <ChevronLeft size={20} />
-            Retour
+            {t('public_profile.back')}
           </button>
           <div className="text-center max-w-md mx-auto">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm">
@@ -425,16 +427,16 @@ export default function PublicProfilePage() {
                 <span className="text-3xl">😕</span>
               </div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                Profil non trouvé
+                {t('public_profile.profile_not_found')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                {error || "L'utilisateur que vous recherchez n'existe pas ou a été supprimé."}
+                {error || t('public_profile.user_not_found')}
               </p>
               <button
                 onClick={() => router.push('/')}
                 className="px-6 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
               >
-                Retour à l'accueil
+                {t('public_profile.back_home')}
               </button>
             </div>
           </div>
@@ -451,7 +453,7 @@ export default function PublicProfilePage() {
           className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300 transition-colors"
         >
           <ChevronLeft size={20} />
-          Retour
+          {t('public_profile.back')}
         </button>
 
         <UserProfileHeader
@@ -484,7 +486,7 @@ export default function PublicProfilePage() {
                       }`}
                     >
                       <FileText size={18} />
-                      Articles ({userArticles.length})
+                      {t('public_profile.tab_articles')} ({userArticles.length})
                     </button>
                     <button
                       onClick={() => setActiveTab('relations')}
@@ -495,7 +497,7 @@ export default function PublicProfilePage() {
                       }`}
                     >
                       <Users size={18} />
-                      Relations
+                      {t('public_profile.tab_relations')}
                     </button>
                   </div>
 
@@ -521,10 +523,10 @@ export default function PublicProfilePage() {
                             <FileText className="text-gray-400 dark:text-gray-500" size={24} />
                           </div>
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            Aucun article publié
+                            {t('public_profile.no_articles_title')}
                           </h3>
                           <p className="text-gray-500 dark:text-gray-400">
-                            {user.firstName} n'a pas encore publié d'articles.
+                            {t('public_profile.no_articles_msg', { name: user.firstName })}
                           </p>
                         </div>
                       )

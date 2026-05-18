@@ -5,6 +5,7 @@ import { FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated } from '../../../../../../services/auth.service';
 import { useUser } from '@/context/UserContext';
+import { useTranslation } from '@/context/LanguageContext';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { articleService } from '../../../../../../services/article.service';
@@ -48,6 +49,7 @@ interface UserArticle {
 export default function CurrentUserProfilePageWithAPI() {
   const router = useRouter();
   const { user: userData, loading: userLoading } = useUser();
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState<'articles' | 'drafts' | 'pending' | 'rejected'>('articles');
   const [userArticles, setUserArticles] = useState<UserArticle[]>([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
@@ -118,16 +120,16 @@ export default function CurrentUserProfilePageWithAPI() {
           content: article.content,
           author: {
             id: article.author?.id || uid,
-            name: article.author?.name || `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || 'Utilisateur',
+            name: article.author?.name || `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || t('profile_page.default_role'),
             initials: article.author?.initials ||
               ((userData?.firstName?.charAt(0) || '') + (userData?.lastName?.charAt(0) || '')).toUpperCase() || 'U',
-            department: article.author?.department || 'Membre',
+            department: article.author?.department || t('profile_page.default_department'),
             avatar: article.author?.avatar || article.author?.profileImage || userData?.profileImage,
           },
           category: article.category ? {
             name: article.category.name,
             slug: article.category.name?.toLowerCase().replace(/\s+/g, '-') || 'general',
-          } : { name: 'Général', slug: 'general' },
+          } : { name: t('profile_page.default_category'), slug: 'general' },
           tags: tags,
           publishedAt: article.publishedAt || article.createdAt,
           status: article.status || 'published',
@@ -167,7 +169,7 @@ export default function CurrentUserProfilePageWithAPI() {
   const handleLike = async (id: string) => {
     try {
       if (!isAuthenticated()) {
-        toast.info('Veuillez vous connecter');
+        toast.info(t('profile_page.login_required'));
         return;
       }
 
@@ -207,7 +209,7 @@ export default function CurrentUserProfilePageWithAPI() {
   const handleBookmark = async (id: string) => {
     try {
       if (!isAuthenticated()) {
-        toast.info('Veuillez vous connecter');
+        toast.info(t('profile_page.login_required'));
         return;
       }
 
@@ -254,14 +256,14 @@ export default function CurrentUserProfilePageWithAPI() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm(t('profile_page.delete_confirm'))) return;
 
     try {
       await articleService.delete(parseInt(id));
       if (userData) await loadUserArticles(userData.id);
     } catch (error) {
       console.error('Error deleting article:', error);
-      toast.error('Erreur lors de la suppression');
+      toast.error(t('profile_page.delete_error'));
     }
   };
 
@@ -308,16 +310,16 @@ export default function CurrentUserProfilePageWithAPI() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Erreur de chargement
+            {t('profile_page.error_loading')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Impossible de charger vos informations. Veuillez vous reconnecter.
+            {t('profile_page.unable_to_load')}
           </p>
           <button
             onClick={() => window.location.href = '/login'}
             className="px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
           >
-            Se connecter
+            {t('profile_page.login')}
           </button>
         </div>
       </div>
@@ -343,23 +345,23 @@ export default function CurrentUserProfilePageWithAPI() {
     switch (activeTab) {
       case 'articles':
         return {
-          title: 'Aucun article publié',
-          message: 'Commencez à partager vos connaissances'
+          title: t('profile_page.empty_published_title'),
+          message: t('profile_page.empty_published_msg'),
         };
       case 'drafts':
         return {
-          title: 'Aucun brouillon',
-          message: 'Commencez à rédiger un nouvel article'
+          title: t('profile_page.empty_drafts_title'),
+          message: t('profile_page.empty_drafts_msg'),
         };
       case 'pending':
         return {
-          title: 'Aucun article en attente',
-          message: 'Vos articles soumis apparaîtront ici avant validation'
+          title: t('profile_page.empty_pending_title'),
+          message: t('profile_page.empty_pending_msg'),
         };
       case 'rejected':
         return {
-          title: 'Aucun article refusé',
-          message: 'Tous vos articles ont été approuvés'
+          title: t('profile_page.empty_rejected_title'),
+          message: t('profile_page.empty_rejected_msg'),
         };
     }
   };
@@ -377,8 +379,8 @@ export default function CurrentUserProfilePageWithAPI() {
             firstName: userData.firstName,
             lastName: userData.lastName,
             profileImage: userData.profileImage,
-            role: userData.role || 'Utilisateur',
-            department: userData.department || 'Non spécifié',
+            role: userData.role || t('profile_page.default_role'),
+            department: userData.department || t('profile_page.default_department_unspecified'),
             email: userData.email,
           }}
           stats={userStats}
@@ -422,10 +424,10 @@ export default function CurrentUserProfilePageWithAPI() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-                      Mes Articles
+                      {t('profile_page.my_articles')}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mt-1">
-                      Gérez et suivez les performances de vos publications
+                      {t('profile_page.articles_subtitle')}
                     </p>
                   </div>
                 </div>
@@ -439,7 +441,7 @@ export default function CurrentUserProfilePageWithAPI() {
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    Publiés ({publishedArticles.length})
+                    {t('profile_page.tab_published')} ({publishedArticles.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('drafts')}
@@ -448,7 +450,7 @@ export default function CurrentUserProfilePageWithAPI() {
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    Brouillons ({draftArticles.length})
+                    {t('profile_page.tab_drafts')} ({draftArticles.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('pending')}
@@ -457,7 +459,7 @@ export default function CurrentUserProfilePageWithAPI() {
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    En attente
+                    {t('profile_page.tab_pending')}
                     {pendingArticles.length > 0 ? (
                       <span className={`ml-1.5 inline-flex items-center justify-center text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 ${
                         activeTab === 'pending'
@@ -477,7 +479,7 @@ export default function CurrentUserProfilePageWithAPI() {
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    Refusés ({rejectedArticles.length})
+                    {t('profile_page.tab_rejected')} ({rejectedArticles.length})
                   </button>
                 </div>
               </div>
@@ -500,7 +502,7 @@ export default function CurrentUserProfilePageWithAPI() {
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
                       >
-                        Créer un article
+                        {t('profile_page.create_article')}
                       </button>
                     )}
 
@@ -518,14 +520,14 @@ export default function CurrentUserProfilePageWithAPI() {
                               </svg>
                             </span>
                             <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-                              En attente de validation par un administrateur
+                              {t('profile_page.pending_banner')}
                             </p>
                           </div>
                         )}
                         {activeTab === 'rejected' && article.rejectionReason && (
                           <div className="mb-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                             <p className="text-sm text-red-600 dark:text-red-400">
-                              <span className="font-medium">Raison du refus :</span> {article.rejectionReason}
+                              <span className="font-medium">{t('profile_page.rejection_reason')}</span> {article.rejectionReason}
                             </p>
                           </div>
                         )}
@@ -536,7 +538,7 @@ export default function CurrentUserProfilePageWithAPI() {
                               id: userData.id,
                               name: `${userData.firstName} ${userData.lastName}`,
                               initials: `${userData.firstName[0]}${userData.lastName[0]}`.toUpperCase(),
-                              department: userData.department || 'Membre',
+                              department: userData.department || t('profile_page.default_department'),
                               avatar: userData.profileImage,
                             },
                           }}

@@ -1,6 +1,6 @@
 {
   "article_card": {
-    "featured": "Featured",
+    "featured": "À la une",
     "menu": {
       "export_pdf": "Exporter en PDF",
       "exporting": "Export en cours...",
@@ -30,9 +30,9 @@
     },
     "aria": {
       "view_profile": "Voir le profil de {{name}}",
-      "more_options": "More options",
-      "share": "Share",
-      "bookmark": "Bookmark",
+      "more_options": "Plus d'options",
+      "share": "Partager",
+      "bookmark": "Sauvegarder",
       "export_pdf": "Exporter en PDF"
     }
   }

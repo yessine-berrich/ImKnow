@@ -3,6 +3,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from '@/context/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   SlidersHorizontal,
@@ -49,26 +50,14 @@ export default function ArticleFilterBar({
   showSearch = false,
   className = ''
 }: ArticleFilterBarProps) {
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState(activeFilters.searchQuery || '');
 
-  // Options de tri avec leurs icônes et libellés
   const sortOptions: { value: SortOption; label: string; icon: React.ReactNode }[] = [
-    { 
-      value: 'recent', 
-      label: 'Plus récents', 
-      icon: <Clock className="h-4 w-4" /> 
-    },
-    { 
-      value: 'oldest', 
-      label: 'Plus anciens', 
-      icon: <Calendar className="h-4 w-4" /> 
-    },
-    { 
-      value: 'popular', 
-      label: 'Plus populaires', 
-      icon: <TrendingUp className="h-4 w-4" /> 
-    },
+    { value: 'recent',  label: t('filterbar.sort_recent'),  icon: <Clock className="h-4 w-4" /> },
+    { value: 'oldest',  label: t('filterbar.sort_oldest'),  icon: <Calendar className="h-4 w-4" /> },
+    { value: 'popular', label: t('filterbar.sort_popular'), icon: <TrendingUp className="h-4 w-4" /> },
   ];
 
   // Gestionnaires d'événements
@@ -129,14 +118,14 @@ export default function ArticleFilterBar({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Rechercher par titre, auteur, catégorie..."
+              placeholder={t('filterbar.search_placeholder')}
               className="w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-4 pr-24 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
             <button
               type="submit"
               className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary/90"
             >
-              Rechercher
+              {t('filterbar.search_button')}
             </button>
           </form>
         )}
@@ -152,7 +141,7 @@ export default function ArticleFilterBar({
             }`}
           >
             <SlidersHorizontal className="h-4 w-4" />
-            Filtres
+            {t('filterbar.filters')}
             {hasActiveFilters && (
               <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
                 {(activeFilters.selectedCategory !== 'all' ? 1 : 0) + 
@@ -193,14 +182,14 @@ export default function ArticleFilterBar({
               <div>
                 <label className="mb-2 flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <Folder className="h-4 w-4" />
-                  Catégorie
+                  {t('filterbar.category_label')}
                 </label>
                 <select
                   value={activeFilters.selectedCategory}
                   onChange={(e) => handleCategoryChange(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="all">Toutes les catégories</option>
+                  <option value="all">{t('filterbar.all_categories')}</option>
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
@@ -211,14 +200,14 @@ export default function ArticleFilterBar({
               <div>
                 <label className="mb-2 flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                   <Tag className="h-4 w-4" />
-                  Tag
+                  {t('filterbar.tag_label')}
                 </label>
                 <select
                   value={activeFilters.selectedTag}
                   onChange={(e) => handleTagChange(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="all">Tous les tags</option>
+                  <option value="all">{t('filterbar.all_tags')}</option>
                   {tags.map(tag => (
                     <option key={tag} value={tag}>{tag}</option>
                   ))}
@@ -230,7 +219,7 @@ export default function ArticleFilterBar({
             {hasActiveFilters && (
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-4 dark:border-gray-700">
                 <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                  Filtres actifs:
+                  {t('filterbar.active_filters')}
                 </span>
                 
                 {activeFilters.searchQuery && (
@@ -266,7 +255,7 @@ export default function ArticleFilterBar({
                   onClick={clearAllFilters}
                   className="text-xs font-medium text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 >
-                  Tout effacer
+                  {t('filterbar.clear_all')}
                 </button>
               </div>
             )}

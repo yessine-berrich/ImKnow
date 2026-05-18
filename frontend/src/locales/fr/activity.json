@@ -1,0 +1,60 @@
+{
+  "liked": {
+    "title": "Articles aimés",
+    "loading": "Chargement de vos articles aimés...",
+    "count_none": "Vous n'avez pas encore aimé d'articles",
+    "count_one": "{{count}} article dans votre collection",
+    "count_plural": "{{count}} articles dans votre collection",
+    "empty_title": "Aucun article aimé",
+    "empty_desc": "Explorez notre base de connaissances et likez vos articles préférés !",
+    "load_error": "Impossible de charger vos articles aimés"
+  },
+  "commented": {
+    "title": "Articles commentés",
+    "loading": "Chargement de vos articles commentés...",
+    "count_none": "Vous n'avez pas encore commenté d'articles",
+    "count_one": "{{count}} article auquel vous avez participé",
+    "count_plural": "{{count}} articles auxquels vous avez participé",
+    "empty_title": "Aucun article commenté",
+    "empty_desc": "Vous n'avez pas encore commenté d'articles. Participez aux discussions en laissant vos commentaires !",
+    "last_comment": "Votre dernier commentaire",
+    "format_error": "Format de réponse inattendu du serveur"
+  },
+  "bookmarked": {
+    "title": "Articles sauvegardés",
+    "loading": "Chargement de vos articles sauvegardés...",
+    "count_none": "Vous n'avez pas encore sauvegardé d'articles",
+    "count_one": "{{count}} article dans votre bibliothèque",
+    "count_plural": "{{count}} articles dans votre bibliothèque",
+    "empty_title": "Aucun article sauvegardé",
+    "empty_desc": "Vous n'avez pas encore sauvegardé d'articles. Explorez notre base de connaissances et sauvegardez vos articles préférés !",
+    "saved_badge": "Sauvegardé"
+  },
+  "filterbar": {
+    "filters": "Filtres",
+    "sort_recent": "Plus récents",
+    "sort_oldest": "Plus anciens",
+    "sort_popular": "Plus populaires",
+    "search_placeholder": "Rechercher par titre, auteur, catégorie...",
+    "search_button": "Rechercher",
+    "category_label": "Catégorie",
+    "all_categories": "Toutes les catégories",
+    "tag_label": "Tag",
+    "all_tags": "Tous les tags",
+    "active_filters": "Filtres actifs :",
+    "clear_all": "Tout effacer"
+  },
+  "activity_common": {
+    "session_expired": "Session expirée",
+    "load_error": "Erreur de chargement",
+    "reconnect": "Veuillez vous reconnecter",
+    "login": "Se connecter",
+    "retry": "Réessayer",
+    "explore_articles": "Explorer les articles",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet article ?",
+    "default_author": "Utilisateur",
+    "default_department": "Membre",
+    "uncategorized": "Non classé",
+    "displaying": "Affichage {{from}} - {{to}} sur {{total}} article{{plural}}"
+  }
+}

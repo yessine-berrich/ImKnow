@@ -5,11 +5,13 @@ import React, { useState, useMemo } from 'react';
 import UserAvatar from './UserAvatar';
 import { Users, MessageSquare, Bell, Search, X, Pin, BellOff } from 'lucide-react';
 import { useChatContext } from '../../context/ChatContext';
+import { useTranslation } from '../../context/LanguageContext';
 import MessageRequestCard from './MessageRequestCard';
 import { Conversation, MessageType, chatService } from '../../../services/chat.service';
 import { getFullName, getInitials } from '../../utils/chat.utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 
 type SidebarTab = 'friends' | 'conversations' | 'requests';
 
@@ -22,6 +24,7 @@ export default function FriendsSidebar({
   onSelectConversation,
   currentConversationId,
 }: FriendsSidebarProps) {
+  const { t, language } = useTranslation();
   const {
     friends,
     friendsLoading,
@@ -35,6 +38,7 @@ export default function FriendsSidebar({
     currentUserId,
     canShowOnlineFor,
   } = useChatContext();
+  const dateLocale = language === 'fr' ? fr : enUS;
 
   const [activeTab, setActiveTab] = useState<SidebarTab>('conversations');
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,7 +107,7 @@ export default function FriendsSidebar({
   /** Renvoie le texte à afficher dans l'aperçu de la dernière conversation */
   const getLastMessagePreview = (conv: Conversation): string => {
     const last = conv.lastMessage;
-    if (!last) return 'Nouvelle conversation';
+    if (!last) return t('chat.new_conversation');
     return chatService.getMessagePreview(last);
   };
 
@@ -112,19 +116,19 @@ export default function FriendsSidebar({
   const tabs: { id: SidebarTab; label: string; icon: React.ReactNode; badge?: number }[] = [
     {
       id: 'conversations',
-      label: 'Messages',
+      label: t('chat.tab_messages'),
       icon: <MessageSquare size={15} />,
       badge: conversations.reduce((s, c) => s + (c.unreadCount ?? 0), 0) || undefined,
     },
     {
       id: 'friends',
-      label: 'Amis',
+      label: t('chat.tab_friends'),
       icon: <Users size={15} />,
       badge: friends.length || undefined,
     },
     {
       id: 'requests',
-      label: 'Demandes',
+      label: t('chat.tab_requests'),
       icon: <Bell size={15} />,
       badge: pendingRequestsCount || undefined,
     },
@@ -135,7 +139,7 @@ export default function FriendsSidebar({
       {/* Header */}
       <div className="px-4 pt-5 pb-3">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white tracking-tight mb-3">
-          Chat
+          {t('chat.sidebar_title')}
         </h2>
         <div className="relative">
           <Search
@@ -146,7 +150,7 @@ export default function FriendsSidebar({
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher…"
+            placeholder={t('chat.search_sidebar')}
             className="w-full pl-8 pr-8 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B] transition-all"
           />
           {searchQuery && (
@@ -198,9 +202,9 @@ export default function FriendsSidebar({
             ) : filteredConversations.length === 0 ? (
               <EmptyState
                 icon={<MessageSquare size={28} className="text-gray-300 dark:text-gray-600" />}
-                title={searchQuery ? 'Aucun résultat' : 'Aucune conversation'}
+                title={searchQuery ? t('chat.no_results') : t('chat.no_conversations')}
                 subtitle={
-                  searchQuery ? 'Essayez un autre terme' : 'Commencez par contacter un ami'
+                  searchQuery ? t('chat.try_other') : t('chat.start_with_friend')
                 }
               />
             ) : (
@@ -250,7 +254,7 @@ export default function FriendsSidebar({
                           <span className="text-[10px] text-gray-400 flex-shrink-0">
                             {formatDistanceToNow(new Date(conv.lastMessage.createdAt), {
                               addSuffix: false,
-                              locale: fr,
+                              locale: dateLocale,
                             })}
                           </span>
                         )}
@@ -266,7 +270,7 @@ export default function FriendsSidebar({
                           {/* Préfixe "Vous:" uniquement pour les messages normaux */}
                           {conv.lastMessage?.senderId === currentUserId &&
                             conv.lastMessage?.type === MessageType.TEXT && (
-                              <span className="text-gray-400">Vous: </span>
+                              <span className="text-gray-400">{t('chat.you_prefix')}</span>
                             )}
                           {getLastMessagePreview(conv)}
                         </p>
@@ -283,7 +287,7 @@ export default function FriendsSidebar({
                           {/* Badge "demande" pour les conversations en attente */}
                           {isRequest && (
                             <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[9px] font-semibold rounded-full px-1.5 py-0.5">
-                              Demande
+                              {t('chat.request_badge')}
                             </span>
                           )}
                           {conv.unreadCount > 0 && (
@@ -309,11 +313,11 @@ export default function FriendsSidebar({
             ) : filteredFriends.length === 0 ? (
               <EmptyState
                 icon={<Users size={28} className="text-gray-300 dark:text-gray-600" />}
-                title={searchQuery ? 'Aucun résultat' : "Aucun ami pour l'instant"}
+                title={searchQuery ? t('chat.no_results') : t('chat.no_friends')}
                 subtitle={
                   searchQuery
-                    ? 'Essayez un autre terme'
-                    : 'Suivez des utilisateurs pour les retrouver ici'
+                    ? t('chat.try_other')
+                    : t('chat.follow_users')
                 }
               />
             ) : (
@@ -372,14 +376,15 @@ export default function FriendsSidebar({
             ) : pendingRequests.length === 0 ? (
               <EmptyState
                 icon={<Bell size={28} className="text-gray-300 dark:text-gray-600" />}
-                title="Aucune demande"
-                subtitle="Les demandes de message apparaîtront ici"
+                title={t('chat.no_requests')}
+                subtitle={t('chat.requests_here')}
               />
             ) : (
               <div className="p-3 space-y-2">
                 <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-1 mb-3">
-                  {pendingRequests.length} demande
-                  {pendingRequests.length > 1 ? 's' : ''} en attente
+                  {pendingRequests.length === 1
+                    ? t('chat.pending_one', { count: pendingRequests.length })
+                    : t('chat.pending_plural', { count: pendingRequests.length })}
                 </p>
                 {pendingRequests.map((req) => (
                   <MessageRequestCard

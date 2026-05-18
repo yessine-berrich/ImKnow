@@ -1,7 +1,9 @@
 // components/chat/SearchResults.tsx
+'use client';
 import React, { useState, useEffect } from 'react';
 import { ChatMessage } from '../../../services/chat.service';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface SearchResultsProps {
   results: ChatMessage[];
@@ -17,6 +19,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   onMessageClick,
 }) => {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -24,7 +27,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
   }, []);
 
   const getSenderLabel = (message: ChatMessage): string =>
-    message.senderId === currentUserId ? 'You' : 'User';
+    message.senderId === currentUserId ? t('chat.sender_you') : t('chat.sender_user');
 
   const getDisplayContent = (message: ChatMessage): string => {
     if (message.type === 'image') return '📷 Image';
@@ -40,7 +43,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       <div className="flex-1 overflow-y-auto p-4">
         <div className="flex items-center justify-center space-x-2 text-gray-500" role="status">
           <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[#00926B]" aria-hidden="true" />
-          <span>Searching…</span>
+          <span>{t('chat.searching')}</span>
         </div>
       </div>
     );
@@ -51,7 +54,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 sticky top-0 z-10">
         <h3 className="font-semibold text-gray-900 dark:text-white">
-          Search Results ({results.length})
+          {t('chat.search_results', { count: results.length })}
         </h3>
         <button
           onClick={onClose}
@@ -77,8 +80,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <p className="text-gray-500 dark:text-gray-400">No messages found</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Try different keywords</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('chat.no_msgs_found')}</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{t('chat.try_keywords')}</p>
           </div>
         ) : (
           <ul>
@@ -100,7 +103,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
                     {truncate(getDisplayContent(message))}
                   </p>
                   {message.isEdited && (
-                    <span className="text-xs text-gray-400 mt-1 inline-block">(edited)</span>
+                    <span className="text-xs text-gray-400 mt-1 inline-block">{t('chat.edited')}</span>
                   )}
                 </button>
               </li>

@@ -11,6 +11,8 @@ import { Dropdown } from '../ui/dropdown/Dropdown';
 import { DropdownItem } from '../ui/dropdown/DropdownItem';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
+import { useTranslation } from '../../context/LanguageContext';
 import UserAvatar from '../chat/UserAvatar';
 import { useChatContext } from '../../context/ChatContext';
 
@@ -20,6 +22,7 @@ interface MessageDropdownProps {
 
 export default function MessageDropdown({ onMessageClick }: MessageDropdownProps) {
   const { canShowOnlineFor } = useChatContext();
+  const { t, language } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -34,16 +37,16 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
     const init = async () => {
       try {
         const token = getToken();
-        if (!token) { setError('Non authentifié'); setLoading(false); return; }
+        if (!token) { setError(t('messages_dropdown.err_not_authenticated')); setLoading(false); return; }
 
         const user = await fetchCurrentUser();
-        if (!user?.id) { setError("Impossible de récupérer l'utilisateur"); setLoading(false); return; }
+        if (!user?.id) { setError(t('messages_dropdown.err_load_user')); setLoading(false); return; }
 
         setCurrentUserId(user.id);
         localStorage.setItem('userId', user.id.toString());
         setError(null);
       } catch {
-        setError('Erreur de chargement utilisateur');
+        setError(t('messages_dropdown.err_loading_user'));
       } finally {
         setLoading(false);
       }
@@ -65,7 +68,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
       setConversations(sorted);
       setUnreadCount(sorted.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0));
     } catch (err: any) {
-      setError(err.message || 'Erreur de chargement des conversations');
+      setError(err.message || t('messages_dropdown.err_load_conversations'));
     }
   }, [currentUserId]);
 
@@ -146,9 +149,9 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
   };
 
   const getLastMessagePreview = (conversation: Conversation): string => {
-    if (!conversation.lastMessage) return 'Aucun message';
+    if (!conversation.lastMessage) return t('messages_dropdown.no_last_message');
     const isOwn = conversation.lastMessage.senderId === currentUserId;
-    const prefix = isOwn ? 'Vous: ' : '';
+    const prefix = isOwn ? t('messages_dropdown.you_prefix') : '';
     switch (conversation.lastMessage.type) {
       case 'image': return `${prefix}📷 Photo`;
       case 'file':  return `${prefix}📎 Fichier`;
@@ -162,7 +165,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
   const getParticipantName = (c: Conversation): string => {
     const u = c.participant;
     if (u.firstName || u.lastName) return `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim();
-    return u.fullName || 'Utilisateur';
+    return u.fullName || t('messages_dropdown.user_fallback');
   };
 
   const getInitials = (c: Conversation): string => {
@@ -172,7 +175,8 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
 
   const formatMessageDate = (dateStr?: string): string => {
     if (!dateStr) return '';
-    try { return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: fr }); }
+    const dateLocale = language === 'fr' ? fr : enUS;
+    try { return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: dateLocale }); }
     catch { return ''; }
   };
 
@@ -203,7 +207,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
       >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
-          <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Messages</h5>
+          <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{t('messages_dropdown.title')}</h5>
           <button onClick={closeDropdown} className="text-gray-500 transition hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             <svg className="fill-current" width="24" height="24" viewBox="0 0 24 24">
               <path fillRule="evenodd" clipRule="evenodd" d="M6.21967 7.28131C5.92678 6.98841 5.92678 6.51354 6.21967 6.22065C6.51256 5.92775 6.98744 5.92775 7.28033 6.22065L11.999 10.9393L16.7176 6.22078C17.0105 5.92789 17.4854 5.92788 17.7782 6.22078C18.0711 6.51367 18.0711 6.98855 17.7782 7.28144L13.0597 12L17.7782 16.7186C18.0711 17.0115 18.0711 17.4863 17.7782 17.7792C17.4854 18.0721 17.0105 18.0721 16.7176 17.7792L11.999 13.0607L7.28033 17.7794C6.98744 18.0722 6.51256 18.0722 6.21967 17.7794C5.92678 17.4865 5.92678 17.0116 6.21967 16.7187L10.9384 12L6.21967 7.28131Z" fill="currentColor" />
@@ -225,8 +229,8 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
             <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune conversation</p>
-            <p className="text-xs text-gray-400 dark:text-gray500 mt-1">Commencez à discuter avec d'autres utilisateurs</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">{t('messages_dropdown.no_conversations')}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{t('messages_dropdown.start_chatting')}</p>
           </div>
         ) : (
           <ul className="flex flex-col flex-1 overflow-y-auto custom-scrollbar">
@@ -267,7 +271,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
                       {hasUnread && (
                         <div className="mt-1">
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                            {conversation.unreadCount} nouveau{(conversation.unreadCount ?? 0) > 1 ? 'x' : ''}
+                            {t((conversation.unreadCount ?? 0) > 1 ? 'messages_dropdown.new_plural' : 'messages_dropdown.new_one', { count: conversation.unreadCount })}
                           </span>
                         </div>
                       )}
@@ -281,7 +285,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
 
         {conversations.length > 10 && (
           <div className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
-            +{conversations.length - 10} autres conversations
+            {t('messages_dropdown.more_conversations', { count: conversations.length - 10 })}
           </div>
         )}
 
@@ -290,7 +294,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
           onClick={closeDropdown}
           className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
         >
-          Voir tous les messages
+          {t('messages_dropdown.see_all')}
         </Link>
       </Dropdown>
     </div>

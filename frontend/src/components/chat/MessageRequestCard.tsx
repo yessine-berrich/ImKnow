@@ -6,7 +6,9 @@ import { Check, X } from 'lucide-react';
 import { MessageRequestResponseDto } from '../../../services/chat.service';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import Avatar from '../ui/avatar/Avatar';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface MessageRequestCardProps {
   request: MessageRequestResponseDto;
@@ -20,6 +22,8 @@ export default function MessageRequestCard({
   onDecline,
 }: MessageRequestCardProps) {
   const [status, setStatus] = useState<'idle' | 'accepting' | 'declining' | 'done'>('idle');
+  const { t, language } = useTranslation();
+  const dateLocale = language === 'fr' ? fr : enUS;
 
   // ✅ MessageRequestResponseDto has: senderId, senderName, senderProfileImage, introMessage
   const initials = request.senderName
@@ -74,7 +78,7 @@ export default function MessageRequestCard({
               {request.senderName}
             </p>
             <span className="text-[11px] text-gray-400 flex-shrink-0">
-              {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true, locale: fr })}
+              {formatDistanceToNow(new Date(request.createdAt), { addSuffix: true, locale: dateLocale })}
             </span>
           </div>
 
@@ -87,7 +91,7 @@ export default function MessageRequestCard({
             </div>
           ) : (
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-              Souhaite vous envoyer un message
+              {t('chat.wants_to_msg')}
             </p>
           )}
 
@@ -106,7 +110,7 @@ export default function MessageRequestCard({
               ) : (
                 <Check size={12} />
               )}
-              Accepter
+              {t('chat.accept')}
             </button>
             <button
               onClick={handleDecline}
@@ -121,7 +125,7 @@ export default function MessageRequestCard({
               ) : (
                 <X size={12} />
               )}
-              Refuser
+              {t('chat.decline')}
             </button>
           </div>
         </div>

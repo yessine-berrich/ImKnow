@@ -16,6 +16,7 @@ import {
 
 import ArticleCard from '@/components/article/ArticleCard';
 import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
+import { useTranslation } from '@/context/LanguageContext';
 // ============================================
 // CONFIGURATION
 // ============================================
@@ -27,6 +28,7 @@ const API_URL = 'http://localhost:3000';
 
 export default function BookmarkedArticlesPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   
   // États
   const [articles, setArticles] = useState<any[]>([]);
@@ -121,10 +123,10 @@ export default function BookmarkedArticlesPage() {
 
         // Transformation des données
         const formattedArticles = data.articles.map((article: any, index: number) => {
-          const authorName = article.author?.name || 
-            (article.author?.firstName && article.author?.lastName 
-              ? `${article.author.firstName} ${article.author.lastName}` 
-              : 'Utilisateur');
+          const authorName = article.author?.name ||
+            (article.author?.firstName && article.author?.lastName
+              ? `${article.author.firstName} ${article.author.lastName}`
+              : t('activity_common.default_author'));
           
           const initials = authorName
             .split(' ')
@@ -151,11 +153,11 @@ export default function BookmarkedArticlesPage() {
               id: article.author?.id,
               name: authorName,
               initials: initials,
-              department: article.author?.department || 'Membre',
+              department: article.author?.department || t('activity_common.default_department'),
               avatar: article.author?.profileImage || article.author?.avatar || null
             },
             category: {
-              name: article.category?.name || 'Non classé'
+              name: article.category?.name || t('activity_common.uncategorized')
             },
             tags: article.tags?.map((tag: any) => 
               typeof tag === 'string' ? tag : tag.name
@@ -310,7 +312,7 @@ export default function BookmarkedArticlesPage() {
   };
 
   const handleDelete = async (articleId: string) => {
-    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm(t('activity_common.delete_confirm'))) return;
     
     console.log('🗑️ Delete article:', articleId);
     try {
@@ -389,7 +391,7 @@ export default function BookmarkedArticlesPage() {
           <div className="text-center">
             <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              Chargement de vos articles sauvegardés...
+              {t('bookmarked.loading')}
             </p>
           </div>
         </div>
@@ -413,7 +415,7 @@ export default function BookmarkedArticlesPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100 dark:bg-yellow-900/20">
                 <Bookmark className="h-5 w-5 text-yellow-600 dark:text-yellow-400 fill-current" />
               </span>
-              Articles sauvegardés
+              {t('bookmarked.title')}
             </h1>
             {totalCount > 0 && (
               <span className="rounded-full bg-yellow-100 px-3 py-1 text-sm font-medium text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400">
@@ -422,9 +424,11 @@ export default function BookmarkedArticlesPage() {
             )}
           </div>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {totalCount === 0 
-              ? "Vous n'avez pas encore sauvegardé d'articles"
-              : `${totalCount} article${totalCount > 1 ? 's' : ''} dans votre bibliothèque`
+            {totalCount === 0
+              ? t('bookmarked.count_none')
+              : totalCount === 1
+                ? t('bookmarked.count_one', { count: totalCount })
+                : t('bookmarked.count_plural', { count: totalCount })
             }
           </p>
         </div>
@@ -446,11 +450,11 @@ export default function BookmarkedArticlesPage() {
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
           </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            {error === 'Session expirée' ? 'Session expirée' : 'Erreur de chargement'}
+            {error === 'Session expirée' ? t('activity_common.session_expired') : t('activity_common.load_error')}
           </h3>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            {error === 'Session expirée' 
-              ? 'Veuillez vous reconnecter'
+            {error === 'Session expirée'
+              ? t('activity_common.reconnect')
               : error}
           </p>
           {error === 'Session expirée' ? (
@@ -458,14 +462,14 @@ export default function BookmarkedArticlesPage() {
               href="/auth/signin"
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
-              Se connecter
+              {t('activity_common.login')}
             </Link>
           ) : (
             <button
               onClick={fetchBookmarkedArticles}
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
-              Réessayer
+              {t('activity_common.retry')}
             </button>
           )}
         </div>
@@ -478,17 +482,16 @@ export default function BookmarkedArticlesPage() {
             <Bookmark className="h-12 w-12 text-gray-400 dark:text-gray-500" />
           </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            Aucun article sauvegardé
+            {t('bookmarked.empty_title')}
           </h3>
           <p className="mb-6 text-gray-600 dark:text-gray-400 max-w-md">
-            Vous n'avez pas encore sauvegardé d'articles.
-            Explorez notre base de connaissances et sauvegardez vos articles préférés !
+            {t('bookmarked.empty_desc')}
           </p>
           <Link
             href="/articles"
             className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
           >
-            Explorer les articles
+            {t('activity_common.explore_articles')}
           </Link>
         </div>
       )}
@@ -503,7 +506,7 @@ export default function BookmarkedArticlesPage() {
                 <div className="absolute -top-2 -right-2 z-10">
                   <div className="flex items-center gap-1 rounded-full bg-yellow-500 px-2.5 py-1.5 text-xs font-bold text-white shadow-lg">
                     <Bookmark className="h-3 w-3 fill-current" />
-                    <span>Sauvegardé</span>
+                    <span>{t('bookmarked.saved_badge')}</span>
                   </div>
                 </div>
                 
@@ -557,7 +560,12 @@ export default function BookmarkedArticlesPage() {
 
           {/* Compteur */}
           <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            Affichage {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredArticles.length)} sur {filteredArticles.length} article{filteredArticles.length > 1 ? 's' : ''}
+            {t('activity_common.displaying', {
+              from: ((currentPage - 1) * itemsPerPage) + 1,
+              to: Math.min(currentPage * itemsPerPage, filteredArticles.length),
+              total: filteredArticles.length,
+              plural: filteredArticles.length > 1 ? 's' : '',
+            })}
           </div>
         </>
       )}

@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import SidebarWidget from "./SidebarWidget";
 import { statsService, EmployeeTrendingTag } from "../../services/stats.service";
+import { useTranslation } from "../context/LanguageContext";
 
 // Type pour une catégorie
 type Category = {
@@ -67,39 +68,38 @@ type NavItem = {
   adminOnly?: boolean;
 };
 
-// ✅ Configuration des items de navigation 
 const navItems: NavItem[] = [
   {
     icon: <Home className="w-5 h-5" />,
-    name: "Home",
+    name: "sidebar.nav_home",
     path: "/home",
     adminOnly: false,
   },
   {
     icon: <MessageCircle className="w-5 h-5" />,
-    name: "Chat",
+    name: "sidebar.nav_chat",
     path: "/chat",
     adminOnly: false,
   },
   {
-    name: "Activities",
+    name: "sidebar.nav_activities",
     icon: <ActivityIcon />,
     adminOnly: false,
     subItems: [
       {
-        name: "Likes",
+        name: "sidebar.nav_likes",
         path: "/liked",
         pro: false,
         icon: <Heart className="w-4 h-4" />
       },
       {
-        name: "Comments",
+        name: "sidebar.nav_comments",
         path: "/commented",
         pro: false,
         icon: <MessageCircle className="w-4 h-4" />
       },
       {
-        name: "Bookmarks",
+        name: "sidebar.nav_bookmarks",
         path: "/bookmarked",
         pro: false,
         icon: <Bookmark className="w-4 h-4" />
@@ -108,19 +108,19 @@ const navItems: NavItem[] = [
   },
   {
     icon: <UserCircleIcon />,
-    name: "User Profile",
+    name: "sidebar.nav_profile",
     path: "/profile",
     adminOnly: false,
   },
   {
     icon: <Users />,
-    name: "Mes relations",
+    name: "sidebar.nav_connections",
     path: "/connections",
     adminOnly: false,
   },
   {
     icon: <Settings className="w-5 h-5" />,
-    name: "Settings",
+    name: "sidebar.nav_settings",
     path: "/settings",
     adminOnly: false,
   },
@@ -129,43 +129,43 @@ const navItems: NavItem[] = [
 const othersItems: NavItem[] = [
   {
     icon: <Tag className="w-5 h-5" />,
-    name: "Tags",
+    name: "sidebar.nav_tags",
     path: "/tags",
     adminOnly: true,
   },
   {
     icon: <Folder className="w-5 h-5" />,
-    name: "Categories",
+    name: "sidebar.nav_categories",
     path: "/categories",
     adminOnly: true,
   },
   {
     icon: <UserRoundCog className="w-5 h-5" />,
-    name: "Users",
+    name: "sidebar.nav_users",
     path: "/users",
     adminOnly: true,
   },
   {
-    name: "Rejected",
+    name: "sidebar.nav_rejected",
     icon: <XCircle />,
     adminOnly: true,
     subItems: [
-      { name: "Duplicated", path: "/rejected/duplicated", pro: false },
-      { name: "Moderation", path: "/rejected/moderation", pro: false },
+      { name: "sidebar.nav_rejected_duplicated", path: "/rejected/duplicated", pro: false },
+      { name: "sidebar.nav_rejected_moderation", path: "/rejected/moderation", pro: false },
     ],
   },
   {
-    name: "Signalements",
+    name: "sidebar.nav_reports",
     icon: <Flag className="w-5 h-5" />,
     adminOnly: true,
     subItems: [
-      { name: "Articles signalés", path: "/reported/reported-articles", pro: false },
-      { name: "Utilisateurs signalés", path: "/reported/reported-users", pro: false },
+      { name: "sidebar.nav_reported_articles", path: "/reported/reported-articles", pro: false },
+      { name: "sidebar.nav_reported_users", path: "/reported/reported-users", pro: false },
     ],
   },
   {
     icon: <ChartArea className="w-5 h-5" />,
-    name: "Statistics",
+    name: "sidebar.nav_statistics",
     path: "/statistics",
     adminOnly: true,
   },
@@ -174,6 +174,7 @@ const othersItems: NavItem[] = [
 const AppSidebar: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -360,7 +361,7 @@ const AppSidebar: React.FC = () => {
     if (filteredItems.length === 0) {
       return (
         <div className="text-center text-gray-500 dark:text-gray-400 py-4 text-sm">
-          Aucun élément disponible
+          {t('sidebar.no_items')}
         </div>
       );
     }
@@ -389,7 +390,7 @@ const AppSidebar: React.FC = () => {
                   {nav.icon}
                 </span>
                 {(isExpanded || isHovered || isMobileOpen) && (
-                  <span className="menu-item-text">{nav.name}</span>
+                  <span className="menu-item-text">{t(nav.name)}</span>
                 )}
                 {(isExpanded || isHovered || isMobileOpen) && (
                   <ChevronDownIcon
@@ -416,7 +417,7 @@ const AppSidebar: React.FC = () => {
                     {nav.icon}
                   </span>
                   {(isExpanded || isHovered || isMobileOpen) && (
-                    <span className="menu-item-text">{nav.name}</span>
+                    <span className="menu-item-text">{t(nav.name)}</span>
                   )}
                 </Link>
               )
@@ -451,7 +452,7 @@ const AppSidebar: React.FC = () => {
                               {subItem.icon}
                             </span>
                           )}
-                          <span className="flex-1">{subItem.name}</span>
+                          <span className="flex-1">{t(subItem.name)}</span>
                           <div className="flex items-center gap-1">
                             {subItem.new && (
                               <span
@@ -530,7 +531,7 @@ const AppSidebar: React.FC = () => {
           </span>
           {(isExpanded || isHovered || isMobileOpen) && (
             <>
-              <span className="menu-item-text">Catégories</span>
+              <span className="menu-item-text">{t('sidebar.categories_label')}</span>
               <ChevronDown
                 className={`ml-auto w-5 h-5 transition-transform duration-200 ${isCategoriesOpen ? "rotate-180" : ""
                   }`}
@@ -558,7 +559,7 @@ const AppSidebar: React.FC = () => {
                 ))
               ) : (
                 <li className="text-gray-500 dark:text-gray-400 text-sm py-2 px-3">
-                  Aucune catégorie disponible
+                  {t('sidebar.no_categories')}
                 </li>
               )}
             </ul>
@@ -599,7 +600,7 @@ const AppSidebar: React.FC = () => {
           </span>
           {(isExpanded || isHovered || isMobileOpen) && (
             <>
-              <span className="menu-item-text">Tags tendances</span>
+              <span className="menu-item-text">{t('sidebar.trending_tags_label')}</span>
               <ChevronDown
                 className={`ml-auto w-5 h-5 transition-transform duration-200 ${isTagsOpen ? "rotate-180" : ""
                   }`}
@@ -633,7 +634,7 @@ const AppSidebar: React.FC = () => {
                 ))
               ) : (
                 <li className="text-gray-500 dark:text-gray-400 text-sm py-2 px-3">
-                  Aucun tag tendance disponible
+                  {t('sidebar.no_trending_tags')}
                 </li>
               )}
             </ul>
@@ -718,7 +719,7 @@ const AppSidebar: React.FC = () => {
                 <h2
                   className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
                 >
-                  {isExpanded || isHovered || isMobileOpen ? "Administration" : <HorizontaLDots />}
+                  {isExpanded || isHovered || isMobileOpen ? t('sidebar.admin_section') : <HorizontaLDots />}
                 </h2>
                 {renderMenuItems(othersItems, "others")}
               </div>
@@ -729,7 +730,7 @@ const AppSidebar: React.FC = () => {
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
               >
-                {isExpanded || isHovered || isMobileOpen ? "Menu" : <HorizontaLDots />}
+                {isExpanded || isHovered || isMobileOpen ? t('sidebar.menu_section') : <HorizontaLDots />}
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>

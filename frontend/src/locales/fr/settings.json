@@ -50,7 +50,9 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "success_message": "Profil mis à jour avec succès !",
-    "error_message": "Erreur lors de la mise à jour du profil."
+    "error_message": "Erreur lors de la mise à jour du profil.",
+    "invalid_phone": "Numéro de téléphone invalide",
+    "required_field": "Ce champ est obligatoire"
   },
   "notifications": {
     "title": "Notifications",
@@ -127,7 +129,13 @@
     "sending": "Envoi...",
     "check_your_email": "Veuillez vérifier votre boîte de réception actuelle et cliquer sur le lien de confirmation. Le lien expire dans 1 heure.",
     "email_confirmation_sent": "Email de confirmation envoyé",
-    "email_change_info": "Un lien de confirmation sera envoyé à votre adresse email actuelle. Vous devez cliquer dessus pour finaliser le changement. Le lien expire dans 1 heure."
+    "email_change_info": "Un lien de confirmation sera envoyé à votre adresse email actuelle. Vous devez cliquer dessus pour finaliser le changement. Le lien expire dans 1 heure.",
+    "delete_account_title": "Supprimer le compte",
+    "delete_account_error": "Erreur lors de la suppression du compte",
+    "delete_data_articles": "Tous vos articles et contenus",
+    "delete_data_comments": "Tous vos commentaires et interactions",
+    "delete_data_profile": "Votre profil et informations personnelles",
+    "enter_password_to_confirm": "Entrez votre mot de passe pour confirmer"
   },
   "sessions": {
     "title": "Sessions actives",
@@ -141,7 +149,11 @@
     "all_others_revoked": "Toutes les autres sessions ont été déconnectées",
     "load_error": "Échec du chargement des sessions",
     "revoke_error": "Échec de la révocation de la session",
-    "revoke_all_error": "Échec de la révocation de toutes les sessions"
+    "revoke_all_error": "Échec de la révocation de toutes les sessions",
+    "unknown": "Inconnu",
+    "device": "Appareil",
+    "last_active": "Dernière activité",
+    "expires": "Expire"
   },
   "common": {
     "loading": "Chargement...",
@@ -153,6 +165,7 @@
     "error": "Erreur",
     "close": "Fermer",
     "deleting": "Suppression...",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "back": "Retour"
   }
 }

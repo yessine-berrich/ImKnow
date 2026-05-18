@@ -247,7 +247,7 @@ export default function TagsSelector({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Tags <span className="text-red-500">*</span>
+            Tags
           </label>
           {selectedTagsData.length > 0 && (
             <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-[#168F6F] text-white">

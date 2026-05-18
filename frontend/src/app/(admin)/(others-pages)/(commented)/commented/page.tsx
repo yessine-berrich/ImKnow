@@ -15,6 +15,7 @@ import {
 import ArticleCard from '@/components/article/ArticleCard';
 import { confirm } from '@/components/modals/ConfirmModal';
 import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
+import { useTranslation } from '@/context/LanguageContext';
 import { commentService } from '../../../../../../services/comment.service';
 import { getToken } from '../../../../../../services/auth.service';
 import { articleService } from '../../../../../../services/article.service';
@@ -25,6 +26,7 @@ import { articleService } from '../../../../../../services/article.service';
 
 export default function CommentedArticlesPage() {
   const router = useRouter();
+  const { t, language } = useTranslation();
   
   // États
   const [articles, setArticles] = useState<any[]>([]);
@@ -79,7 +81,7 @@ export default function CommentedArticlesPage() {
         console.log('✅ Format tableau,', articlesList.length, 'articles');
       } else {
         console.error('❌ Format de réponse inattendu:', response);
-        setError('Format de réponse inattendu du serveur');
+        setError(t('commented.format_error'));
         setArticles([]);
         setTotalCount(0);
         setIsLoading(false);
@@ -106,10 +108,10 @@ export default function CommentedArticlesPage() {
       const tagsSet = new Set<string>();
 
       const formattedArticles = articlesList.map((article: any) => {
-        const authorName = article.author?.name || 
-          (article.author?.firstName && article.author?.lastName 
-            ? `${article.author.firstName} ${article.author.lastName}` 
-            : 'Utilisateur');
+        const authorName = article.author?.name ||
+          (article.author?.firstName && article.author?.lastName
+            ? `${article.author.firstName} ${article.author.lastName}`
+            : t('activity_common.default_author'));
         
         const initials = authorName
           .split(' ')
@@ -138,11 +140,11 @@ export default function CommentedArticlesPage() {
             id: article.author?.id,
             name: authorName,
             initials: initials,
-            department: article.author?.department || 'Membre',
+            department: article.author?.department || t('activity_common.default_department'),
             avatar: article.author?.profileImage || article.author?.avatar || null
           },
           category: {
-            name: article.category?.name || 'Non classé'
+            name: article.category?.name || t('activity_common.uncategorized')
           },
           tags: article.tags?.map((tag: any) => typeof tag === 'string' ? tag : tag.name) || [],
           publishedAt: article.publishedAt || article.createdAt,
@@ -252,7 +254,7 @@ export default function CommentedArticlesPage() {
   };
 
   const handleDelete = async (articleId: string) => {
-    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm(t('activity_common.delete_confirm'))) return;
     
     try {
       await articleService.delete(Number(articleId));
@@ -316,7 +318,7 @@ export default function CommentedArticlesPage() {
           <div className="text-center">
             <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              Chargement de vos articles commentés...
+              {t('commented.loading')}
             </p>
           </div>
         </div>
@@ -340,7 +342,7 @@ export default function CommentedArticlesPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
                 <MessageCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
               </span>
-              Articles commentés
+              {t('commented.title')}
             </h1>
             {totalCount > 0 && (
               <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-600 dark:bg-green-900/20 dark:text-green-400">
@@ -349,9 +351,11 @@ export default function CommentedArticlesPage() {
             )}
           </div>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {totalCount === 0 
-              ? "Vous n'avez pas encore commenté d'articles"
-              : `${totalCount} article${totalCount > 1 ? 's' : ''} auquel${totalCount > 1 ? 'x' : ''} vous avez participé`
+            {totalCount === 0
+              ? t('commented.count_none')
+              : totalCount === 1
+                ? t('commented.count_one', { count: totalCount })
+                : t('commented.count_plural', { count: totalCount })
             }
           </p>
         </div>
@@ -373,11 +377,11 @@ export default function CommentedArticlesPage() {
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
           </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            {error === 'Session expirée' ? 'Session expirée' : 'Erreur de chargement'}
+            {error === t('commented.format_error') ? t('activity_common.load_error') : error === 'Session expirée' ? t('activity_common.session_expired') : t('activity_common.load_error')}
           </h3>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            {error === 'Session expirée' 
-              ? 'Veuillez vous reconnecter'
+            {error === 'Session expirée'
+              ? t('activity_common.reconnect')
               : error}
           </p>
           {error === 'Session expirée' ? (
@@ -385,14 +389,14 @@ export default function CommentedArticlesPage() {
               href="/auth/signin"
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
-              Se connecter
+              {t('activity_common.login')}
             </Link>
           ) : (
             <button
               onClick={fetchCommentedArticles}
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
-              Réessayer
+              {t('activity_common.retry')}
             </button>
           )}
         </div>
@@ -405,17 +409,16 @@ export default function CommentedArticlesPage() {
             <MessageCircle className="h-12 w-12 text-gray-400 dark:text-gray-500" />
           </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            Aucun article commenté
+            {t('commented.empty_title')}
           </h3>
           <p className="mb-6 text-gray-600 dark:text-gray-400 max-w-md">
-            Vous n'avez pas encore commenté d'articles. 
-            Participez aux discussions en laissant vos commentaires !
+            {t('commented.empty_desc')}
           </p>
           <Link
             href="/articles"
             className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
           >
-            Explorer les articles
+            {t('activity_common.explore_articles')}
           </Link>
         </div>
       )}
@@ -445,7 +448,7 @@ export default function CommentedArticlesPage() {
                 {/* Dernier commentaire */}
                 {article.lastCommentDate && (
                   <div className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
-                    Votre dernier commentaire {new Date(article.lastCommentDate).toLocaleDateString('fr-FR', {
+                    {t('commented.last_comment')} {new Date(article.lastCommentDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric',
@@ -497,7 +500,12 @@ export default function CommentedArticlesPage() {
 
           {/* Compteur */}
           <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            Affichage {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredArticles.length)} sur {filteredArticles.length} article{filteredArticles.length > 1 ? 's' : ''}
+            {t('activity_common.displaying', {
+              from: ((currentPage - 1) * itemsPerPage) + 1,
+              to: Math.min(currentPage * itemsPerPage, filteredArticles.length),
+              total: filteredArticles.length,
+              plural: filteredArticles.length > 1 ? 's' : '',
+            })}
           </div>
         </>
       )}

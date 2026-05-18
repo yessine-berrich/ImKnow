@@ -63,7 +63,7 @@ const LinuxIcon = ({ className }: { className?: string }) => (
 );
 
 export default function SessionsTab() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -168,7 +168,7 @@ export default function SessionsTab() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-US', {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(date);
@@ -262,7 +262,7 @@ export default function SessionsTab() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="font-medium text-gray-900 dark:text-white">
-                        {session.deviceType?.charAt(0).toUpperCase() + session.deviceType?.slice(1) || 'Unknown'} Device
+                        {session.deviceType?.charAt(0).toUpperCase() + session.deviceType?.slice(1) || t('sessions.unknown')} {t('sessions.device')}
                       </span>
                       {current && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
@@ -274,11 +274,11 @@ export default function SessionsTab() {
                     <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
                       <span className="flex items-center gap-1">
                         {getBrowserIcon(session.browser)}
-                        {session.browser || 'Unknown'}
+                        {session.browser || t('sessions.unknown')}
                       </span>
                       <span className="flex items-center gap-1">
                         {getOsIcon(session.os)}
-                        {session.os || 'Unknown'}
+                        {session.os || t('sessions.unknown')}
                       </span>
                       {session.ipAddress && (
                         <span>IP: {session.ipAddress}</span>
@@ -289,8 +289,8 @@ export default function SessionsTab() {
                     </div>
                     
                     <div className="flex gap-4 mt-2 text-xs text-gray-400">
-                      <span>Last active: {formatDate(session.lastUsedAt)}</span>
-                      <span>Expires: {formatDate(session.expiresAt)}</span>
+                      <span>{t('sessions.last_active')}: {formatDate(session.lastUsedAt)}</span>
+                      <span>{t('sessions.expires')}: {formatDate(session.expiresAt)}</span>
                     </div>
                   </div>
                 </div>

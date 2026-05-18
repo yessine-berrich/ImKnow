@@ -50,7 +50,9 @@
     "save": "Save",
     "saving": "Saving...",
     "success_message": "Profile updated successfully!",
-    "error_message": "Error updating profile."
+    "error_message": "Error updating profile.",
+    "invalid_phone": "Invalid phone number",
+    "required_field": "This field is required"
   },
   "notifications": {
     "title": "Notifications",
@@ -127,7 +129,13 @@
     "sending": "Sending...",
     "check_your_email": "Please check your current email inbox and click the confirmation link. The link expires in 1 hour.",
     "email_confirmation_sent": "Confirmation Email Sent",
-    "email_change_info": "A confirmation link will be sent to your current email address. You must click it to complete the change. The link expires in 1 hour."
+    "email_change_info": "A confirmation link will be sent to your current email address. You must click it to complete the change. The link expires in 1 hour.",
+    "delete_account_title": "Delete Account",
+    "delete_account_error": "Error deleting account",
+    "delete_data_articles": "All your articles and content",
+    "delete_data_comments": "All your comments and interactions",
+    "delete_data_profile": "Your profile and personal information",
+    "enter_password_to_confirm": "Enter your password to confirm"
   },
   "sessions": {
     "title": "Active Sessions",
@@ -141,7 +149,11 @@
     "all_others_revoked": "All other sessions have been signed out",
     "load_error": "Failed to load sessions",
     "revoke_error": "Failed to revoke session",
-    "revoke_all_error": "Failed to revoke all sessions"
+    "revoke_all_error": "Failed to revoke all sessions",
+    "unknown": "Unknown",
+    "device": "Device",
+    "last_active": "Last active",
+    "expires": "Expires"
   },
   "common": {
     "loading": "Loading...",
@@ -153,6 +165,7 @@
     "error": "Error",
     "close": "Close",
     "deleting": "Deleting...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "back": "Back"
   }
 }

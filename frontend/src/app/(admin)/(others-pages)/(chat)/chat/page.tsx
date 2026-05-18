@@ -11,6 +11,7 @@ import EmptyState from '@/components/chat/EmptyState';
 import SearchBar from '@/components/chat/SearchBar';
 import SearchResults from '@/components/chat/SearchResults';
 import { useChatContext } from '@/context/ChatContext';
+import { useTranslation } from '@/context/LanguageContext';
 import { chatService, Conversation, ChatMessage, MessageType, MessageRequestStatus } from '../../../../../../services/chat.service';
 import { chatSocketService, NewChatMessagePayload } from '../../../../../../services/chat-socket.service';
 
@@ -63,6 +64,7 @@ const prependUniqueMessages = (
 
 export default function ChatPage() {
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const { refreshConversations, currentUserId, blockedIds, refreshBlockedIds } = useChatContext();
 
   // ── Active conversation ───────────────────────────────────
@@ -120,7 +122,7 @@ export default function ChatPage() {
       setLocalConversations(conversations);
       return conversations;
     } catch (err) {
-      showToast('Impossible de charger les conversations.');
+      showToast(t('chat.err_load_convs'));
       return [];
     } finally {
       setConversationsReady(true);
@@ -165,7 +167,7 @@ export default function ChatPage() {
           id: targetId,
           firstName: '',
           lastName: '',
-          fullName: 'Chargement...',
+          fullName: t('chat.loading_name'),
           isOnline: false,
           lastSeenAt: null,
         },
@@ -221,7 +223,7 @@ export default function ChatPage() {
           }
         }
       } catch (err) {
-        showToast('Impossible de charger les messages.');
+        showToast(t('chat.err_load_msgs'));
         setMessages([]);
       } finally {
         setMessagesLoading(false);
@@ -310,7 +312,7 @@ export default function ChatPage() {
       setPage(page + 1);
       setHasMore((page + 1) * PAGE_SIZE < totalMessages);
     } catch (err) {
-      showToast('Impossible de charger les messages précédents.', 'warning');
+      showToast(t('chat.err_load_older'), 'warning');
     } finally {
       setMessagesLoading(false);
     }
@@ -331,9 +333,9 @@ export default function ChatPage() {
       setMessages([]);
       await loadConversations();
       refreshConversations().catch(() => {});
-      showToast('Conversation supprimée.', 'warning');
+      showToast(t('chat.conv_deleted'), 'warning');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible de supprimer la conversation.');
+      showToast(err instanceof Error ? err.message : t('chat.err_delete_conv'));
     }
   }, [activeConversation, loadConversations, refreshConversations, showToast]);
 
@@ -352,7 +354,7 @@ export default function ChatPage() {
       await loadConversations();
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible de supprimer la demande.');
+      showToast(err instanceof Error ? err.message : t('chat.err_delete_req'));
     }
   }, [activeConversation, messages, loadConversations, refreshConversations, showToast]);
 
@@ -363,14 +365,14 @@ export default function ChatPage() {
     try {
       if (isCurrentlyBlocked) {
         await chatService.unblockUser(participantId);
-        showToast('Utilisateur débloqué.', 'warning');
+        showToast(t('chat.user_unblocked'), 'warning');
       } else {
         await chatService.blockUser(participantId);
-        showToast('Utilisateur bloqué.', 'warning');
+        showToast(t('chat.user_blocked_toast'), 'warning');
       }
       await refreshBlockedIds();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Action impossible.');
+      showToast(err instanceof Error ? err.message : t('chat.action_failed'));
     }
   }, [activeConversation, blockedIds, showToast, refreshBlockedIds]);
 
@@ -391,7 +393,7 @@ export default function ChatPage() {
       );
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Action impossible.');
+      showToast(err instanceof Error ? err.message : t('chat.action_failed'));
     }
   }, [activeConversation, refreshConversations, showToast]);
 
@@ -407,7 +409,7 @@ export default function ChatPage() {
       );
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Action impossible.');
+      showToast(err instanceof Error ? err.message : t('chat.action_failed'));
     }
   }, [activeConversation, refreshConversations, showToast]);
 
@@ -433,7 +435,7 @@ export default function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible d\'envoyer le message.');
+      showToast(err instanceof Error ? err.message : t('chat.err_send_msg'));
     } finally {
       setIsSending(false);
     }
@@ -456,7 +458,7 @@ export default function ChatPage() {
       loadConversations().catch(() => {});
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible d\'envoyer le fichier.');
+      showToast(err instanceof Error ? err.message : t('chat.err_send_file'));
     } finally {
       setIsSending(false);
     }
@@ -467,7 +469,7 @@ export default function ChatPage() {
       await chatService.deleteMessage(id);
       setMessages(prev => prev.filter(m => m.id !== id));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible de supprimer le message.');
+      showToast(err instanceof Error ? err.message : t('chat.err_delete_msg'));
     }
   }, []);
 
@@ -482,7 +484,7 @@ export default function ChatPage() {
         )
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible de modifier le message.');
+      showToast(err instanceof Error ? err.message : t('chat.err_edit_msg'));
     }
   }, []);
 
@@ -493,7 +495,7 @@ export default function ChatPage() {
         prev.map(m => (m.id === id ? { ...m, reactions: message.reactions } : m))
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible d\'ajouter la réaction.');
+      showToast(err instanceof Error ? err.message : t('chat.err_add_reaction'));
     }
   }, []);
 
@@ -504,7 +506,7 @@ export default function ChatPage() {
         prev.map(m => (m.id === id ? { ...m, reactions: message.reactions } : m))
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Impossible de supprimer la réaction.');
+      showToast(err instanceof Error ? err.message : t('chat.err_remove_reaction'));
     }
   }, []);
 
@@ -522,7 +524,7 @@ export default function ChatPage() {
       );
       setSearchResults(result.messages);
     } catch (err) {
-      showToast('Erreur lors de la recherche.', 'warning');
+      showToast(t('chat.err_search'), 'warning');
       setSearchResults([]);
     } finally {
       setSearchLoading(false);
@@ -558,7 +560,7 @@ export default function ChatPage() {
       <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des conversations...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('chat.loading_conversations')}</p>
         </div>
       </div>
     );
@@ -613,7 +615,7 @@ export default function ChatPage() {
                       setSearchQuery('');
                       setSearchResults([]);
                     }}
-                    placeholder="Rechercher dans la conversation…"
+                    placeholder={t('chat.search_in_conv')}
                   />
                 </div>
               )}
@@ -654,23 +656,23 @@ export default function ChatPage() {
                     <div className="flex items-center gap-3 px-5 py-4 bg-gray-50 dark:bg-gray-800/60">
                       <span className="text-base leading-none">🚫</span>
                       <p className="text-sm text-gray-600 dark:text-gray-400 flex-1">
-                        {chatInputState === 'blocked' && 'Vous avez bloqué cet utilisateur. Vous ne pouvez pas envoyer de messages.'}
-                        {chatInputState === 'pending_sent' && 'Demande en attente. Vous ne pouvez pas envoyer de messages.'}
-                        {chatInputState === 'declined' && 'Demande refusée. Vous ne pouvez pas envoyer de messages.'}
+                        {chatInputState === 'blocked' && t('chat.blocked_notice')}
+                        {chatInputState === 'pending_sent' && t('chat.pending_notice')}
+                        {chatInputState === 'declined' && t('chat.declined_notice')}
                       </p>
                       {chatInputState === 'blocked' && (
                         <button onClick={handleToggleBlock} className="text-xs font-semibold text-[#00926B] hover:underline flex-shrink-0">
-                          Débloquer
+                          {t('chat.unblock')}
                         </button>
                       )}
                       {chatInputState === 'pending_sent' && (
                         <button onClick={handleDeleteRequest} className="text-xs font-semibold text-[#00926B] hover:underline flex-shrink-0">
-                          Supprimer la demande
+                          {t('chat.cancel_request')}
                         </button>
                       )}
                       {chatInputState === 'declined' && (
                         <button onClick={handleDeleteConversation} className="text-xs font-semibold text-[#00926B] hover:underline flex-shrink-0">
-                          Supprimer la conversation
+                          {t('chat.delete_conv_action')}
                         </button>
                       )}
                     </div>
@@ -680,7 +682,7 @@ export default function ChatPage() {
                         onSendMessage={handleSendMessage}
                         onSendFile={handleSendFile}
                         isLoading={isSending}
-                        placeholder={`Message à ${activeConversation.participant.firstName || activeConversation.participant.fullName || 'l\'utilisateur'}…`}
+                        placeholder={t('chat.message_placeholder', { name: activeConversation.participant.firstName || activeConversation.participant.fullName || '...' })}
                       />
                     </div>
                   )}
@@ -689,8 +691,8 @@ export default function ChatPage() {
             </>
           ) : (
             <EmptyState
-              title="Sélectionnez une conversation"
-              description="Choisissez un ami ou une conversation dans le panneau de gauche pour commencer à discuter."
+              title={t('chat.select_title')}
+              description={t('chat.select_desc')}
             />
           )}
         </div>

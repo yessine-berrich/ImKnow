@@ -10,6 +10,7 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { fetchCurrentUser, getToken } from "../../../services/auth.service";
 import Avatar from "../ui/avatar/Avatar";
 import { useArticleModal } from "@/context/ArticleModalContext";
+import { useTranslation } from "@/context/LanguageContext";
 
 const enum NotificationType {
   MENTION = 'mention',
@@ -60,6 +61,7 @@ export default function NotificationDropdown() {
   const [loading, setLoading] = useState(true);
 
   const { openArticleModal } = useArticleModal();
+  const { t, language } = useTranslation();
 
   const token = getToken() ?? "";
   const userId = typeof window !== "undefined" ? localStorage.getItem("userId") || "1" : "1";
@@ -179,79 +181,40 @@ export default function NotificationDropdown() {
   // Fonction pour obtenir le libellé du type de notification
   const getNotificationTypeLabel = (type: NotificationType): string => {
     switch (type) {
-      // Commentaires et interactions
-      case NotificationType.NEW_COMMENT:
-        return "Commentaire";
-      case NotificationType.REPLY:
-        return "Réponse";
-      case NotificationType.MENTION:
-        return "Mention";
-
-      // Follow
-      case NotificationType.NEW_FOLLOWER:
-        return "Nouvel abonné";
-
-      // Articles
-      case NotificationType.ARTICLE_PUBLISHED:
-        return "Article publié";
-      case NotificationType.ARTICLE_PENDING_MODERATION:
-        return "En attente de modération";
-      case NotificationType.ARTICLE_REJECTED:
-        return "Article refusé";
-
-      // Likes et bookmarks
-      case NotificationType.ARTICLE_LIKED:
-        return "J'aime";
-      case NotificationType.COMMENT_LIKED:
-        return "J'aime sur commentaire";
-      case NotificationType.ARTICLE_BOOKMARKED:
-        return "Sauvegarde";
-
-      // Système
-      case NotificationType.SYSTEM_INFO:
-        return "Information";
-      case NotificationType.SYSTEM_ERROR:
-        return "Erreur système";
-      case NotificationType.USER_ROLE_CHANGED:
-        return "Changement de rôle";
-      case NotificationType.ACCOUNT_ACTIVATED:
-        return "Compte activé";
-      case NotificationType.ACCOUNT_DEACTIVATED:
-        return "Compte désactivé";
-
-      default:
-        return "Notification";
+      case NotificationType.NEW_COMMENT:              return t('notifications.type_comment');
+      case NotificationType.REPLY:                    return t('notifications.type_reply');
+      case NotificationType.MENTION:                  return t('notifications.type_mention');
+      case NotificationType.NEW_FOLLOWER:             return t('notifications.type_new_follower');
+      case NotificationType.ARTICLE_PUBLISHED:        return t('notifications.type_article_published');
+      case NotificationType.ARTICLE_PENDING_MODERATION: return t('notifications.type_pending_moderation');
+      case NotificationType.ARTICLE_REJECTED:         return t('notifications.type_article_rejected');
+      case NotificationType.ARTICLE_LIKED:            return t('notifications.type_article_liked');
+      case NotificationType.COMMENT_LIKED:            return t('notifications.type_comment_liked');
+      case NotificationType.ARTICLE_BOOKMARKED:       return t('notifications.type_bookmarked');
+      case NotificationType.SYSTEM_INFO:              return t('notifications.type_system_info');
+      case NotificationType.SYSTEM_ERROR:             return t('notifications.type_system_error');
+      case NotificationType.USER_ROLE_CHANGED:        return t('notifications.type_role_changed');
+      case NotificationType.ACCOUNT_ACTIVATED:        return t('notifications.type_account_activated');
+      case NotificationType.ACCOUNT_DEACTIVATED:      return t('notifications.type_account_deactivated');
+      default:                                        return t('notifications.type_default');
     }
   };
 
   // Fonction pour obtenir le message par défaut selon le type
   const getDefaultMessage = (type: NotificationType, senderName: string): string => {
     switch (type) {
-      case NotificationType.NEW_COMMENT:
-        return `${senderName} a commenté votre article`;
-      case NotificationType.REPLY:
-        return `${senderName} a répondu à votre commentaire`;
-      case NotificationType.MENTION:
-        return `${senderName} vous a mentionné`;
-      case NotificationType.NEW_FOLLOWER:
-        return `${senderName} veut vous suivre`;
-      case NotificationType.ARTICLE_LIKED:
-        return `${senderName} a aimé votre article`;
-      case NotificationType.COMMENT_LIKED:
-        return `${senderName} a aimé votre commentaire`;
-      case NotificationType.ARTICLE_BOOKMARKED:
-        return `${senderName} a sauvegardé votre article`;
-      case NotificationType.ARTICLE_PUBLISHED:
-        return `Votre article a été publié`;
-      case NotificationType.ARTICLE_REJECTED:
-        return `Votre article a été refusé`;
-      case NotificationType.ACCOUNT_ACTIVATED:
-        return 'Votre compte a été activé. Vous pouvez maintenant accéder à la plateforme.';
-      case NotificationType.ACCOUNT_DEACTIVATED:
-        return "Votre compte a été désactivé. Contactez un administrateur pour plus d'informations.";
-
-      default:
-        return `${senderName} a interagi avec votre contenu`;
+      case NotificationType.NEW_COMMENT:         return t('notifications.msg_new_comment', { name: senderName });
+      case NotificationType.REPLY:               return t('notifications.msg_reply', { name: senderName });
+      case NotificationType.MENTION:             return t('notifications.msg_mention', { name: senderName });
+      case NotificationType.NEW_FOLLOWER:        return t('notifications.msg_new_follower', { name: senderName });
+      case NotificationType.ARTICLE_LIKED:       return t('notifications.msg_article_liked', { name: senderName });
+      case NotificationType.COMMENT_LIKED:       return t('notifications.msg_comment_liked', { name: senderName });
+      case NotificationType.ARTICLE_BOOKMARKED:  return t('notifications.msg_bookmarked', { name: senderName });
+      case NotificationType.ARTICLE_PUBLISHED:   return t('notifications.msg_article_published');
+      case NotificationType.ARTICLE_REJECTED:    return t('notifications.msg_article_rejected');
+      case NotificationType.ACCOUNT_ACTIVATED:   return t('notifications.msg_account_activated');
+      case NotificationType.ACCOUNT_DEACTIVATED: return t('notifications.msg_account_deactivated');
+      default:                                   return t('notifications.msg_default', { name: senderName });
     }
   };
 
@@ -331,7 +294,7 @@ export default function NotificationDropdown() {
       closeDropdown();
     } catch (error) {
       console.error('❌ Erreur chargement article:', error);
-      toast.error("Impossible de charger l'article");
+      toast.error(t('notifications.err_load_article'));
     }
   };
 
@@ -340,11 +303,11 @@ export default function NotificationDropdown() {
     const diffMs = Date.now() - date.getTime();
     const minutes = Math.floor(diffMs / 60000);
 
-    if (minutes < 1) return "à l'instant";
-    if (minutes < 60) return `il y a ${minutes} min`;
+    if (minutes < 1) return t('notifications.just_now');
+    if (minutes < 60) return t('notifications.minutes_ago', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `il y a ${hours} h`;
-    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    if (hours < 24) return t('notifications.hours_ago', { count: hours });
+    return date.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' });
   };
 
   const getNotificationAvatar = (sender: Notification['sender']): string | null => {
@@ -382,7 +345,7 @@ export default function NotificationDropdown() {
       >
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
           <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            Notifications
+            {t('notifications.title')}
           </h5>
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
@@ -406,9 +369,9 @@ export default function NotificationDropdown() {
                   }
                 }}
                 className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                title="Tout marquer comme lu"
+                title={t('notifications.mark_all_read_title')}
               >
-                Tout lire
+                {t('notifications.mark_all_read')}
               </button>
             )}
             <button onClick={closeDropdown} className="text-gray-500 transition dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
@@ -426,18 +389,18 @@ export default function NotificationDropdown() {
 
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <p className="text-gray-500 dark:text-gray-400">Chargement...</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('notifications.loading')}</p>
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center">
-            <p className="text-gray-500 dark:text-gray-400">Aucune notification</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('notifications.empty')}</p>
           </div>
         ) : (
           <ul className="flex flex-col h-auto overflow-y-auto custom-scrollbar">
             {notifications.map((notif) => {
               const senderName = notif.sender?.firstName && notif.sender?.lastName
                 ? `${notif.sender.firstName} ${notif.sender.lastName}`
-                : notif.sender?.name || 'Utilisateur';
+                : notif.sender?.name || t('notifications.default_sender');
 
               return (
                 <li key={notif.id}>
@@ -467,14 +430,14 @@ export default function NotificationDropdown() {
                       {/* Afficher la raison du rejet si nécessaire */}
                       {notif.type === NotificationType.ARTICLE_REJECTED && notif.data?.reason && (
                         <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-                          Raison : {notif.data.reason}
+                          {t('notifications.reason_label', { reason: notif.data.reason })}
                         </p>
                       )}
 
                       {/* Afficher l'info de modération */}
                       {notif.type === NotificationType.ARTICLE_PENDING_MODERATION && (
                         <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                          Votre article est en attente de modération
+                          {t('notifications.pending_moderation_info')}
                         </p>
                       )}
 
@@ -578,7 +541,7 @@ export default function NotificationDropdown() {
           className="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
           onClick={closeDropdown}
         >
-          Voir toutes les notifications
+          {t('notifications.see_all')}
         </Link>
       </Dropdown>
     </div>

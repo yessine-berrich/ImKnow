@@ -9,6 +9,7 @@ import {
   Flag, X, AlertTriangle,
 } from 'lucide-react';
 import Avatar from '../ui/avatar/Avatar';
+import { useTranslation } from '../../context/LanguageContext';
 import { followService } from '../../../services/follow.service';
 import { userService } from '../../../services/user.service';
 import type { UserReportReason } from '../../../services/user.service';
@@ -47,14 +48,6 @@ interface UserProfileHeaderProps {
 
 type FollowUIStatus = 'not-following' | 'follower' | 'following' | 'mutual';
 
-const reportReasons: { value: UserReportReason; label: string }[] = [
-  { value: 'harassment', label: 'Harcèlement ou intimidation' },
-  { value: 'spam', label: 'Spam ou arnaque' },
-  { value: 'inappropriate_content', label: 'Contenu inapproprié' },
-  { value: 'impersonation', label: "Usurpation d'identité" },
-  { value: 'other', label: 'Autre' },
-];
-
 export default function UserProfileHeader({
   user,
   stats,
@@ -68,7 +61,16 @@ export default function UserProfileHeader({
   hideUnfollow = false,
 }: UserProfileHeaderProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { canShowOnlineFor } = useChatContext();
+
+  const reportReasons: { value: UserReportReason; label: string }[] = [
+    { value: 'harassment', label: t('user_header.report_reason_harassment') },
+    { value: 'spam', label: t('user_header.report_reason_spam') },
+    { value: 'inappropriate_content', label: t('user_header.report_reason_inappropriate') },
+    { value: 'impersonation', label: t('user_header.report_reason_impersonation') },
+    { value: 'other', label: t('user_header.report_reason_other') },
+  ];
 
   const [followStatus, setFollowStatus] = useState<FollowUIStatus>('not-following');
   const [followersCount, setFollowersCount] = useState(propFollowersCount);
@@ -117,17 +119,17 @@ export default function UserProfileHeader({
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const handleFollow = async () => {
-    if (!currentUserId) return showToast('Connectez-vous pour suivre cet utilisateur', 'error');
+    if (!currentUserId) return showToast(t('user_header.login_to_follow'), 'error');
     setLoading(true);
     try {
       await followService.follow(targetUserId);
       const status = await followService.getStatus(targetUserId);
       if (status.isFollowing && status.isFollower) {
         setFollowStatus('mutual');
-        showToast('Vous êtes maintenant amis !', 'success');
+        showToast(t('user_header.now_friends'), 'success');
       } else {
         setFollowStatus('following');
-        showToast('Vous suivez maintenant cet utilisateur', 'success');
+        showToast(t('user_header.now_following'), 'success');
       }
       setFollowersCount((p) => p + 1);
     } catch (err: unknown) {
@@ -148,7 +150,7 @@ export default function UserProfileHeader({
       else if (status.isFollowing && !status.isFollower) setFollowStatus('following');
       else setFollowStatus('not-following');
       setFollowersCount((p) => Math.max(0, p - 1));
-      showToast('Vous ne suivez plus cet utilisateur', 'success');
+      showToast(t('user_header.unfollowed'), 'success');
       setShowOptions(false);
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : 'Erreur', 'error');
@@ -164,14 +166,14 @@ export default function UserProfileHeader({
 
   const handleReportSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!currentUserId) return showToast('Connectez-vous pour signaler cet utilisateur', 'error');
+    if (!currentUserId) return showToast(t('user_header.login_to_report'), 'error');
     setReportLoading(true);
     try {
       const result = await userService.reportUser(targetUserId, {
         reason: reportReason,
         details: reportDetails.trim() || undefined,
       });
-      showToast(result.message || 'Signalement envoyé', 'success');
+      showToast(result.message || t('user_header.request_sent'), 'success');
       setShowReportModal(false);
       setReportReason('harassment');
       setReportDetails('');
@@ -201,21 +203,21 @@ export default function UserProfileHeader({
       return (
         <button disabled className={`${baseButtonStyle} bg-gray-200 dark:bg-gray-700 text-gray-500 cursor-not-allowed`}>
           <Loader2 size={15} className="animate-spin" />
-          <span>Chargement…</span>
+          <span>{t('user_header.loading')}</span>
         </button>
       );
     }
     if (followStatus === 'not-following') {
       return (
         <button onClick={handleFollow} className={`${baseButtonStyle} bg-[#168F6F] text-white hover:bg-[#00B383]`}>
-          <UserPlus size={15} /><span>Suivre</span>
+          <UserPlus size={15} /><span>{t('user_header.follow')}</span>
         </button>
       );
     }
     if (followStatus === 'follower') {
       return (
         <button onClick={handleFollow} className={`${baseButtonStyle} bg-[#168F6F] text-white hover:bg-[#127a5f]`}>
-          <UserRoundCheck size={15} /><span>Suivre en retour</span>
+          <UserRoundCheck size={15} /><span>{t('user_header.follow_back')}</span>
         </button>
       );
     }
@@ -230,7 +232,7 @@ export default function UserProfileHeader({
           }`}
         >
           <UserCheck size={15} />
-          <span>{followStatus === 'mutual' ? 'Amis' : 'Abonné'}</span>
+          <span>{followStatus === 'mutual' ? t('user_header.friends_label') : t('user_header.subscribed')}</span>
         </button>
         {showOptions && !hideUnfollow && (
           <div className="absolute top-full mt-2 right-0 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 py-1.5 w-48 z-20">
@@ -238,7 +240,7 @@ export default function UserProfileHeader({
               onClick={handleUnfollow}
               className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
             >
-              <UserMinus size={14} />Ne plus suivre
+              <UserMinus size={14} />{t('user_header.unfollow')}
             </button>
           </div>
         )}
@@ -268,7 +270,7 @@ export default function UserProfileHeader({
                 {user.firstName} {user.lastName}
               </h1>
               <p className="text-base text-gray-500 dark:text-gray-400">
-                {user.role} · {user.department ?? 'Membre'}
+                {user.role} · {user.department ?? t('user_header.member')}
               </p>
             </div>
 
@@ -280,14 +282,14 @@ export default function UserProfileHeader({
                 {!isCurrentUser && (
                   <>
                     <button onClick={onFollowersClick} className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full hover:bg-[#168F6F]/20 transition-colors cursor-pointer">
-                      <span className="font-bold">{followersCount}</span> abonné{followersCount !== 1 ? 's' : ''}
+                      <span className="font-bold">{followersCount}</span> {followersCount !== 1 ? t('user_header.followers_plural') : t('user_header.followers_singular')}
                     </button>
                     <button onClick={onFollowingClick} className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full hover:bg-[#168F6F]/20 transition-colors cursor-pointer">
-                      <span className="font-bold">{followingCount}</span> abonnement{followingCount !== 1 ? 's' : ''}
+                      <span className="font-bold">{followingCount}</span> {followingCount !== 1 ? t('user_header.following_plural') : t('user_header.following_singular')}
                     </button>
                     {propFriendsCount > 0 && (
                       <button onClick={onFriendsClick} className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full hover:bg-[#168F6F]/20 transition-colors cursor-pointer">
-                        <span className="font-bold">{propFriendsCount}</span> ami{propFriendsCount !== 1 ? 's' : ''}
+                        <span className="font-bold">{propFriendsCount}</span> {propFriendsCount !== 1 ? t('user_header.friends_plural') : t('user_header.friends_singular')}
                       </button>
                     )}
                   </>
@@ -306,26 +308,26 @@ export default function UserProfileHeader({
                     }`}
                   >
                     {isFriend ? <Send size={15} /> : <MessageSquare size={15} />}
-                    <span>{isFriend ? 'Message' : 'Contacter'}</span>
+                    <span>{isFriend ? t('user_header.message') : t('user_header.contact')}</span>
                   </button>
                   <button
                     onClick={() => {
-                      if (!currentUserId) { showToast('Connectez-vous pour signaler cet utilisateur', 'error'); return; }
+                      if (!currentUserId) { showToast(t('user_header.login_to_report'), 'error'); return; }
                       setShowReportModal(true);
                     }}
                     className={`${baseButtonStyle} bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800`}
                     title="Signaler ce profil"
                   >
-                    <Flag size={15} /><span>Signaler</span>
+                    <Flag size={15} /><span>{t('user_header.report')}</span>
                   </button>
                 </div>
               )}
             </div>
 
             <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1.5"><Heart size={14} className="text-[#168F6F]" /><span>{stats.totalLikes} likes</span></span>
-              <span className="flex items-center gap-1.5"><MessageCircle size={14} className="text-[#168F6F]" /><span>{stats.totalComments} commentaires</span></span>
-              <span className="flex items-center gap-1.5"><Eye size={14} className="text-[#168F6F]" /><span>{stats.totalViews.toLocaleString()} vues</span></span>
+              <span className="flex items-center gap-1.5"><Heart size={14} className="text-[#168F6F]" /><span>{stats.totalLikes} {t('user_header.likes')}</span></span>
+              <span className="flex items-center gap-1.5"><MessageCircle size={14} className="text-[#168F6F]" /><span>{stats.totalComments} {t('user_header.comments')}</span></span>
+              <span className="flex items-center gap-1.5"><Eye size={14} className="text-[#168F6F]" /><span>{stats.totalViews.toLocaleString()} {t('user_header.views')}</span></span>
             </div>
           </div>
         </div>
@@ -343,7 +345,7 @@ export default function UserProfileHeader({
             lastSeenAt: user.lastSeenAt ?? undefined,
           }}
           onClose={() => setShowRequestModal(false)}
-          onSuccess={() => showToast('Demande envoyée avec succès', 'success')}
+          onSuccess={() => showToast(t('user_header.request_sent'), 'success')}
         />
       )}
 
@@ -357,20 +359,20 @@ export default function UserProfileHeader({
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Signaler {user.firstName} {user.lastName}
+                    {t('user_header.report_title', { name: `${user.firstName} ${user.lastName}` })}
                   </h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Votre signalement sera transmis à l'équipe de modération.
+                    {t('user_header.report_subtitle')}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setShowReportModal(false)} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300" aria-label="Fermer">
+              <button onClick={() => setShowReportModal(false)} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300" aria-label={t('user_header.close')}>
                 <X size={18} />
               </button>
             </div>
             <form onSubmit={handleReportSubmit} className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Motif</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('user_header.report_reason_label')}</label>
                 <select
                   value={reportReason}
                   onChange={(e) => setReportReason(e.target.value as UserReportReason)}
@@ -382,24 +384,24 @@ export default function UserProfileHeader({
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Détails</label>
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('user_header.report_details_label')}</label>
                 <textarea
                   value={reportDetails}
                   onChange={(e) => setReportDetails(e.target.value)}
                   maxLength={1000}
                   rows={4}
-                  placeholder="Ajoutez un contexte utile pour la modération..."
+                  placeholder={t('user_header.report_details_placeholder')}
                   className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                 />
                 <div className="mt-1 text-right text-xs text-gray-400">{reportDetails.length}/1000</div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setShowReportModal(false)} className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
-                  Annuler
+                  {t('user_header.cancel')}
                 </button>
                 <button type="submit" disabled={reportLoading} className="flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70">
                   {reportLoading && <Loader2 size={15} className="animate-spin" />}
-                  Envoyer le signalement
+                  {t('user_header.send_report')}
                 </button>
               </div>
             </form>

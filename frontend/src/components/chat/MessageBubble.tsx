@@ -4,7 +4,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChatMessage } from '../../../services/chat.service';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale';
 import UserAvatar from './UserAvatar';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -100,6 +102,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
+  const { t, language } = useTranslation();
+  const dateLocale = language === 'fr' ? fr : enUS;
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -161,7 +165,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   };
 
   const getDisplayFilename = (): string => {
-    const name = message.filename ?? 'Fichier';
+    const name = message.filename ?? t('chat.file_default');
     return name.length > 30 ? `${name.substring(0, 27)}…` : name;
   };
 
@@ -178,7 +182,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-sm underline opacity-80 hover:opacity-100"
                 >
-                  🖼️ Voir l'image
+                  🖼️ {t('chat.view_image')}
                 </a>
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -214,7 +218,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   className="absolute bottom-4 right-4 text-white bg-black/40 hover:bg-black/60 rounded-lg px-3 py-1.5 text-xs transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Ouvrir l'original
+                  {t('chat.open_original')}
                 </a>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -312,13 +316,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       onClick={() => setIsEditing(false)}
                       className="text-xs px-2 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
                     >
-                      Annuler
+                      {t('chat.edit_cancel')}
                     </button>
                     <button
                       onClick={handleEdit}
                       className="text-xs px-2 py-1 bg-[#00926B] text-white rounded-md hover:bg-[#00B383] transition-colors"
                     >
-                      Enregistrer
+                      {t('chat.edit_save')}
                     </button>
                   </div>
                 </div>
@@ -335,10 +339,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     <span>
                       {formatDistanceToNow(new Date(message.createdAt), {
                         addSuffix: true,
-                        locale: fr,
+                        locale: dateLocale,
                       })}
                     </span>
-                    {message.isEdited && <span>(modifié)</span>}
+                    {message.isEdited && <span>{t('chat.edited')}</span>}
                     {isOwn && (
                       <span className="ml-1">{message.isRead ? '✓✓' : '✓'}</span>
                     )}

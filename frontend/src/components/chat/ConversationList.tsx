@@ -7,6 +7,7 @@ import { Conversation } from '../../../services/chat.service';
 import { getFullName, getInitials } from '../../utils/chat.utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useChatContext } from '../../context/ChatContext';
+import { useTranslation } from '../../context/LanguageContext';
 import { Pin, BellOff } from 'lucide-react';
 
 interface ConversationListProps {
@@ -23,6 +24,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
   loading,
 }) => {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const { t } = useTranslation();
   const { canShowOnlineFor } = useChatContext();
 
   useEffect(() => {
@@ -56,9 +58,9 @@ const ConversationList: React.FC<ConversationListProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
         </div>
-        <p className="text-gray-500 dark:text-gray-400 font-medium">No messages yet</p>
+        <p className="text-gray-500 dark:text-gray-400 font-medium">{t('chat.no_msgs_yet')}</p>
         <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-          Start a conversation with someone
+          {t('chat.start_conversation')}
         </p>
       </div>
     );
@@ -119,7 +121,7 @@ const ConversationList: React.FC<ConversationListProps> = ({
                 <div className="flex justify-between items-center mt-1">
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                     {lastMessage?.senderId === currentUserId && (
-                      <span className="font-medium">You: </span>
+                      <span className="font-medium">{t('chat.you_prefix')}</span>
                     )}
                     {lastMessage?.type === 'image'
                       ? '📷 Photo'

@@ -15,6 +15,7 @@ import { Plus, Menu, BookOpen, Sparkles } from "lucide-react";
 import MessageDropdown from "@/components/header/MessageDropdown";
 import DraftArticlesModal from "@/components/modals/Draftarticlesmodal";
 import Avatar from "@/components/ui/avatar/Avatar";
+import { useTranslation } from "@/context/LanguageContext";
 
 // Interface pour les résultats de recherche (adaptée au format du backend)
 interface SearchResult {
@@ -54,6 +55,7 @@ const AppHeader: React.FC = () => {
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   // ── Recherche sémantique ──
   const [searchQuery, setSearchQuery] = useState("");
@@ -256,7 +258,7 @@ const AppHeader: React.FC = () => {
                     setShowResults(true);
                   }}
                   onFocus={() => setShowResults(true)}
-                  placeholder="Rechercher des articles, utilisateurs, tags... (⌘K)"
+                  placeholder={t('header.search_placeholder')}
                   className="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-200 bg-transparent py-2.5 pl-12 pr-14 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-800 dark:bg-gray-900 dark:bg-white/[0.03] dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
                 />
 
@@ -274,13 +276,13 @@ const AppHeader: React.FC = () => {
                 >
                   {isSearching ? (
                     <div className="p-4 text-center text-gray-500 dark:text-gray-400">
-                      Recherche en cours...
+                      {t('header.searching')}
                     </div>
                   ) : !searchResults || totalResults === 0 ? (
                     <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                       {searchQuery.trim()
-                        ? "Aucun résultat trouvé"
-                        : "Commencez à taper pour rechercher"}
+                        ? t('header.no_results')
+                        : t('header.start_typing')}
                     </div>
                   ) : (
                     <div className="py-2">
@@ -288,7 +290,7 @@ const AppHeader: React.FC = () => {
                       {searchResults.articles && searchResults.articles.length > 0 && (
                         <div>
                           <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-                            ARTICLES ({searchResults.articles.length})
+                            {t('header.section_articles', { count: searchResults.articles.length })}
                           </div>
                           {searchResults.articles.map((article) => (
                             <button
@@ -306,7 +308,7 @@ const AppHeader: React.FC = () => {
                               )}
                               {article.similarity !== undefined && (
                                 <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                  Pertinence : {(article.similarity * 100).toFixed(0)}%
+                                  {t('header.relevance', { percent: (article.similarity * 100).toFixed(0) })}
                                 </span>
                               )}
                             </button>
@@ -318,7 +320,7 @@ const AppHeader: React.FC = () => {
                       {searchResults.users && searchResults.users.length > 0 && (
                         <div>
                           <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-                            UTILISATEURS ({searchResults.users.length})
+                            {t('header.section_users', { count: searchResults.users.length })}
                           </div>
                           {searchResults.users.map((user) => (
                             <button
@@ -328,7 +330,7 @@ const AppHeader: React.FC = () => {
                             >
                               <Avatar
                                 src={user.profileImage}
-                                alt={`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || 'Utilisateur'}
+                                alt={`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || t('user_dropdown.user_label')}
                                 size="small"
                               />
                               <div>
@@ -348,7 +350,7 @@ const AppHeader: React.FC = () => {
                       {searchResults.categories && searchResults.categories.length > 0 && (
                         <div>
                           <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-                            CATÉGORIES ({searchResults.categories.length})
+                            {t('header.section_categories', { count: searchResults.categories.length })}
                           </div>
                           {searchResults.categories.map((category) => (
                             <button
@@ -366,7 +368,7 @@ const AppHeader: React.FC = () => {
                               )}
                               {category.articlesCount !== undefined && (
                                 <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                  {category.articlesCount} article{category.articlesCount > 1 ? 's' : ''}
+                                  {t(category.articlesCount > 1 ? 'header.article_count_plural' : 'header.article_count_one', { count: category.articlesCount })}
                                 </span>
                               )}
                             </button>
@@ -378,7 +380,7 @@ const AppHeader: React.FC = () => {
                       {searchResults.tags && searchResults.tags.length > 0 && (
                         <div>
                           <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-                            TAGS ({searchResults.tags.length})
+                            {t('header.section_tags', { count: searchResults.tags.length })}
                           </div>
                           {searchResults.tags.map((tag) => (
                             <button
@@ -391,7 +393,7 @@ const AppHeader: React.FC = () => {
                               </span>
                               {tag.articlesCount !== undefined && (
                                 <span className="block text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                                  {tag.articlesCount} article{tag.articlesCount > 1 ? 's' : ''}
+                                  {t(tag.articlesCount > 1 ? 'header.article_count_plural' : 'header.article_count_one', { count: tag.articlesCount })}
                                 </span>
                               )}
                             </button>
@@ -423,7 +425,7 @@ const AppHeader: React.FC = () => {
               <button
                 onClick={() => setIsAIAssistantOpen(true)}
                 className="relative flex items-center justify-center h-11 w-11 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-500 transition-colors hover:bg-[#168F6F]/10 hover:text-[#168F6F] hover:border-[#168F6F]/30 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-[#168F6F]/20 dark:hover:text-[#168F6F]"
-                title="Assistant IA"
+                title={t('header.ai_assistant')}
               >
                 <Sparkles size={20} />
               </button>
@@ -432,7 +434,7 @@ const AppHeader: React.FC = () => {
               <button
                 onClick={() => setDraftModalOpen(true)}
                 className="relative flex items-center justify-center h-11 w-11 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-500 transition-colors hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
-                title="Mes brouillons"
+                title={t('header.my_drafts')}
               >
                 <BookOpen size={20} />
               </button>
@@ -441,7 +443,7 @@ const AppHeader: React.FC = () => {
               <button
                 onClick={() => setCreateModalOpen(true)}
                 className="relative flex items-center justify-center h-11 w-11 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                title="Ajouter un article"
+                title={t('header.add_article')}
               >
                 <Plus size={20} />
               </button>

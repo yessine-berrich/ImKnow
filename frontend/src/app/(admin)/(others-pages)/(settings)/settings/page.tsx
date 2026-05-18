@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, Lock, Palette } from 'lucide-react';
+import { User, Lock, Palette, Bell } from 'lucide-react';
 import ProfileTab from '@/components/settings/ProfileTab';
 import SecurityTab from '@/components/settings/SecurityTab';
 import AppearanceTab from '@/components/settings/AppearanceTab';
+import NotificationsTab from '@/components/settings/NotificationsTab';
 import { getToken } from '../../../../../../services/auth.service';
 import { useUser } from '@/context/UserContext';
 import { useTranslation } from '@/context/LanguageContext';
@@ -12,7 +13,16 @@ import { useTranslation } from '@/context/LanguageContext';
 export default function SettingsPage() {
   const { t, language: currentLang, setLanguage } = useTranslation();
   const { user: userData, loading } = useUser();
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications'>('profile');
+
+  const [notifications, setNotifications] = useState({
+    email: true,
+    push: false,
+    comments: true,
+    likes: true,
+    follows: true,
+    newsletter: false,
+  });
 
   const [security, setSecurity] = useState({
     currentPassword: '',
@@ -21,9 +31,14 @@ export default function SettingsPage() {
     twoFactorEnabled: false,
   });
 
+  const handleNotificationToggle = (field: keyof typeof notifications) => {
+    setNotifications(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
   const tabs = [
     { id: 'profile', label: t('profile.title'), icon: User },
     { id: 'security', label: t('security.title'), icon: Lock },
+    { id: 'notifications', label: t('notifications.title'), icon: Bell },
     { id: 'appearance', label: t('appearance.title'), icon: Palette },
   ] as const;
 
@@ -130,7 +145,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-1 mb-6">
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -181,8 +196,15 @@ export default function SettingsPage() {
             />
           )}
           
+          {activeTab === 'notifications' && (
+            <NotificationsTab
+              notifications={notifications}
+              onToggle={handleNotificationToggle}
+            />
+          )}
+
           {activeTab === 'appearance' && (
-            <AppearanceTab 
+            <AppearanceTab
               language={userData.language || currentLang}
               timezone={userData.timezone || 'Europe/Paris'}
               onLanguageChange={handleLanguageChange}

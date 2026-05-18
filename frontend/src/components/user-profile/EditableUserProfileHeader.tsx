@@ -5,6 +5,7 @@ import { toast } from '@/components/modals/ToastContainer';
 import { useState, useMemo, useEffect } from 'react';
 import Avatar from '../ui/avatar/Avatar';
 import { resolveProfileImageSrc } from '@/utils/profile-image';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface EditableUserProfileHeaderProps {
   user: {
@@ -46,6 +47,7 @@ export default function EditableUserProfileHeader({
   onFollowingClick,
   onFriendsClick,
 }: EditableUserProfileHeaderProps) {
+  const { t } = useTranslation();
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -70,12 +72,12 @@ export default function EditableUserProfileHeader({
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("L'image est trop volumineuse. Maximum 5 Mo.");
+      toast.error(t('profile_header.image_too_large'));
       return;
     }
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
-      toast.error("Format non supporté. Utilisez JPEG, PNG, GIF ou WebP.");
+      toast.error(t('profile_header.unsupported_format'));
       return;
     }
 
@@ -147,19 +149,19 @@ export default function EditableUserProfileHeader({
               onClick={onFollowersClick}
               className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full hover:bg-[#168F6F]/20 dark:hover:bg-[#168F6F]/30 transition-colors"
             >
-              <span className="font-bold">{followersCount}</span> abonné{followersCount !== 1 ? 's' : ''}
+              <span className="font-bold">{followersCount}</span> {followersCount !== 1 ? t('profile_header.followers_plural') : t('profile_header.followers_singular')}
             </button>
             <button
               onClick={onFollowingClick}
               className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full hover:bg-[#168F6F]/20 dark:hover:bg-[#168F6F]/30 transition-colors"
             >
-              <span className="font-bold">{followingCount}</span> abonnement{followingCount !== 1 ? 's' : ''}
+              <span className="font-bold">{followingCount}</span> {followingCount !== 1 ? t('profile_header.following_plural') : t('profile_header.following_singular')}
             </button>
             <button
               onClick={onFriendsClick}
               className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full hover:bg-[#168F6F]/20 dark:hover:bg-[#168F6F]/30 transition-colors"
             >
-              <span className="font-bold">{friendsCount}</span> ami{friendsCount !== 1 ? 's' : ''}
+              <span className="font-bold">{friendsCount}</span> {friendsCount !== 1 ? t('profile_header.friends_plural') : t('profile_header.friends_singular')}
             </button>
           </div>
 
@@ -167,15 +169,15 @@ export default function EditableUserProfileHeader({
           <div className="flex flex-wrap gap-4 mb-4">
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Heart size={16} className="text-[#168F6F] dark:text-[#00B383]" />
-              <span>{stats.totalLikes} likes</span>
+              <span>{stats.totalLikes} {t('profile_header.likes')}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <MessageCircle size={16} className="text-[#168F6F] dark:text-[#00B383]" />
-              <span>{stats.totalComments} commentaires</span>
+              <span>{stats.totalComments} {t('profile_header.comments')}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               <Eye size={16} className="text-[#168F6F] dark:text-[#00B383]" />
-              <span>{stats.totalViews.toLocaleString()} vues</span>
+              <span>{stats.totalViews.toLocaleString()} {t('profile_header.views')}</span>
             </div>
           </div>
         </div>
@@ -188,7 +190,7 @@ export default function EditableUserProfileHeader({
               className="flex items-center gap-2 px-5 py-2.5 bg-[#168F6F] text-white rounded-lg hover:bg-[#00B383] transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Edit size={18} />
-              <span className="font-medium">Modifier le profil</span>
+              <span className="font-medium">{t('profile_header.edit_profile')}</span>
             </button>
           </div>
         )}
@@ -197,7 +199,7 @@ export default function EditableUserProfileHeader({
       {isCurrentUser && previewImage && (
         <div className="mt-3 p-2 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm rounded-lg flex items-center gap-2">
           <div className="w-3 h-3 bg-[#168F6F] rounded-full animate-pulse" />
-          <span>Image sélectionnée. Cliquez sur « Modifier le profil » pour sauvegarder.</span>
+          <span>{t('profile_header.image_selected')}</span>
         </div>
       )}
     </div>

@@ -16,6 +16,7 @@ import {
 
 import ArticleCard from '@/components/article/ArticleCard';
 import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
+import { useTranslation } from '@/context/LanguageContext';
 
 
 // ============================================
@@ -29,6 +30,7 @@ const API_URL = 'http://localhost:3000'; // Backend NestJS
 
 export default function LikedArticlesPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   
   // États
   const [articles, setArticles] = useState<any[]>([]);
@@ -102,7 +104,7 @@ export default function LikedArticlesPage() {
 
         // Transformation des données
         const formattedArticles = data.articles.map((article: any) => {
-          const authorName = article.author?.name || 'Utilisateur';
+          const authorName = article.author?.name || t('activity_common.default_author');
           const initials = authorName
             .split(' ')
             .map((n: string) => n[0])
@@ -129,11 +131,11 @@ export default function LikedArticlesPage() {
               id: article.author?.id,
               name: authorName,
               initials: initials,
-              department: article.author?.department || 'Membre',
+              department: article.author?.department || t('activity_common.default_department'),
               avatar: article.author?.avatar || null
             },
             category: {
-              name: article.category?.name || 'Non classé',
+              name: article.category?.name || t('activity_common.uncategorized'),
               slug: article.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'non-classe'
             },
             tags: article.tags || [],
@@ -241,7 +243,7 @@ export default function LikedArticlesPage() {
   };
 
   const handleDelete = async (articleId: string) => {
-    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm(t('activity_common.delete_confirm'))) return;
     
     try {
       const token = getToken();
@@ -312,7 +314,7 @@ export default function LikedArticlesPage() {
           <div className="text-center">
             <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
             <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              Chargement de vos articles aimés...
+              {t('liked.loading')}
             </p>
           </div>
         </div>
@@ -336,7 +338,7 @@ export default function LikedArticlesPage() {
               <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/20">
                 <Heart className="h-5 w-5 text-red-600 dark:text-red-400 fill-current" />
               </span>
-              Articles aimés
+              {t('liked.title')}
             </h1>
             {totalCount > 0 && (
               <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-600 dark:bg-red-900/20 dark:text-red-400">
@@ -345,9 +347,11 @@ export default function LikedArticlesPage() {
             )}
           </div>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {totalCount === 0 
-              ? "Vous n'avez pas encore aimé d'articles"
-              : `${totalCount} article${totalCount > 1 ? 's' : ''} dans votre collection`
+            {totalCount === 0
+              ? t('liked.count_none')
+              : totalCount === 1
+                ? t('liked.count_one', { count: totalCount })
+                : t('liked.count_plural', { count: totalCount })
             }
           </p>
         </div>
@@ -369,26 +373,26 @@ export default function LikedArticlesPage() {
             <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400" />
           </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            {error === 'Session expirée' ? 'Session expirée' : 'Erreur de chargement'}
+            {error === 'Session expirée' ? t('activity_common.session_expired') : t('activity_common.load_error')}
           </h3>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            {error === 'Session expirée' 
-              ? 'Veuillez vous reconnecter'
-              : 'Impossible de charger vos articles aimés'}
+            {error === 'Session expirée'
+              ? t('activity_common.reconnect')
+              : t('liked.load_error')}
           </p>
           {error === 'Session expirée' ? (
             <Link
               href="/auth/signin"
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
-              Se connecter
+              {t('activity_common.login')}
             </Link>
           ) : (
             <button
               onClick={fetchLikedArticles}
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
-              Réessayer
+              {t('activity_common.retry')}
             </button>
           )}
         </div>
@@ -401,16 +405,16 @@ export default function LikedArticlesPage() {
             <Heart className="h-12 w-12 text-gray-400 dark:text-gray-500" />
           </div>
           <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-white">
-            Aucun article aimé
+            {t('liked.empty_title')}
           </h3>
           <p className="mb-6 text-gray-600 dark:text-gray-400">
-            Explorez notre base de connaissances et likez vos articles préférés !
+            {t('liked.empty_desc')}
           </p>
           <Link
             href="/articles"
             className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
           >
-            Explorer les articles
+            {t('activity_common.explore_articles')}
           </Link>
         </div>
       )}

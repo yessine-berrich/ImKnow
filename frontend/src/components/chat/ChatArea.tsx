@@ -1,6 +1,8 @@
 // components/chat/ChatArea.tsx
+'use client';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ChatMessage, MessageType, MessageRequestStatus } from '../../../services/chat.service';
+import { useTranslation } from '../../context/LanguageContext';
 import LoadingSpinner from './LoadingSpinner';
 import MessageBubble from './MessageBubble';
 
@@ -41,6 +43,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   messagesEndRef,
   onRespondToRequest,
 }) => {
+  const { t } = useTranslation();
   const participantName =
     participant?.fullName ||
     (participant?.firstName || participant?.lastName
@@ -94,8 +97,8 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   const formatDateHeader = (dateKey: string): string => {
     const today = new Date().toLocaleDateString();
     const yesterday = new Date(Date.now() - 86_400_000).toLocaleDateString();
-    if (dateKey === today) return "Aujourd'hui";
-    if (dateKey === yesterday) return 'Hier';
+    if (dateKey === today) return t('chat.today');
+    if (dateKey === yesterday) return t('chat.yesterday');
     return dateKey;
   };
 
@@ -126,7 +129,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             <LoadingSpinner size="sm" />
           ) : (
             <span className="text-xs text-gray-500 dark:text-gray-400">
-              Défiler vers le haut pour charger les anciens messages
+              {t('chat.scroll_older')}
             </span>
           )}
         </div>
@@ -168,7 +171,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                       <div className="text-2xl flex-shrink-0">📩</div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {isReceiver ? 'Demande de contact' : 'Demande envoyée'}
+                          {isReceiver ? t('chat.request_received') : t('chat.request_sent')}
                         </p>
                         {message.content && (
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
@@ -179,12 +182,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                         {/* Statut */}
                         {isAccepted && (
                           <span className="inline-flex items-center gap-1 mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                            ✓ Acceptée
+                            ✓ {t('chat.request_accepted')}
                           </span>
                         )}
                         {isDeclined && (
                           <span className="inline-flex items-center gap-1 mt-2 text-xs text-red-500 dark:text-red-400 font-medium">
-                            ✕ Refusée
+                            ✕ {t('chat.request_declined')}
                           </span>
                         )}
 
@@ -195,13 +198,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({
                               onClick={() => onRespondToRequest(message.id, 'accepted')}
                               className="flex-1 py-1.5 text-xs font-semibold bg-[#00926B] hover:bg-[#007a5a] text-white rounded-lg transition-colors"
                             >
-                              Accepter
+                              {t('chat.accept')}
                             </button>
                             <button
                               onClick={() => onRespondToRequest(message.id, 'declined')}
                               className="flex-1 py-1.5 text-xs font-semibold bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors"
                             >
-                              Refuser
+                              {t('chat.decline')}
                             </button>
                           </div>
                         )}

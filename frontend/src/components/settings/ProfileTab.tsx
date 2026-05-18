@@ -178,7 +178,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
       
       // Valide le numéro
       if (formattedValue && !validatePhoneNumber(formattedValue)) {
-        setPhoneError(t('profile.invalid_phone') || 'Numéro de téléphone invalide');
+        setPhoneError(t('profile.invalid_phone'));
       } else {
         setPhoneError('');
       }
@@ -220,16 +220,16 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
   const handleSubmit = async () => {
     // Vérifier les champs obligatoires
     if (!validateRequiredFields()) {
-      toast.error('Error updating profile.');
+      toast.error(t('profile.error_message'));
       return;
     }
-    
+
     // Validation du téléphone avant soumission
     if (profile.phone && !validatePhoneNumber(profile.phone)) {
-      setPhoneError(t('profile.invalid_phone') || 'Veuillez entrer un numéro de téléphone valide');
+      setPhoneError(t('profile.invalid_phone'));
       triggerBlinkAnimation('phone');
       scrollToElement(phoneRef.current);
-      toast.error('Error updating profile.');
+      toast.error(t('profile.error_message'));
       return;
     }
 
@@ -288,7 +288,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
       toast.success(t('profile.success_message'));
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Error updating profile.');
+      toast.error(t('profile.error_message'));
     } finally {
       setIsSubmitting(false);
     }
@@ -436,7 +436,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
               {emptyFields.includes('firstName') && (
                 <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                   <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
-                  {t('profile.required_field') || 'Ce champ est obligatoire'}
+                  {t('profile.required_field')}
                 </p>
               )}
             </div>
@@ -461,7 +461,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
               {emptyFields.includes('lastName') && (
                 <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                   <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
-                  {t('profile.required_field') || 'Ce champ est obligatoire'}
+                  {t('profile.required_field')}
                 </p>
               )}
             </div>
@@ -501,7 +501,7 @@ export default function ProfileTab({ currentProfile, userId, onSave }: ProfileTa
                   onChange={handleInputChange}
                   disabled={isSubmitting}
                   className={getFieldClassName('phone', !!phoneError)}
-                  placeholder={t('profile.phone_placeholder') || '+33 6 12 34 56 78'}
+                  placeholder={t('profile.phone_placeholder')}
                 />
               </div>
               {phoneError && (

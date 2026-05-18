@@ -13,7 +13,7 @@ type NestedKeyOf<T> = T extends object
     }[keyof T]
   : never;
 
-type TranslationKeys = NestedKeyOf<typeof resources.fr.settings>;
+type TranslationKeys = NestedKeyOf<typeof resources.fr>;
 
 interface LanguageContextType {
   language: Language;
@@ -45,8 +45,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const t = (key: TranslationKeys, params?: Record<string, string | number>): string => {
     const keys = key.split('.');
-    let value: any = resources[language]?.settings;
-    
+    let value: any = resources[language];
+
     for (const k of keys) {
       if (value && typeof value === 'object') {
         value = value[k];
@@ -58,7 +58,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     if (!value) {
       // Fallback to French if translation not found
-      let fallbackValue: any = resources.fr.settings;
+      let fallbackValue: any = resources.fr;
       for (const k of keys) {
         if (fallbackValue && typeof fallbackValue === 'object') {
           fallbackValue = fallbackValue[k];
@@ -71,8 +71,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (params && typeof value === 'string') {
-      return value.replace(/\{(\w+)\}/g, (_, match) => {
-        return String(params[match] ?? `{${match}}`);
+      return value.replace(/\{\{(\w+)\}\}/g, (_, match) => {
+        return String(params[match] ?? `{{${match}}}`);
       });
     }
 

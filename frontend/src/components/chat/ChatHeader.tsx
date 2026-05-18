@@ -8,6 +8,7 @@ import { Conversation } from '../../../services/chat.service';
 import { getFullName, getInitials } from '../../utils/chat.utils';
 import { userService, User } from '../../../services/user.service';
 import { Search, MoreVertical, Trash2, ShieldOff, Shield, Pin, PinOff, BellOff, Bell } from 'lucide-react';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface ChatHeaderProps {
   conversation: Conversation;
@@ -20,26 +21,6 @@ interface ChatHeaderProps {
   onToggleMute: () => void;
 }
 
-const formatLastSeen = (lastSeenAt: Date | string | null | undefined): string => {
-  if (!lastSeenAt) return "Dernière connexion inconnue";
-  try {
-    const lastSeen = new Date(lastSeenAt);
-    if (isNaN(lastSeen.getTime())) return "Dernière connexion inconnue";
-    const now = new Date();
-    const diffInMs = now.getTime() - lastSeen.getTime();
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    if (diffInMinutes < 1) return "Vu à l'instant";
-    if (diffInMinutes < 60) return `Vu il y a ${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`;
-    if (diffInHours < 24) return `Vu il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
-    if (diffInDays === 1) return "Vu hier";
-    if (diffInDays < 7) return `Vu il y a ${diffInDays} jours`;
-    return `Vu le ${lastSeen.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`;
-  } catch {
-    return "Dernière connexion inconnue";
-  }
-};
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
   conversation,
@@ -51,6 +32,34 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   onTogglePin,
   onToggleMute,
 }) => {
+  const { t, language } = useTranslation();
+
+  const formatLastSeen = (lastSeenAt: Date | string | null | undefined): string => {
+    if (!lastSeenAt) return t('chat.last_seen_unknown');
+    try {
+      const lastSeen = new Date(lastSeenAt);
+      if (isNaN(lastSeen.getTime())) return t('chat.last_seen_unknown');
+      const now = new Date();
+      const diffInMs = now.getTime() - lastSeen.getTime();
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      if (diffInMinutes < 1) return t('chat.seen_just_now');
+      if (diffInMinutes < 60) return diffInMinutes === 1
+        ? t('chat.seen_minutes_one', { count: diffInMinutes })
+        : t('chat.seen_minutes_plural', { count: diffInMinutes });
+      if (diffInHours < 24) return diffInHours === 1
+        ? t('chat.seen_hours_one', { count: diffInHours })
+        : t('chat.seen_hours_plural', { count: diffInHours });
+      if (diffInDays === 1) return t('chat.seen_yesterday');
+      if (diffInDays < 7) return t('chat.seen_days', { count: diffInDays });
+      const dateLocale = language === 'fr' ? 'fr-FR' : 'en-US';
+      return t('chat.seen_on', { date: lastSeen.toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' }) });
+    } catch {
+      return t('chat.last_seen_unknown');
+    }
+  };
+
   const otherUser = conversation?.participant;
   const [userDetails, setUserDetails] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -118,11 +127,11 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               <h2 className="font-semibold text-gray-900 dark:text-white">{displayName}</h2>
             </Link>
             {isBlocked ? (
-              <p className="text-xs text-red-500">Utilisateur bloqué</p>
+              <p className="text-xs text-red-500">{t('chat.user_blocked_label')}</p>
             ) : canChat && isUserOnline ? (
               <p className="text-xs text-green-500 flex items-center gap-1">
                 <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                En ligne
+                {t('chat.online')}
               </p>
             ) : canChat ? (
               <p className="text-xs text-gray-400">{formatLastSeen(lastSeenAt)}</p>
@@ -135,7 +144,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
           <button
             onClick={onSearchClick}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            title="Rechercher"
+            title={t('chat.search_title')}
           >
             <Search size={18} />
           </button>
@@ -145,7 +154,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             <button
               onClick={() => { setMenuOpen(v => !v); setConfirmDelete(false); }}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Plus d'options"
+              title={t('chat.more_options')}
             >
               <MoreVertical size={18} />
             </button>
@@ -158,7 +167,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   {conversation.isPinned ? <PinOff size={15} /> : <Pin size={15} />}
-                  {conversation.isPinned ? 'Désépingler' : 'Épingler'}
+                  {conversation.isPinned ? t('chat.unpin') : t('chat.pin')}
                 </button>
 
                 {/* Mute / Unmute */}
@@ -167,7 +176,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   {conversation.isMuted ? <Bell size={15} /> : <BellOff size={15} />}
-                  {conversation.isMuted ? 'Réactiver les notifications' : 'Mettre en sourdine'}
+                  {conversation.isMuted ? t('chat.unmute') : t('chat.mute')}
                 </button>
 
                 <div className="h-px bg-gray-100 dark:bg-gray-700 mx-2" />
@@ -182,7 +191,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                     }`}
                 >
                   {isBlocked ? <ShieldOff size={15} /> : <Shield size={15} />}
-                  {isBlocked ? 'Débloquer' : 'Bloquer'}
+                  {isBlocked ? t('chat.unblock') : t('chat.block')}
                 </button>
 
                 <div className="h-px bg-gray-100 dark:bg-gray-700 mx-2" />
@@ -194,25 +203,25 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <Trash2 size={15} />
-                    Supprimer la conversation
+                    {t('chat.delete_conv_action')}
                   </button>
                 ) : (
                   <div className="px-4 py-3 space-y-2">
                     <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      Supprimer tous les messages ?
+                      {t('chat.delete_confirm_msg')}
                     </p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => { onDeleteConversation(); setMenuOpen(false); setConfirmDelete(false); }}
                         className="flex-1 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-colors"
                       >
-                        Supprimer
+                        {t('chat.delete')}
                       </button>
                       <button
                         onClick={() => setConfirmDelete(false)}
                         className="flex-1 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs font-semibold transition-colors"
                       >
-                        Annuler
+                        {t('chat.cancel')}
                       </button>
                     </div>
                   </div>

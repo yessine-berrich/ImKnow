@@ -1,6 +1,7 @@
 'use client';
 
 import { BookOpen, Heart, Award, Star, MessageCircle, Eye } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface UserStatsCardProps {
   stats: {
@@ -12,8 +13,9 @@ interface UserStatsCardProps {
 }
 
 export default function UserStatsCard({ stats }: UserStatsCardProps) {
-  // Calcul des métriques dérivées
-  const engagementRate = stats.totalArticles > 0 
+  const { t } = useTranslation();
+
+  const engagementRate = stats.totalArticles > 0
     ? Math.round((stats.totalLikes + stats.totalComments) / stats.totalArticles * 10) / 10
     : 0;
   
@@ -31,7 +33,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
       <h3 className="mb-5 text-lg font-semibold text-gray-800 dark:text-white/90">
-        Statistiques
+        {t('stats_card.title')}
       </h3>
       
       <div className="grid grid-cols-2 gap-4">
@@ -43,7 +45,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           {stats.totalArticles}
         </h4>
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          Articles
+          {t('stats_card.articles')}
         </span>
       </div>
        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
@@ -60,7 +62,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           {formatNumber(stats.totalComments)}
         </h4>
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          Commentaires
+          {t('stats_card.comments')}
         </span>
       </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
@@ -77,7 +79,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           {formatNumber(stats.totalLikes)}
         </h4>
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          J'aime
+          {t('stats_card.likes')}
         </span>
       </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 dark:bg-rose-900/20">
@@ -94,7 +96,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
           {formatNumber(stats.totalViews)}
         </h4>
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          Vues
+          {t('stats_card.views')}
         </span>
       </div>
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
@@ -111,7 +113,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
             {/* Taux d'engagement */}
             <div className="text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Engagement / article
+                {t('stats_card.engagement_per_article')}
               </p>
               <div className="flex items-center justify-center gap-1">
                 <Award className="h-4 w-4 text-[#168F6F]" />
@@ -127,7 +129,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
             {/* Moyenne de vues */}
             <div className="text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                Vues / article
+                {t('stats_card.views_per_article')}
               </p>
               <div className="flex items-center justify-center gap-1">
                 <Star className="h-4 w-4 text-[#168F6F]" />
@@ -136,7 +138,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Moyenne par article
+                {t('stats_card.avg_per_article')}
               </p>
             </div>
           </div>

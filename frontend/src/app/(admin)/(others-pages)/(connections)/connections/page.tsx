@@ -13,6 +13,7 @@ import Avatar from '@/components/ui/avatar/Avatar';
 import SendMessageRequestModal from '@/components/chat/SendMessageRequestModal';
 import { followService, FollowRelationshipDto, FollowStatsDto, FriendSuggestionDto } from '../../../../../../services/follow.service';
 import { confirm } from '@/components/modals/ConfirmModal';
+import { useTranslation } from '@/context/LanguageContext';
 
 type TabType = 'followers' | 'following' | 'friends' | 'suggestions';
 type ViewType = 'grid' | 'list';
@@ -34,7 +35,9 @@ function UserCard({
   onRemoveFollower,
   onDismiss,
   onMessage,
-  onViewProfile
+  onViewProfile,
+  t,
+  language,
 }: {
   user: any;
   isFriend: boolean;
@@ -50,6 +53,8 @@ function UserCard({
   onDismiss?: (userId: number) => void;
   onMessage: (userId: number, isFriend: boolean) => void;
   onViewProfile: (userId: number) => void;
+  t: (key: any, params?: any) => string;
+  language: string;
 }) {
   const fullName = `${user.firstName} ${user.lastName}`;
 
@@ -62,11 +67,11 @@ function UserCard({
           className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-medium"
         >
           {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserMinus size={16} />}
-          <span className="hidden sm:inline">Retirer</span>
+          <span className="hidden sm:inline">{t('connections.remove')}</span>
         </button>
       );
     }
-    
+
     if (activeTab === 'following' || activeTab === 'friends') {
       return (
         <button
@@ -75,11 +80,11 @@ function UserCard({
           className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-medium"
         >
           {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
-          <span className="hidden sm:inline">Suivi</span>
+          <span className="hidden sm:inline">{t('connections.following_label')}</span>
         </button>
       );
     }
-    
+
     if (activeTab === 'suggestions') {
       if (isFollowing) {
         return (
@@ -89,7 +94,7 @@ function UserCard({
             className="flex-1 px-3 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-medium"
           >
             {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
-            <span className="hidden sm:inline">Suivi</span>
+            <span className="hidden sm:inline">{t('connections.following_label')}</span>
           </button>
         );
       }
@@ -101,7 +106,7 @@ function UserCard({
           style={{ backgroundColor: PRIMARY_COLOR }}
         >
           {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
-          <span className="hidden sm:inline">Suivre</span>
+          <span className="hidden sm:inline">{t('connections.follow')}</span>
         </button>
       );
     }
@@ -137,11 +142,11 @@ function UserCard({
                 </h3>
                 {isFriend && (
                   <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs font-medium rounded-full inline-flex items-center gap-1">
-                    <Heart size={10} /> Ami
+                    <Heart size={10} /> {t('connections.friend')}
                   </span>
                 )}
                 {user.isOnline && (
-                  <span className="text-xs text-emerald-500 font-medium">● en ligne</span>
+                  <span className="text-xs text-emerald-500 font-medium">● {t('connections.online')}</span>
                 )}
               </div>
 
@@ -152,7 +157,9 @@ function UserCard({
               {(mutualFriendsCount !== undefined && mutualFriendsCount > 0) && (
                 <p className="text-xs font-medium mt-2"
                    style={{ color: PRIMARY_COLOR }}>
-                  {mutualFriendsCount} ami{mutualFriendsCount > 1 ? 's' : ''} en commun
+                  {mutualFriendsCount === 1
+                    ? t('connections.mutual_friends_one', { count: mutualFriendsCount })
+                    : t('connections.mutual_friends_other', { count: mutualFriendsCount })}
                 </p>
               )}
 
@@ -164,7 +171,7 @@ function UserCard({
 
               {followedAt && activeTab !== 'suggestions' && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                  Depuis {new Date(followedAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                  {t('connections.since')} {new Date(followedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })}
                 </p>
               )}
             </button>
@@ -175,7 +182,7 @@ function UserCard({
             <button
               onClick={() => onDismiss(user.id)}
               className="flex-shrink-0 p-1.5 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
-              title="Masquer cette suggestion"
+              title={t('connections.hide_suggestion')}
             >
               <X size={16} />
             </button>
@@ -191,10 +198,10 @@ function UserCard({
                 ? 'bg-[#168F6F] text-white hover:bg-[#0F6B54] shadow-sm'
                 : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
-            title={isFriend ? 'Envoyer un message' : 'Contacter'}
+            title={isFriend ? t('connections.message') : t('connections.contact')}
           >
             {isFriend ? <Send size={16} /> : <MessageSquare size={16} />}
-            <span className="hidden md:inline">{isFriend ? 'Message' : 'Contacter'}</span>
+            <span className="hidden md:inline">{isFriend ? t('connections.message') : t('connections.contact')}</span>
           </button>
 
           <button
@@ -202,7 +209,7 @@ function UserCard({
             className="px-3 py-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
           >
             <Eye size={16} />
-            <span className="hidden md:inline">Profil</span>
+            <span className="hidden md:inline">{t('connections.profile')}</span>
           </button>
 
           {getActionButton()}
@@ -227,7 +234,9 @@ function UserListItem({
   onRemoveFollower,
   onDismiss,
   onMessage,
-  onViewProfile
+  onViewProfile,
+  t,
+  language,
 }: {
   user: any;
   isFriend: boolean;
@@ -243,6 +252,8 @@ function UserListItem({
   onDismiss?: (userId: number) => void;
   onMessage: (userId: number, isFriend: boolean) => void;
   onViewProfile: (userId: number) => void;
+  t: (key: any, params?: any) => string;
+  language: string;
 }) {
   const fullName = `${user.firstName} ${user.lastName}`;
 
@@ -255,11 +266,11 @@ function UserListItem({
           className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-all disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
         >
           {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserMinus size={16} />}
-          <span className="hidden sm:inline">Retirer</span>
+          <span className="hidden sm:inline">{t('connections.remove')}</span>
         </button>
       );
     }
-    
+
     if (activeTab === 'following' || activeTab === 'friends') {
       return (
         <button
@@ -268,11 +279,11 @@ function UserListItem({
           className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-950/30 dark:hover:text-red-400 transition-all disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
         >
           {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
-          <span className="hidden sm:inline">Suivi</span>
+          <span className="hidden sm:inline">{t('connections.following_label')}</span>
         </button>
       );
     }
-    
+
     if (activeTab === 'suggestions') {
       if (isFollowing) {
         return (
@@ -282,7 +293,7 @@ function UserListItem({
             className="px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
           >
             {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
-            <span className="hidden sm:inline">Suivi</span>
+            <span className="hidden sm:inline">{t('connections.following_label')}</span>
           </button>
         );
       }
@@ -294,7 +305,7 @@ function UserListItem({
           style={{ backgroundColor: PRIMARY_COLOR }}
         >
           {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />}
-          <span className="hidden sm:inline">Suivre</span>
+          <span className="hidden sm:inline">{t('connections.follow')}</span>
         </button>
       );
     }
@@ -328,11 +339,11 @@ function UserListItem({
             </p>
             {isFriend && (
               <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs font-medium rounded-full">
-                Ami
+                {t('connections.friend')}
               </span>
             )}
             {user.isOnline && (
-              <span className="text-xs text-emerald-500 font-medium">● en ligne</span>
+              <span className="text-xs text-emerald-500 font-medium">● {t('connections.online')}</span>
             )}
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
@@ -340,9 +351,10 @@ function UserListItem({
           </p>
           <div className="flex items-center gap-3 mt-1">
             {(mutualFriendsCount !== undefined && mutualFriendsCount > 0) && (
-              <span className="text-xs font-medium"
-                    style={{ color: PRIMARY_COLOR }}>
-                {mutualFriendsCount} ami{mutualFriendsCount > 1 ? 's' : ''} en commun
+              <span className="text-xs font-medium" style={{ color: PRIMARY_COLOR }}>
+                {mutualFriendsCount === 1
+                  ? t('connections.mutual_friends_one', { count: mutualFriendsCount })
+                  : t('connections.mutual_friends_other', { count: mutualFriendsCount })}
               </span>
             )}
             {reason && (mutualFriendsCount === 0 || mutualFriendsCount === undefined) && (
@@ -350,7 +362,7 @@ function UserListItem({
             )}
             {followedAt && activeTab !== 'suggestions' && (
               <span className="text-xs text-gray-400">
-                Depuis {new Date(followedAt).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                {t('connections.since')} {new Date(followedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', year: 'numeric' })}
               </span>
             )}
           </div>
@@ -366,14 +378,14 @@ function UserListItem({
               ? 'bg-[#168F6F] text-white hover:bg-[#0F6B54] shadow-sm'
               : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
-          title={isFriend ? 'Message' : 'Contacter'}
+          title={isFriend ? t('connections.message') : t('connections.contact')}
         >
           {isFriend ? <Send size={18} /> : <MessageSquare size={18} />}
         </button>
         <button
           onClick={() => onViewProfile(user.id)}
           className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
-          title="Profil"
+          title={t('connections.profile')}
         >
           <Eye size={18} />
         </button>
@@ -382,7 +394,7 @@ function UserListItem({
           <button
             onClick={() => onDismiss(user.id)}
             className="p-2 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"
-            title="Masquer"
+            title={t('connections.hide')}
           >
             <X size={18} />
           </button>
@@ -394,6 +406,7 @@ function UserListItem({
 
 export default function ConnectionsPage() {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('followers');
   const [viewType, setViewType] = useState<ViewType>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -444,7 +457,7 @@ export default function ConnectionsPage() {
       setFollowingSet(followingIds);
     } catch (err) {
       console.error('Erreur chargement:', err);
-      showToast('Erreur de chargement des données', 'error');
+      showToast(t('connections.error_loading'), 'error');
     } finally {
       setLoading(false);
     }
@@ -487,17 +500,15 @@ export default function ConnectionsPage() {
     try {
       await followService.follow(userId);
       setFollowingSet(prev => new Set([...prev, userId]));
-      // Optimistically remove from suggestions instead of full reload
       setDismissedSuggestionIds(prev => new Set([...prev, userId]));
-      showToast('Vous suivez maintenant cet utilisateur', 'success');
-      // Refresh other tabs in the background
+      showToast(t('connections.follow_success'), 'success');
       Promise.all([
         followService.getFollowing().then(setFollowing),
         followService.getFriends().then(setFriends),
         followService.getFollowStats().then(setStats),
       ]).catch(() => {});
     } catch (err: any) {
-      showToast(err.message || 'Erreur lors du suivi', 'error');
+      showToast(err.message || t('connections.follow_error'), 'error');
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -508,8 +519,8 @@ export default function ConnectionsPage() {
   };
 
   const handleUnfollow = async (userId: number, userName: string) => {
-    if (!await confirm(`Ne plus suivre ${userName} ?`)) return;
-    
+    if (!await confirm(t('connections.unfollow_confirm', { name: userName }))) return;
+
     setProcessingIds(prev => new Set(prev).add(userId));
     try {
       await followService.unfollow(userId);
@@ -518,10 +529,10 @@ export default function ConnectionsPage() {
         next.delete(userId);
         return next;
       });
-      showToast(`Vous ne suivez plus ${userName}`, 'success');
-      loadAllData(); // Rafraîchir
+      showToast(t('connections.unfollow_success', { name: userName }), 'success');
+      loadAllData();
     } catch (err: any) {
-      showToast(err.message || 'Erreur', 'error');
+      showToast(err.message || t('common.error'), 'error');
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -532,15 +543,15 @@ export default function ConnectionsPage() {
   };
 
   const handleRemoveFollower = async (userId: number, userName: string) => {
-    if (!await confirm(`Retirer ${userName} de vos abonnés ?`)) return;
-    
+    if (!await confirm(t('connections.remove_follower_confirm', { name: userName }))) return;
+
     setProcessingIds(prev => new Set(prev).add(userId));
     try {
       await followService.removeFollower(userId);
-      showToast(`${userName} a été retiré de vos abonnés`, 'success');
-      loadAllData(); // Rafraîchir
+      showToast(t('connections.remove_success', { name: userName }), 'success');
+      loadAllData();
     } catch (err: any) {
-      showToast(err.message || 'Erreur', 'error');
+      showToast(err.message || t('common.error'), 'error');
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -608,12 +619,11 @@ export default function ConnectionsPage() {
     });
   }, [getCurrentData, searchQuery, sortBy]);
 
-  // Configuration des onglets
   const tabs = [
-    { id: 'followers' as TabType, label: 'Abonnés', icon: Users, count: stats?.followersCount || 0 },
-    { id: 'following' as TabType, label: 'Abonnements', icon: UserCheck, count: stats?.followingCount || 0 },
-    { id: 'friends' as TabType, label: 'Amis', icon: Heart, count: stats?.friendsCount || 0 },
-    { id: 'suggestions' as TabType, label: 'Suggestions', icon: Sparkles, count: Math.max(0, suggestions.length - dismissedSuggestionIds.size) },
+    { id: 'followers' as TabType, label: t('connections.followers'), icon: Users, count: stats?.followersCount || 0 },
+    { id: 'following' as TabType, label: t('connections.following'), icon: UserCheck, count: stats?.followingCount || 0 },
+    { id: 'friends' as TabType, label: t('connections.friends'), icon: Heart, count: stats?.friendsCount || 0 },
+    { id: 'suggestions' as TabType, label: t('connections.suggestions'), icon: Sparkles, count: Math.max(0, suggestions.length - dismissedSuggestionIds.size) },
   ];
 
   // Helper pour les props de rendu
@@ -635,7 +645,7 @@ export default function ConnectionsPage() {
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4"
                  style={{ color: PRIMARY_COLOR }} />
-          <p className="text-gray-600 dark:text-gray-400">Chargement de vos relations...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('connections.loading')}</p>
         </div>
       </div>
     );
@@ -652,15 +662,15 @@ export default function ConnectionsPage() {
             className="mb-4 flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-sm"
           >
             <ChevronLeft size={18} />
-            Retour
+            {t('common.back')}
           </button>
 
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400 bg-clip-text text-transparent">
-              Mes relations
+              {t('connections.title')}
             </h1>
             <p className="mt-1 text-gray-500 dark:text-gray-400 text-sm">
-              Gérez vos abonnements et découvrez de nouvelles personnes
+              {t('connections.subtitle')}
             </p>
           </div>
         </div>
@@ -674,7 +684,7 @@ export default function ConnectionsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par nom ou email..."
+              placeholder={t('connections.search_placeholder')}
               className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition-all"
               style={{ '--tw-ring-color': PRIMARY_COLOR } as React.CSSProperties}
             />
@@ -696,8 +706,8 @@ export default function ConnectionsPage() {
               className="px-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50"
               style={{ '--tw-ring-color': PRIMARY_COLOR } as React.CSSProperties}
             >
-              <option value="date">Plus récents</option>
-              <option value="name">Nom (A-Z)</option>
+              <option value="date">{t('connections.sort_recent')}</option>
+              <option value="name">{t('connections.sort_name')}</option>
             </select>
 
             {/* View toggle */}
@@ -710,19 +720,19 @@ export default function ConnectionsPage() {
                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
                 style={viewType === 'grid' ? { backgroundColor: PRIMARY_COLOR } : {}}
-                title="Vue en grille"
+                title={t('connections.grid_view')}
               >
                 <Grid size={18} />
               </button>
               <button
                 onClick={() => setViewType('list')}
                 className={`p-2 rounded-lg transition-all ${
-                  viewType === 'list' 
-                    ? 'text-white shadow-sm' 
+                  viewType === 'list'
+                    ? 'text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
                 style={viewType === 'list' ? { backgroundColor: PRIMARY_COLOR } : {}}
-                title="Vue en liste"
+                title={t('connections.list_view')}
               >
                 <List size={18} />
               </button>
@@ -733,7 +743,7 @@ export default function ConnectionsPage() {
               onClick={loadAllData}
               className="p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-500 hover:opacity-80 transition-all"
               style={{ color: PRIMARY_COLOR }}
-              title="Rafraîchir"
+              title={t('connections.refresh')}
             >
               <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -777,20 +787,20 @@ export default function ConnectionsPage() {
               {activeTab === 'suggestions' ? <Sparkles size={32} className="text-gray-400" /> : <Users size={32} className="text-gray-400" />}
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              {searchQuery ? 'Aucun résultat' : 
-               activeTab === 'suggestions' ? 'Aucune suggestion pour le moment' :
-               activeTab === 'friends' ? 'Pas encore d\'amis' :
-               activeTab === 'followers' ? 'Pas encore d\'abonnés' :
-               'Vous ne suivez personne encore'}
+              {searchQuery ? t('connections.no_results') :
+               activeTab === 'suggestions' ? t('connections.no_suggestions') :
+               activeTab === 'friends' ? t('connections.no_friends') :
+               activeTab === 'followers' ? t('connections.no_followers') :
+               t('connections.no_following')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm mx-auto">
-              {searchQuery 
-                ? 'Essayez avec un autre terme de recherche' 
+              {searchQuery
+                ? t('connections.try_different_search')
                 : activeTab === 'suggestions'
-                  ? 'Suivez plus de personnes pour obtenir des recommandations personnalisées'
+                  ? t('connections.suggestions_hint')
                   : activeTab === 'friends'
-                    ? 'Suivez des utilisateurs qui vous suivent pour devenir amis'
-                    : 'Commencez à suivre des personnes pour construire votre réseau'}
+                    ? t('connections.friends_hint')
+                    : t('connections.following_hint')}
             </p>
             {activeTab === 'suggestions' && !searchQuery && (
               <button
@@ -798,7 +808,7 @@ export default function ConnectionsPage() {
                 className="px-4 py-2 text-white rounded-xl hover:opacity-90 transition-all text-sm font-medium"
                 style={{ backgroundColor: PRIMARY_COLOR }}
               >
-                Rafraîchir les suggestions
+                {t('connections.refresh_suggestions')}
               </button>
             )}
           </div>
@@ -817,6 +827,8 @@ export default function ConnectionsPage() {
                   onDismiss={handleDismissSuggestion}
                   onMessage={handleMessage}
                   onViewProfile={(id) => router.push(`/profile/${id}`)}
+                  t={t}
+                  language={language}
                 />
               );
             })}
@@ -836,6 +848,8 @@ export default function ConnectionsPage() {
                   onDismiss={handleDismissSuggestion}
                   onMessage={handleMessage}
                   onViewProfile={(id) => router.push(`/profile/${id}`)}
+                  t={t}
+                  language={language}
                 />
               );
             })}
@@ -845,8 +859,8 @@ export default function ConnectionsPage() {
         {/* Footer info */}
         {filteredAndSortedData.length > 0 && (
           <div className="mt-6 text-center text-sm text-gray-400">
-            Affichage de {filteredAndSortedData.length} résultat{filteredAndSortedData.length > 1 ? 's' : ''}
-            {searchQuery && ` pour "${searchQuery}"`}
+            {t('connections.showing_results', { count: filteredAndSortedData.length, plural: filteredAndSortedData.length > 1 ? 's' : '' })}
+            {searchQuery && t('connections.for_query', { query: searchQuery })}
           </div>
         )}
       </div>
@@ -857,7 +871,7 @@ export default function ConnectionsPage() {
           user={contactModal}
           onClose={() => setContactModal(null)}
           onSuccess={() => {
-            showToast('Demande envoyée avec succès', 'success');
+            showToast(t('connections.request_sent'), 'success');
             setContactModal(null);
           }}
         />

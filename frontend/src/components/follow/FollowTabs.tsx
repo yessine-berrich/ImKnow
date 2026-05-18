@@ -13,6 +13,7 @@ import {
   UserBriefDto,
 } from '../../../services/follow.service';
 import Avatar from '../ui/avatar/Avatar';
+import { useTranslation } from '@/context/LanguageContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -28,9 +29,9 @@ type TabType = 'followers' | 'following' | 'friends' | 'suggestions';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const fmtDate = (d?: string) => {
+const fmtDate = (d: string | undefined, lang: string) => {
   if (!d) return null;
-  return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const fullName = (u: UserBriefDto) =>
@@ -122,6 +123,7 @@ export default function FollowTabs({
   initialTab = 'followers',
 }: FollowTabsProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [followers,   setFollowers]   = useState<FollowRelationshipDto[]>([]);
@@ -232,16 +234,16 @@ export default function FollowTabs({
   const emptyMsg = () => {
     if (isCurrentUser) {
       switch (activeTab) {
-        case 'followers':   return { title: 'Aucun abonné',      sub: 'Personne ne vous suit encore.' };
-        case 'following':   return { title: 'Aucun abonnement',  sub: 'Vous ne suivez personne.' };
-        case 'friends':     return { title: 'Aucun ami',         sub: 'Abonnez-vous mutuellement pour devenir amis.' };
-        case 'suggestions': return { title: 'Aucune suggestion', sub: 'Revenez plus tard.' };
+        case 'followers':   return { title: t('connections.no_followers'),   sub: t('connections.followers_hint') };
+        case 'following':   return { title: t('connections.no_following'),   sub: t('connections.following_hint') };
+        case 'friends':     return { title: t('connections.no_friends'),     sub: t('connections.mutually_subscribe') };
+        case 'suggestions': return { title: t('connections.no_suggestions'), sub: t('connections.come_back_later') };
       }
     }
     switch (activeTab) {
-      case 'followers':   return { title: 'Aucun abonné',      sub: 'Cet utilisateur n\'a pas encore d\'abonnés.' };
-      case 'following':   return { title: 'Aucun abonnement',  sub: 'Cet utilisateur ne suit personne.' };
-      case 'friends':     return { title: 'Aucun ami',         sub: 'Cet utilisateur n\'a pas encore d\'amis.' };
+      case 'followers':   return { title: t('connections.no_followers'),   sub: t('connections.no_followers_other') };
+      case 'following':   return { title: t('connections.no_following'),   sub: t('connections.no_following_other') };
+      case 'friends':     return { title: t('connections.no_friends'),     sub: t('connections.no_friends_other') };
       case 'suggestions': return { title: '', sub: '' };
     }
   };
@@ -262,7 +264,7 @@ export default function FollowTabs({
     const isFollowing  = status?.isFollowing ?? false;
     const isFriend     = status?.isFriend    ?? false;
     const busy         = actionLoading === uid;
-    const date         = fmtDate(rel.followedAt);
+    const date         = fmtDate(rel.followedAt, language);
 
     return (
       <div
@@ -288,23 +290,25 @@ export default function FollowTabs({
               </span>
               {isFriend && activeTab !== 'friends' && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 text-[#168F6F]">
-                  <Heart size={9} className="fill-[#168F6F]" /> Ami
+                  <Heart size={9} className="fill-[#168F6F]" /> {t('connections.friend')}
                 </span>
               )}
               {activeTab === 'friends' && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 text-[#168F6F]">
-                  <Heart size={9} className="fill-[#168F6F]" /> Amis
+                  <Heart size={9} className="fill-[#168F6F]" /> {t('connections.friend_badge')}
                 </span>
               )}
             </div>
             <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
               {userData.department || ''}
               {userData.department && date ? ' · ' : ''}
-              {date ? `Depuis ${date}` : ''}
+              {date ? `${t('connections.since')} ${date}` : ''}
             </p>
             {isSuggestion && sug.mutualFriendsCount > 0 && (
               <p className="text-[11px] text-[#168F6F] mt-0.5">
-                {sug.mutualFriendsCount} ami{sug.mutualFriendsCount > 1 ? 's' : ''} en commun
+                {sug.mutualFriendsCount === 1
+                  ? t('connections.mutual_friends_one', { count: sug.mutualFriendsCount })
+                  : t('connections.mutual_friends_other', { count: sug.mutualFriendsCount })}
               </p>
             )}
           </button>
@@ -319,26 +323,25 @@ export default function FollowTabs({
               {/* Suggestions: Suivre */}
               {activeTab === 'suggestions' && (
                 <ActionBtn loading={busy} onClick={() => handleFollow(uid)} variant="primary">
-                  <UserPlus size={13} /><span>Suivre</span>
+                  <UserPlus size={13} /><span>{t('connections.follow')}</span>
                 </ActionBtn>
               )}
 
-              {/* Followers: Suivre en retour / badge Ami + Supprimer */}
               {activeTab === 'followers' && (
                 <>
                   {!isFollowing && (
                     <ActionBtn loading={busy} onClick={() => handleFollow(uid)} variant="primary">
-                      <UserPlus size={13} /><span>Suivre</span>
+                      <UserPlus size={13} /><span>{t('connections.follow')}</span>
                     </ActionBtn>
                   )}
                   {isFollowing && !isFriend && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#168F6F]/10 text-[#168F6F] border border-[#168F6F]/20">
-                      <UserCheck size={13} /> Abonné
+                      <UserCheck size={13} /> {t('connections.subscribed')}
                     </span>
                   )}
                   {isFriend && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#168F6F]/10 text-[#168F6F] border border-[#168F6F]/20">
-                      <Heart size={13} className="fill-[#168F6F]" /> Ami
+                      <Heart size={13} className="fill-[#168F6F]" /> {t('connections.friend')}
                     </span>
                   )}
                   <ActionBtn loading={busy} onClick={() => handleRemoveFollower(uid)} variant="danger">
@@ -347,17 +350,15 @@ export default function FollowTabs({
                 </>
               )}
 
-              {/* Following: Ne plus suivre */}
               {activeTab === 'following' && (
                 <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="ghost">
-                  <UserMinus size={13} /><span>Ne plus suivre</span>
+                  <UserMinus size={13} /><span>{t('connections.unfollow')}</span>
                 </ActionBtn>
               )}
 
-              {/* Friends: Ne plus suivre */}
               {activeTab === 'friends' && (
                 <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="ghost">
-                  <UserMinus size={13} /><span>Ne plus suivre</span>
+                  <UserMinus size={13} /><span>{t('connections.unfollow')}</span>
                 </ActionBtn>
               )}
             </>
@@ -368,17 +369,17 @@ export default function FollowTabs({
             <>
               {isFollowing && !isFriend && (
                 <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="secondary">
-                  <UserCheck size={13} /><span>Abonné</span>
+                  <UserCheck size={13} /><span>{t('connections.subscribed')}</span>
                 </ActionBtn>
               )}
               {isFriend && (
                 <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="secondary">
-                  <Heart size={13} className="fill-[#168F6F]" /><span>Ami</span>
+                  <Heart size={13} className="fill-[#168F6F]" /><span>{t('connections.friend')}</span>
                 </ActionBtn>
               )}
               {!isFollowing && (
                 <ActionBtn loading={busy} onClick={() => handleFollow(uid)} variant="primary">
-                  <UserPlus size={13} /><span>Suivre</span>
+                  <UserPlus size={13} /><span>{t('connections.follow')}</span>
                 </ActionBtn>
               )}
             </>
@@ -399,10 +400,10 @@ export default function FollowTabs({
   // ── Render ──────────────────────────────────────────────────────────────────
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode; show: boolean }[] = [
-    { key: 'followers',   label: 'Abonnés',      icon: <Users size={15} />,    show: true },
-    { key: 'following',   label: 'Abonnements',  icon: <UserCheck size={15} />, show: true },
-    { key: 'friends',     label: 'Amis',         icon: <Heart size={15} />,    show: true },
-    { key: 'suggestions', label: 'Suggestions',  icon: <Sparkles size={15} />, show: isCurrentUser },
+    { key: 'followers',   label: t('connections.followers'),   icon: <Users size={15} />,     show: true },
+    { key: 'following',   label: t('connections.following'),   icon: <UserCheck size={15} />, show: true },
+    { key: 'friends',     label: t('connections.friends'),     icon: <Heart size={15} />,     show: true },
+    { key: 'suggestions', label: t('connections.suggestions'), icon: <Sparkles size={15} />,  show: isCurrentUser },
   ];
 
   const data = currentData();
@@ -413,7 +414,7 @@ export default function FollowTabs({
       {/* Header */}
       <div className="px-5 pt-5 pb-0">
         <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4">
-          {isCurrentUser ? 'Mes relations' : 'Relations'}
+          {isCurrentUser ? t('connections.title') : t('connections.relations')}
         </h3>
 
         {/* Tabs */}
