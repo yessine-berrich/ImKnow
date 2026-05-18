@@ -232,9 +232,14 @@ export default function ModerationTable({
     setOpenMenuId(null);
   };
 
+  const getCatKeys = (cats: Record<string, boolean> | string[] | undefined | null): string[] => {
+    if (!cats) return [];
+    return Array.isArray(cats) ? cats : Object.keys(cats);
+  };
+
   const allCategories = useMemo(() => {
     const set = new Set<string>();
-    articles.forEach((a) => a.moderationResult?.categories?.forEach((c) => set.add(c)));
+    articles.forEach((a) => getCatKeys(a.moderationResult?.categories).forEach((c) => set.add(c)));
     return Array.from(set);
   }, [articles]);
 
@@ -251,7 +256,10 @@ export default function ModerationTable({
           a.rejectionReason.toLowerCase().includes(s);
         if (!match) return false;
       }
-      if (categoryFilter && !a.moderationResult?.categories?.includes(categoryFilter)) return false;
+      if (categoryFilter) {
+        const hasCat = getCatKeys(a.moderationResult?.categories).includes(categoryFilter);
+        if (!hasCat) return false;
+      }
       if (highSeverityFilter && (a.moderationScore ?? 0) < 0.8) return false;
       return true;
     });
@@ -287,7 +295,7 @@ export default function ModerationTable({
     const avgScore = scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : 0;
     const catCount: Record<string, number> = {};
     articles.forEach((a) =>
-      a.moderationResult?.categories?.forEach((c) => { catCount[c] = (catCount[c] ?? 0) + 1; })
+      getCatKeys(a.moderationResult?.categories).forEach((c) => { catCount[c] = (catCount[c] ?? 0) + 1; })
     );
     const topCategory = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
     return {
@@ -496,10 +504,16 @@ export default function ModerationTable({
 
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
-                            {mr?.categories?.length ? mr.categories.map((cat) => {
-                              const meta = getCategoryMeta(cat);
-                              return <span key={cat} className={`px-2 py-0.5 text-xs font-medium rounded-full ${meta.color}`}>{meta.label}</span>;
-                            }) : <span className="text-sm text-gray-400">—</span>}
+                            {(() => {
+                              const cats = mr?.categories;
+                              const catKeys: string[] = !cats ? [] : Array.isArray(cats) ? cats : Object.keys(cats);
+                              return catKeys.length > 0
+                                ? catKeys.map((cat) => {
+                                  const meta = getCategoryMeta(cat);
+                                  return <span key={cat} className={`px-2 py-0.5 text-xs font-medium rounded-full ${meta.color}`}>{meta.label}</span>;
+                                })
+                                : <span className="text-sm text-gray-400">—</span>;
+                            })()}
                           </div>
                         </td>
 
@@ -526,7 +540,7 @@ export default function ModerationTable({
                                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{article.title}</p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Score IA : <span className="font-bold text-red-500">{Math.round(article.moderationScore * 100)}%</span>
+                                    Score IA : <span className="font-bold text-red-500">{Math.round((article.moderationScore ?? 0) * 100)}%</span>
                                     {mr?.model && <span className="ml-2 text-gray-400">· {mr.model.split('-').slice(0, 2).join('-')}</span>}
                                   </p>
                                 </div>

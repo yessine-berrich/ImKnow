@@ -8,12 +8,6 @@ import { ArticleModule } from './article/article.module';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tag/tag.module';
 import { CommentModule } from './comment/comment.module';
-import { Comment } from './comment/entities/comment.entity';
-import { Tag } from './tag/entities/tag.entity';
-import { Category } from './category/entities/category.entity';
-import { ArticleVersion } from './article/entities/article-version.entity';
-import { Article } from './article/entities/article.entity';
-import { User } from './users/entities/user.entity';
 import { MailModule } from './mail/mail.module';
 import { MediaModule } from './media/media.module';
 import { NotificationModule } from './notification/notification.module';
@@ -25,7 +19,6 @@ import { FollowModule } from './follow/follow.module';
 import { SearchModule } from './search/search.module';
 import { ChatModule } from './chat/chat.module';
 import { SessionModule } from './session/session.module';
-import { UserReport } from './users/entities/user-report.entity';
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
 
 @Module({

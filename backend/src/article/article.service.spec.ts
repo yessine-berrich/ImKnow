@@ -14,6 +14,7 @@ import { NotificationService } from '../notification/notification.service';
 import { ArticleReport } from './entities/article-report.entity';
 import { ArticleStatus, NotificationType } from 'utils/constants';
 import { NotFoundException } from '@nestjs/common';
+import { ArticleChunkService } from './article-chunk.service';
 
 describe('ArticleService', () => {
   let service: ArticleService;
@@ -141,6 +142,12 @@ describe('ArticleService', () => {
           provide: NotificationService,
           useValue: {
             createAndNotify: jest.fn(),
+          },
+        },
+        {
+          provide: ArticleChunkService,
+          useValue: {
+            generateChunks: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

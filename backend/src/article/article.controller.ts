@@ -707,6 +707,7 @@ export class ArticleController {
             id: article.author.id,
             name: `${article.author.firstName} ${article.author.lastName}`,
             email: article.author.email,
+            role: article.author.role,
             profileImage: article.author.profileImage ?? null,
           }
           : null,

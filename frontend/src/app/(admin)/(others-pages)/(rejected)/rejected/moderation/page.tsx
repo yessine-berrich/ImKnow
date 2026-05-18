@@ -14,13 +14,13 @@ export interface ModerationArticle {
   rejectionReason: string;
   moderationScore: number;
   moderationResult: {
-    model: string;
-    score: number;
-    reason: string;
-    isFlagged: boolean;
-    categories: string[];
-    confidence: number;
-    moderatedAt: string;
+    model?: string;
+    score?: number;
+    reason?: string;
+    isFlagged?: boolean;
+    categories?: Record<string, boolean> | string[];
+    confidence?: number;
+    moderatedAt?: string;
   } | null;
   duplicateScore: number | null;
   similarArticlesCache: any[] | null;
@@ -28,6 +28,7 @@ export interface ModerationArticle {
     id: number;
     name: string;
     email: string;
+    role?: string;
     profileImage?: string | null;
   } | null;
   category: {

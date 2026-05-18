@@ -1,13 +1,13 @@
 import { Article } from 'src/article/entities/article.entity';
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/users/entities/user.entity';
-import { ArticleStatus, NotificationType } from 'utils/constants';
-import { NotificationService } from 'src/notification/notification.service';
-import { ArticleView } from './entities/article-view.entity';
+import { ArticleStatus } from 'utils/constants';
 import { ArticleVersion } from './entities/article-version.entity';
 import { ArticleService } from './article.service';
+import { Category } from 'src/category/entities/category.entity';
+import { Tag } from 'src/tag/entities/tag.entity';
 
 @Injectable()
 export class ArticleVersioningService {
@@ -18,17 +18,18 @@ export class ArticleVersioningService {
         private readonly versionRepository: Repository<ArticleVersion>,
         @Inject(forwardRef(() => ArticleService))
         private readonly articleService: ArticleService,
-        private readonly notificationService: NotificationService,
     ) { }
 
-    // ────────────────────────────────────────────────
-    // Méthode centrale de création de version
-    // ────────────────────────────────────────────────
     async createNewVersion(
         article: Article,
         user: User,
         changeSummary: string,
     ): Promise<ArticleVersion> {
+        const articleWithRelations = await this.articleRepository.findOneOrFail({
+            where: { id: article.id },
+            relations: ['category', 'tags'],
+        });
+
         const lastVersion = await this.versionRepository.findOne({
             where: { articleId: article.id },
             order: { versionNumber: 'DESC' },
@@ -37,33 +38,36 @@ export class ArticleVersioningService {
         const nextVersionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
 
         const version = this.versionRepository.create({
-            article,
+            article: articleWithRelations,
             articleId: article.id,
             versionNumber: nextVersionNumber,
-            title: article.title,
-            content: article.content,
+            title: articleWithRelations.title,
+            content: articleWithRelations.content,
             author: user,
             authorId: user.id,
-            status: article.status,
+            status: articleWithRelations.status,
             changeSummary,
-            categorySnapshot: article.category
-                ? { id: article.category.id, name: article.category.name }
+            categorySnapshot: articleWithRelations.category
+                ? {
+                    id: articleWithRelations.category.id,
+                    name: articleWithRelations.category.name,
+                }
                 : undefined,
-            tagsSnapshot: article.tags?.map((t) => ({ id: t.id, name: t.name })),
+            tagsSnapshot: articleWithRelations.tags?.map((tag) => ({
+                id: tag.id,
+                name: tag.name,
+            })) ?? [],
         });
 
         const savedVersion = await this.versionRepository.save(version);
 
-        // Mettre à jour le numéro de version courante
-        article.currentVersionNumber = nextVersionNumber;
-        await this.articleRepository.save(article);
+        await this.articleRepository.update(article.id, {
+            currentVersionNumber: nextVersionNumber,
+        });
 
         return savedVersion;
     }
 
-    // ────────────────────────────────────────────────
-    // Historique complet
-    // ────────────────────────────────────────────────
     async getHistory(articleId: number): Promise<ArticleVersion[]> {
         return this.versionRepository.find({
             where: { articleId },
@@ -72,9 +76,6 @@ export class ArticleVersioningService {
         });
     }
 
-    // ────────────────────────────────────────────────
-    // Revenir à une version précédente
-    // ────────────────────────────────────────────────
     async revertToVersion(
         articleId: number,
         versionNumber: number,
@@ -89,17 +90,24 @@ export class ArticleVersioningService {
             relations: ['category', 'tags'],
         });
 
-        // Mise à jour des champs principaux
         article.title = version.title;
         article.content = version.content;
         article.status = version.status as ArticleStatus;
 
-        // Note : on ne restaure PAS automatiquement category/tags (trop risqué)
-        // → on peut le faire manuellement si vraiment nécessaire
+        if (version.categorySnapshot?.id) {
+            article.category = {
+                id: version.categorySnapshot.id,
+            } as Category;
+        }
+
+        if (version.tagsSnapshot) {
+            article.tags = version.tagsSnapshot.map((tag) => ({
+                id: tag.id,
+            })) as Tag[];
+        }
 
         const updated = await this.articleRepository.save(article);
 
-        // Créer une nouvelle version pour ce rollback
         await this.createNewVersion(
             updated,
             user,
@@ -108,5 +116,4 @@ export class ArticleVersioningService {
 
         return this.articleService.findOne(articleId);
     }
-
 }

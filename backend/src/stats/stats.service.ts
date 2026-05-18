@@ -817,10 +817,10 @@ export class StatsService {
     const categoryMap = new Map<string, number>();
 
     articles.forEach((a) => {
-      if (a.moderationResult?.categories) {
-        a.moderationResult.categories.forEach((cat) => {
-          categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1);
-        });
+      const cats = a.moderationResult?.categories;
+      if (cats) {
+        const catKeys: string[] = Array.isArray(cats) ? cats : Object.keys(cats);
+        catKeys.forEach((cat) => categoryMap.set(cat, (categoryMap.get(cat) || 0) + 1));
       }
     });
 
