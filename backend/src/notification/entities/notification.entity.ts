@@ -17,7 +17,7 @@ export class Notification {
   message?: string;               // ← texte court affiché (ex: "Yessine a répondu à votre commentaire")
 
   @Column({ type: 'jsonb', nullable: true })
-  data?: Record<string, any>;     // ← payload flexible (articleId, commentId, etc.)
+  data?: Record<string, any>;     // ← payload flexible (publicationId, commentId, etc.)
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   recipient: User;

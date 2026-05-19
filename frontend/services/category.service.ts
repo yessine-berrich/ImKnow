@@ -1,11 +1,11 @@
-import { Article } from "./article.service";
+import { Publication } from "./publication.service";
 import { getToken } from './auth.service';
 
 export interface Category {
   id: number;
   name: string;
   description: string;
-  articleCount?: number; // Calculé côté frontend
+  publicationCount?: number; // Calculé côté frontend
 }
 
 export interface CreateCategoryDto {
@@ -106,14 +106,14 @@ class CategoryService {
     return this.handleResponse<void>(response);
   }
 
-  async findArticlesByCategory(id: number): Promise<Article[]> {
-    const response = await fetch(`${API_URL}/categories/${id}/articles`, {
+  async findPublicationsByCategory(id: number): Promise<Publication[]> {
+    const response = await fetch(`${API_URL}/categories/${id}/publications`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
       credentials: 'include',
     });
     
-    return this.handleResponse<Article[]>(response);
+    return this.handleResponse<Publication[]>(response);
   }
 }
 

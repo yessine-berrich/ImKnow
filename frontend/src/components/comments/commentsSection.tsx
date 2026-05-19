@@ -31,7 +31,7 @@ interface MentionUser {
 }
 
 interface CommentsSectionProps {
-  articleId: number;
+  publicationId: number;
   onCommentAdded?: () => void;
   /** Pass the list of users that can be mentioned (e.g. friends / followers) */
   mentionableUsers?: MentionUser[];
@@ -513,7 +513,7 @@ function CommentItem({
 // ─── CommentsSection ──────────────────────────────────────────────────────────
 
 export default function CommentsSection({
-  articleId,
+  publicationId,
   onCommentAdded,
   mentionableUsers = [],
 }: CommentsSectionProps) {
@@ -542,7 +542,7 @@ export default function CommentsSection({
   const fetchComments = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await commentService.findByArticle(articleId);
+      const data = await commentService.findByPublication(publicationId);
       setComments(data);
     } catch (err) {
       console.error('Erreur de chargement des commentaires:', err);
@@ -550,7 +550,7 @@ export default function CommentsSection({
     } finally {
       setLoading(false);
     }
-  }, [articleId]);
+  }, [publicationId]);
 
   useEffect(() => { fetchComments(); }, [fetchComments]);
 
@@ -560,7 +560,7 @@ export default function CommentsSection({
     try {
       const mentionedUserIds = extractMentionedIds(newComment, mentionableUsers);
       await commentService.create({
-        articleId,
+        publicationId,
         content: newComment.trim(),
         mentionedUserIds: mentionedUserIds.length ? mentionedUserIds : undefined,
       });
@@ -578,7 +578,7 @@ export default function CommentsSection({
     try {
       const mentionedUserIds = extractMentionedIds(replyContent, mentionableUsers);
       await commentService.create({
-        articleId,
+        publicationId,
         content: replyContent.trim(),
         parentId: commentId,
         mentionedUserIds: mentionedUserIds.length ? mentionedUserIds : undefined,

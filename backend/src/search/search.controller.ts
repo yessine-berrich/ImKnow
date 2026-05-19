@@ -15,14 +15,14 @@ export class SearchController {
     return this.searchService.globalSearch(query, limitPerType, minSimilarity);
   }
 
-  @Get('articles')
+  @Get('publications')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard)
-  async searchArticles(@Query() searchDto: SearchDto) {
+  async searchPublications(@Query() searchDto: SearchDto) {
     const { query, limit = 10, minSimilarity = 0.65 } = searchDto;
     return {
       query,
-      articles: await this.searchService.searchArticlesOnly(query, limit, minSimilarity),
+      publications: await this.searchService.searchPublicationsOnly(query, limit, minSimilarity),
     };
   }
 

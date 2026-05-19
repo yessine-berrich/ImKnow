@@ -2,18 +2,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { StatsService } from './stats.service';
-import { Article } from '../article/entities/article.entity';
+import { Publication } from '../publication/entities/publication.entity';
 import { User } from '../users/entities/user.entity';
 import { Category } from '../category/entities/category.entity';
 import { Tag } from '../tag/entities/tag.entity';
 import { Comment } from '../comment/entities/comment.entity';
-import { ArticleReport } from '../article/entities/article-report.entity';
+import { PublicationReport } from '../publication/entities/publication-report.entity';
 import { UserReport } from '../users/entities/user-report.entity';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 
 describe('StatsService', () => {
   let service: StatsService;
-  let articleRepo: jest.Mocked<Repository<Article>>;
+  let publicationRepo: jest.Mocked<Repository<Publication>>;
   let userRepo: jest.Mocked<Repository<User>>;
   let categoryRepo: jest.Mocked<Repository<Category>>;
   let tagRepo: jest.Mocked<Repository<Tag>>;
@@ -39,7 +39,7 @@ describe('StatsService', () => {
     getCount: jest.fn().mockResolvedValue(0),
   });
 
-  const mockArticleRepo = {
+  const mockPublicationRepo = {
     count: jest.fn(),
     find: jest.fn(),
     createQueryBuilder: jest.fn(() => mockQBFactory()),
@@ -72,8 +72,8 @@ describe('StatsService', () => {
       providers: [
         StatsService,
         {
-          provide: getRepositoryToken(Article),
-          useValue: mockArticleRepo,
+          provide: getRepositoryToken(Publication),
+          useValue: mockPublicationRepo,
         },
         {
           provide: getRepositoryToken(User),
@@ -92,7 +92,7 @@ describe('StatsService', () => {
           useValue: mockCommentRepo,
         },
         {
-          provide: getRepositoryToken(ArticleReport),
+          provide: getRepositoryToken(PublicationReport),
           useValue: { count: jest.fn(), find: jest.fn(), createQueryBuilder: jest.fn() },
         },
         {
@@ -103,7 +103,7 @@ describe('StatsService', () => {
     }).compile();
 
     service = module.get<StatsService>(StatsService);
-    articleRepo = module.get(getRepositoryToken(Article));
+    publicationRepo = module.get(getRepositoryToken(Publication));
     userRepo = module.get(getRepositoryToken(User));
     categoryRepo = module.get(getRepositoryToken(Category));
     tagRepo = module.get(getRepositoryToken(Tag));
@@ -120,7 +120,7 @@ describe('StatsService', () => {
 
   describe('getDashboardStats', () => {
     it('should return dashboard statistics', async () => {
-      mockArticleRepo.count.mockResolvedValue(100);
+      mockPublicationRepo.count.mockResolvedValue(100);
       mockUserRepo.count.mockResolvedValue(50);
       mockCategoryRepo.count.mockResolvedValue(10);
       mockTagRepo.count.mockResolvedValue(25);
@@ -131,7 +131,7 @@ describe('StatsService', () => {
         from: jest.fn().mockReturnThis(),
         getRawOne: jest.fn().mockResolvedValue({ count: '500' }),
       };
-      mockArticleRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockPublicationRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
 
       const mockCategoryQB = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -143,7 +143,7 @@ describe('StatsService', () => {
         getRawOne: jest.fn().mockResolvedValue({
           category_id: 1,
           category_name: 'Tech',
-          articleCount: '50',
+          publicationCount: '50',
         }),
       };
       mockCategoryRepo.createQueryBuilder.mockReturnValue(mockCategoryQB as any);
@@ -160,15 +160,15 @@ describe('StatsService', () => {
           author_id: 1,
           author_firstName: 'John',
           author_lastName: 'Doe',
-          articlesCount: '20',
+          publicationsCount: '20',
         }),
       };
-      mockArticleRepo.createQueryBuilder.mockReturnValueOnce(mockQueryBuilder as any);
-      mockArticleRepo.createQueryBuilder.mockReturnValueOnce(mockAuthorQB as any);
+      mockPublicationRepo.createQueryBuilder.mockReturnValueOnce(mockQueryBuilder as any);
+      mockPublicationRepo.createQueryBuilder.mockReturnValueOnce(mockAuthorQB as any);
 
       const result = await service.getDashboardStats();
 
-      expect(result.totalArticles).toBe(100);
+      expect(result.totalPublications).toBe(100);
       expect(result.totalUsers).toBe(50);
       expect(result.totalCategories).toBe(10);
       expect(result.totalTags).toBe(25);
@@ -183,7 +183,7 @@ describe('StatsService', () => {
           id: 1,
           name: 'Tech',
           description: 'Technology',
-          articles: [
+          publications: [
             { viewsCount: 100, likes: [{ id: 1 }], comments: [{ id: 1 }] },
             { viewsCount: 200, likes: [{ id: 1 }, { id: 2 }], comments: [] },
           ],
@@ -191,8 +191,8 @@ describe('StatsService', () => {
         {
           id: 2,
           name: 'Science',
-          description: 'Science articles',
-          articles: [
+          description: 'Science publications',
+          publications: [
             { viewsCount: 50, likes: [], comments: [{ id: 1 }] },
           ],
         },
@@ -203,7 +203,7 @@ describe('StatsService', () => {
       const result = await service.getCategoryStats();
 
       expect(result.categories).toHaveLength(2);
-      expect(result.totalArticles).toBe(3);
+      expect(result.totalPublications).toBe(3);
       expect(result.mostPopularCategory).toBeDefined();
       expect(result.mostPopularCategory?.name).toBe('Tech');
     });
@@ -212,7 +212,7 @@ describe('StatsService', () => {
   describe('getUserActivity', () => {
     it('should return user activity for specified months', async () => {
       mockUserRepo.count.mockResolvedValue(5);
-      mockArticleRepo.count.mockResolvedValue(10);
+      mockPublicationRepo.count.mockResolvedValue(10);
       mockCommentRepo.count.mockResolvedValue(20);
 
       const mockActiveAuthorsQB = {
@@ -227,7 +227,7 @@ describe('StatsService', () => {
         getRawMany: jest.fn().mockResolvedValue([{ authorId: 2 }, { authorId: 3 }]),
       };
 
-      mockArticleRepo.createQueryBuilder.mockReturnValue(mockActiveAuthorsQB as any);
+      mockPublicationRepo.createQueryBuilder.mockReturnValue(mockActiveAuthorsQB as any);
       mockCommentRepo.createQueryBuilder.mockReturnValue(mockActiveCommentersQB as any);
 
       const result = await service.getUserActivity(3);
@@ -241,7 +241,7 @@ describe('StatsService', () => {
 
   describe('getContentAnalytics', () => {
     it('should return content analytics for specified days', async () => {
-      mockArticleRepo.count.mockResolvedValue(5);
+      mockPublicationRepo.count.mockResolvedValue(5);
 
       const result = await service.getContentAnalytics(7);
 
@@ -254,10 +254,10 @@ describe('StatsService', () => {
 
   describe('getEngagementStats', () => {
     it('should return engagement statistics', async () => {
-      const mockArticles = [
+      const mockPublications = [
         {
           id: 1,
-          title: 'Article 1',
+          title: 'Publication 1',
           viewsCount: 100,
           createdAt: new Date(),
           author: { id: 1, firstName: 'John', lastName: 'Doe' },
@@ -267,7 +267,7 @@ describe('StatsService', () => {
         },
         {
           id: 2,
-          title: 'Article 2',
+          title: 'Publication 2',
           viewsCount: 50,
           createdAt: new Date(),
           author: { id: 2, firstName: 'Jane', lastName: 'Smith' },
@@ -277,22 +277,22 @@ describe('StatsService', () => {
         },
       ];
 
-      mockArticleRepo.find.mockResolvedValue(mockArticles as any);
+      mockPublicationRepo.find.mockResolvedValue(mockPublications as any);
 
       const result = await service.getEngagementStats(10);
 
-      expect(result.mostLikedArticles).toHaveLength(2);
-      expect(result.mostBookmarkedArticles).toHaveLength(2);
+      expect(result.mostLikedPublications).toHaveLength(2);
+      expect(result.mostBookmarkedPublications).toHaveLength(2);
       expect(result.totalLikes).toBe(3);
       expect(result.totalBookmarks).toBe(3);
-      expect(result.avgLikesPerArticle).toBe(2);
-      expect(result.avgBookmarksPerArticle).toBe(2);
+      expect(result.avgLikesPerPublication).toBe(2);
+      expect(result.avgBookmarksPerPublication).toBe(2);
     });
   });
 
   describe('getTopContributors', () => {
     it('should return top contributors', async () => {
-      const mockArticles = [
+      const mockPublications = [
         {
           id: 1,
           viewsCount: 100,
@@ -314,10 +314,10 @@ describe('StatsService', () => {
         loadRelationCountAndMap: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockArticles),
+        getMany: jest.fn().mockResolvedValue(mockPublications),
       };
 
-      mockArticleRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockPublicationRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
 
       const result = await service.getTopContributors(5);
 
@@ -326,12 +326,12 @@ describe('StatsService', () => {
     });
   });
 
-  describe('getTrendingArticles', () => {
-    it('should return trending articles', async () => {
-      const mockArticles = [
+  describe('getTrendingPublications', () => {
+    it('should return trending publications', async () => {
+      const mockPublications = [
         {
           id: 1,
-          title: 'Trending Article',
+          title: 'Trending Publication',
           content: 'Content here',
           viewsCount: 1000,
           createdAt: new Date(),
@@ -348,14 +348,14 @@ describe('StatsService', () => {
         loadRelationCountAndMap: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockArticles),
+        getMany: jest.fn().mockResolvedValue(mockPublications),
       };
 
-      mockArticleRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
+      mockPublicationRepo.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
 
-      const result = await service.getTrendingArticles(5);
+      const result = await service.getTrendingPublications(5);
 
-      expect(result.articles).toBeDefined();
+      expect(result.publications).toBeDefined();
       expect(result.period).toBeDefined();
     });
   });
@@ -368,11 +368,11 @@ describe('StatsService', () => {
           firstName: 'John',
           lastName: 'Doe',
           department: 'IT',
-          articles: [
+          publications: [
             {
               id: 1,
-              title: 'Article 1',
-              status: ArticleStatus.PUBLISHED,
+              title: 'Publication 1',
+              status: PublicationStatus.PUBLISHED,
               viewsCount: 100,
               likes: [{ id: 1 }],
               comments: [{ id: 1 }],
@@ -387,17 +387,17 @@ describe('StatsService', () => {
 
       expect(result.authors).toBeDefined();
       expect(result.totalAuthors).toBeGreaterThanOrEqual(0);
-      expect(result.avgArticlesPerAuthor).toBeGreaterThanOrEqual(0);
+      expect(result.avgPublicationsPerAuthor).toBeGreaterThanOrEqual(0);
     });
   });
 
   describe('getContentQuality', () => {
     it('should return content quality stats', async () => {
-      const mockArticles = [
+      const mockPublications = [
         {
           id: 1,
-          title: 'Quality Article',
-          content: 'This is a well written article with good content and structure. '.repeat(20),
+          title: 'Quality Publication',
+          content: 'This is a well written publication with good content and structure. '.repeat(20),
           author: { firstName: 'John', lastName: 'Doe' },
           category: { name: 'Tech' },
           tags: [{ name: 'nestjs' }],
@@ -406,37 +406,37 @@ describe('StatsService', () => {
         },
       ];
 
-      mockArticleRepo.find.mockResolvedValue(mockArticles as any);
+      mockPublicationRepo.find.mockResolvedValue(mockPublications as any);
 
       const result = await service.getContentQuality(10);
 
       expect(result.overallScore).toBeGreaterThanOrEqual(0);
       expect(result.metrics).toBeDefined();
-      expect(result.topQualityArticles).toBeDefined();
+      expect(result.topQualityPublications).toBeDefined();
       expect(result.needsImprovement).toBeDefined();
     });
   });
 
   describe('getModerationStats', () => {
     it('should return moderation stats', async () => {
-      const mockArticles = [
+      const mockPublications = [
         {
           id: 1,
-          status: ArticleStatus.PUBLISHED,
+          status: PublicationStatus.PUBLISHED,
           createdAt: new Date(),
           isAutoModerated: true,
           moderationResult: { isFlagged: false, categories: [] },
         },
         {
           id: 2,
-          status: ArticleStatus.REJECTED,
+          status: PublicationStatus.REJECTED,
           createdAt: new Date(),
           isAutoModerated: true,
           moderationResult: { isFlagged: true, categories: ['spam'] },
         },
       ];
 
-      mockArticleRepo.find.mockResolvedValue(mockArticles as any);
+      mockPublicationRepo.find.mockResolvedValue(mockPublications as any);
 
       const result = await service.getModerationStats(30);
 
@@ -449,34 +449,34 @@ describe('StatsService', () => {
 
   describe('getReadingTimeStats', () => {
     it('should return reading time stats', async () => {
-      const mockArticles = [
+      const mockPublications = [
         {
           id: 1,
-          title: 'Long Article',
+          title: 'Long Publication',
           content: 'Word '.repeat(1000),
           viewsCount: 100,
-          status: ArticleStatus.PUBLISHED,
+          status: PublicationStatus.PUBLISHED,
           author: { firstName: 'John', lastName: 'Doe' },
         },
         {
           id: 2,
-          title: 'Short Article',
+          title: 'Short Publication',
           content: 'Word '.repeat(100),
           viewsCount: 50,
-          status: ArticleStatus.PUBLISHED,
+          status: PublicationStatus.PUBLISHED,
           author: { firstName: 'Jane', lastName: 'Smith' },
         },
       ];
 
-      mockArticleRepo.find.mockResolvedValue(mockArticles as any);
+      mockPublicationRepo.find.mockResolvedValue(mockPublications as any);
 
       const result = await service.getReadingTimeStats();
 
       expect(result.ranges).toBeDefined();
       expect(result.avgWordCount).toBeGreaterThanOrEqual(0);
       expect(result.avgReadTime).toBeGreaterThanOrEqual(0);
-      expect(result.longestArticles).toBeDefined();
-      expect(result.shortestArticles).toBeDefined();
+      expect(result.longestPublications).toBeDefined();
+      expect(result.shortestPublications).toBeDefined();
     });
   });
 
@@ -486,7 +486,7 @@ describe('StatsService', () => {
         {
           id: 1,
           name: 'nestjs',
-          articles: [
+          publications: [
             {
               id: 1,
               viewsCount: 100,
@@ -498,7 +498,7 @@ describe('StatsService', () => {
         {
           id: 2,
           name: 'typescript',
-          articles: [],
+          publications: [],
         },
       ];
 

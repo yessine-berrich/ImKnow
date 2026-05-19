@@ -5,7 +5,7 @@ import { useTranslation } from '@/context/LanguageContext';
 
 interface UserStatsCardProps {
   stats: {
-    totalArticles: number;
+    totalPublications: number;
     totalLikes: number;
     totalComments: number;
     totalViews: number;
@@ -15,12 +15,12 @@ interface UserStatsCardProps {
 export default function UserStatsCard({ stats }: UserStatsCardProps) {
   const { t } = useTranslation();
 
-  const engagementRate = stats.totalArticles > 0
-    ? Math.round((stats.totalLikes + stats.totalComments) / stats.totalArticles * 10) / 10
+  const engagementRate = stats.totalPublications > 0
+    ? Math.round((stats.totalLikes + stats.totalComments) / stats.totalPublications * 10) / 10
     : 0;
   
-  const avgViews = stats.totalArticles > 0 
-    ? Math.round(stats.totalViews / stats.totalArticles)
+  const avgViews = stats.totalPublications > 0 
+    ? Math.round(stats.totalViews / stats.totalPublications)
     : 0;
 
   // Formater les grands nombres
@@ -37,15 +37,15 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
       </h3>
       
       <div className="grid grid-cols-2 gap-4">
-  {/* Articles publiés */}
+  {/* Publications publiés */}
   <div className="rounded-lg bg-gray-50 dark:bg-gray-800/50 p-4">
     <div className="flex items-center justify-between">
       <div>
         <h4 className="text-2xl font-bold text-gray-700 dark:text-gray-300">
-          {stats.totalArticles}
+          {stats.totalPublications}
         </h4>
         <span className="text-sm text-gray-600 dark:text-gray-400">
-          {t('stats_card.articles')}
+          {t('stats_card.publications')}
         </span>
       </div>
        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20">
@@ -106,14 +106,14 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
   </div>
 </div>
 
-      {/* Métriques avancées - Affichées uniquement si l'utilisateur a des articles */}
-      {stats.totalArticles > 0 && (
+      {/* Métriques avancées - Affichées uniquement si l'utilisateur a des publications */}
+      {stats.totalPublications > 0 && (
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-2 gap-4">
             {/* Taux d'engagement */}
             <div className="text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                {t('stats_card.engagement_per_article')}
+                {t('stats_card.engagement_per_publication')}
               </p>
               <div className="flex items-center justify-center gap-1">
                 <Award className="h-4 w-4 text-[#168F6F]" />
@@ -129,7 +129,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
             {/* Moyenne de vues */}
             <div className="text-center">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                {t('stats_card.views_per_article')}
+                {t('stats_card.views_per_publication')}
               </p>
               <div className="flex items-center justify-center gap-1">
                 <Star className="h-4 w-4 text-[#168F6F]" />
@@ -138,7 +138,7 @@ export default function UserStatsCard({ stats }: UserStatsCardProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {t('stats_card.avg_per_article')}
+                {t('stats_card.avg_per_publication')}
               </p>
             </div>
           </div>

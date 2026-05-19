@@ -11,7 +11,7 @@ describe('StatsController', () => {
 
   const mockStatsService = {
     getTopContributors: jest.fn(),
-    getTrendingArticles: jest.fn(),
+    getTrendingPublications: jest.fn(),
     getDashboardStats: jest.fn(),
     getCategoryStats: jest.fn(),
     getUserActivity: jest.fn(),
@@ -62,32 +62,32 @@ describe('StatsController', () => {
     });
   });
 
-  describe('getTrendingArticles', () => {
-    it('should return trending articles', async () => {
+  describe('getTrendingPublications', () => {
+    it('should return trending publications', async () => {
       const mockResult = {
         period: { from: '2024-01-01', to: '2024-01-07' },
-        articles: [],
+        publications: [],
       };
-      service.getTrendingArticles.mockResolvedValue(mockResult);
+      service.getTrendingPublications.mockResolvedValue(mockResult);
 
-      const result = await controller.getTrendingArticles(5);
+      const result = await controller.getTrendingPublications(5);
 
       expect(result).toEqual(mockResult);
-      expect(service.getTrendingArticles).toHaveBeenCalledWith(5);
+      expect(service.getTrendingPublications).toHaveBeenCalledWith(5);
     });
   });
 
   describe('getDashboardStats', () => {
     it('should return dashboard stats', async () => {
       const mockResult = {
-        totalArticles: 100,
+        totalPublications: 100,
         totalUsers: 50,
         totalCategories: 10,
         totalTags: 25,
         totalComments: 200,
         totalLikes: 500,
-        articlesThisWeek: 10,
-        articlesThisMonth: 30,
+        publicationsThisWeek: 10,
+        publicationsThisMonth: 30,
         newUsersThisMonth: 5,
         mostActiveCategory: null,
         topContributor: null,
@@ -105,7 +105,7 @@ describe('StatsController', () => {
     it('should return category stats', async () => {
       const mockResult = {
         categories: [],
-        totalArticles: 100,
+        totalPublications: 100,
         mostPopularCategory: null,
       };
       service.getCategoryStats.mockResolvedValue(mockResult);
@@ -124,20 +124,20 @@ describe('StatsController', () => {
           month: 'Jan 2024',
           newUsers: 5,
           activeUsers: 20,
-          articlesPublished: 10,
+          publicationsPublished: 10,
           commentsMade: 30,
         },
         previousMonth: {
           month: 'Dec 2023',
           newUsers: 3,
           activeUsers: 15,
-          articlesPublished: 8,
+          publicationsPublished: 8,
           commentsMade: 20,
         },
         growthRate: {
           newUsers: 67,
           activeUsers: 33,
-          articlesPublished: 25,
+          publicationsPublished: 25,
         },
         history: [],
       };
@@ -174,12 +174,12 @@ describe('StatsController', () => {
   describe('getEngagementStats', () => {
     it('should return engagement stats', async () => {
       const mockResult = {
-        mostLikedArticles: [],
-        mostBookmarkedArticles: [],
+        mostLikedPublications: [],
+        mostBookmarkedPublications: [],
         totalLikes: 100,
         totalBookmarks: 50,
-        avgLikesPerArticle: 5,
-        avgBookmarksPerArticle: 2,
+        avgLikesPerPublication: 5,
+        avgBookmarksPerPublication: 2,
       };
       service.getEngagementStats.mockResolvedValue(mockResult);
 
@@ -196,7 +196,7 @@ describe('StatsController', () => {
         authors: [],
         totalAuthors: 10,
         topAuthor: null,
-        avgArticlesPerAuthor: 5,
+        avgPublicationsPerAuthor: 5,
       };
       service.getAuthorPerformance.mockResolvedValue(mockResult);
 
@@ -212,11 +212,11 @@ describe('StatsController', () => {
       const mockResult = {
         overallScore: 75,
         metrics: [],
-        topQualityArticles: [],
+        topQualityPublications: [],
         needsImprovement: [],
         avgWordCount: 500,
-        articlesWithImages: 80,
-        articlesWithTags: 90,
+        publicationsWithImages: 80,
+        publicationsWithTags: 90,
       };
       service.getContentQuality.mockResolvedValue(mockResult);
 
@@ -253,8 +253,8 @@ describe('StatsController', () => {
         ranges: [],
         avgWordCount: 600,
         avgReadTime: 3,
-        longestArticles: [],
-        shortestArticles: [],
+        longestPublications: [],
+        shortestPublications: [],
         optimalLength: null,
       };
       service.getReadingTimeStats.mockResolvedValue(mockResult);

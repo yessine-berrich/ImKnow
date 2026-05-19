@@ -123,7 +123,7 @@ export default function DeleteAccountButton({ isGoogleAccount = false, userEmail
                 </p>
 
                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                  <li>{t('security.delete_data_articles')}</li>
+                  <li>{t('security.delete_data_publications')}</li>
                   <li>{t('security.delete_data_comments')}</li>
                   <li>{t('security.delete_data_profile')}</li>
                 </ul>

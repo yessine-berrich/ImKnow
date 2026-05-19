@@ -12,8 +12,8 @@ describe('CategoryService', () => {
   const mockCategory: Category = {
     id: 1,
     name: 'Technology',
-    description: 'Tech articles',
-    articles: [],
+    description: 'Tech publications',
+    publications: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   } as Category;
@@ -78,7 +78,7 @@ describe('CategoryService', () => {
 
   describe('create', () => {
     it('should create a new category', async () => {
-      const createDto = { name: 'Science', description: 'Science articles' };
+      const createDto = { name: 'Science', description: 'Science publications' };
       mockCategoryRepo.create.mockReturnValue({ ...createDto, id: 2 } as any);
       mockCategoryRepo.save.mockResolvedValue({ ...createDto, id: 2 } as any);
 

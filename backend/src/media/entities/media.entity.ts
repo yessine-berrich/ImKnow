@@ -1,6 +1,6 @@
 // backend/src/media/entities/media.entity.ts
 
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 export enum MediaType {
@@ -36,9 +36,9 @@ export class Media {
   size: number;
 
   @Column({ nullable: true })
-  articleId: number;
+  publicationId: number;
 
-  @ManyToOne(() => Article, (article) => article.media, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'articleId' })
-  article: Article;
+  @ManyToOne(() => Publication, (publication) => publication.media, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'publicationId' })
+  publication: Publication;
 }

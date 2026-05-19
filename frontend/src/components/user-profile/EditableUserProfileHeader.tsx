@@ -18,7 +18,7 @@ interface EditableUserProfileHeaderProps {
     email?: string;
   };
   stats: {
-    totalArticles: number;
+    totalPublications: number;
     totalLikes: number;
     totalComments: number;
     totalViews: number;
@@ -142,7 +142,7 @@ export default function EditableUserProfileHeader({
           {/* Stats follow - avec couleur #168F6F */}
           <div className="flex flex-wrap gap-2 mt-4 mb-4">
             <span className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full">
-              {stats.totalArticles} article{stats.totalArticles !== 1 ? 's' : ''}
+              {stats.totalPublications} publication{stats.totalPublications !== 1 ? 's' : ''}
             </span>
 
             <button

@@ -212,8 +212,8 @@ export default function TopContributors({ limit = 5 }: { limit?: number }) {
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
                       <BookOpen className="h-3.5 w-3.5" />
-                      <span className="font-medium text-gray-600 dark:text-gray-300">{contributor.articlesCount}</span>
-                      <span>articles</span>
+                      <span className="font-medium text-gray-600 dark:text-gray-300">{contributor.publicationsCount}</span>
+                      <span>publications</span>
                     </div>
 
                     {/* Progress bar */}

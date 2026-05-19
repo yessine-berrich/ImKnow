@@ -2,7 +2,7 @@ export class MonthlyUserActivityDto {
   month: string;
   newUsers: number;
   activeUsers: number;
-  articlesPublished: number;
+  publicationsPublished: number;
   commentsMade: number;
 }
 
@@ -12,7 +12,7 @@ export class UserActivityResponseDto {
   growthRate: {
     newUsers: number;
     activeUsers: number;
-    articlesPublished: number;
+    publicationsPublished: number;
   };
   history: MonthlyUserActivityDto[];
 }

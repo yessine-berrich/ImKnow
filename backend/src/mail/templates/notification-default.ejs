@@ -35,24 +35,24 @@
                   headerIcon = '🔒';
                   headerTitle = 'Compte désactivé';
                   headerSub = 'Votre compte a été suspendu';
-                } else if (typeof articleTitle !== 'undefined' && typeof rejectionReason === 'undefined') {
+                } else if (typeof publicationTitle !== 'undefined' && typeof rejectionReason === 'undefined') {
                   // PUBLISHED or PENDING
                   if (typeof moderationScore !== 'undefined') {
                     headerGradient = 'linear-gradient(135deg,#059669 0%,#047857 100%)';
                     headerIcon = '✅';
-                    headerTitle = 'Article publié !';
-                    headerSub = 'Votre article est maintenant en ligne';
+                    headerTitle = 'Publication publié !';
+                    headerSub = 'Votre publication est maintenant en ligne';
                   } else {
                     headerGradient = 'linear-gradient(135deg,#d97706 0%,#b45309 100%)';
                     headerIcon = '⏳';
                     headerTitle = 'En attente de modération';
-                    headerSub = 'Votre article est en cours de vérification';
+                    headerSub = 'Votre publication est en cours de vérification';
                   }
                 } else if (typeof rejectionReason !== 'undefined') {
                   headerGradient = 'linear-gradient(135deg,#dc2626 0%,#9f1239 100%)';
                   headerIcon = '❌';
-                  headerTitle = 'Article refusé';
-                  headerSub = 'Votre article n\'a pas pu être publié';
+                  headerTitle = 'Publication refusé';
+                  headerSub = 'Votre publication n\'a pas pu être publié';
                 } else if (typeof newRole !== 'undefined') {
                   headerGradient = 'linear-gradient(135deg,#0891b2 0%,#0e7490 100%)';
                   headerIcon = '👤';
@@ -99,25 +99,25 @@
                       </p>
                     <% } %>
 
-                    <!-- Article publié -->
-                    <% if (typeof articleTitle !== 'undefined' && typeof rejectionReason === 'undefined') { %>
+                    <!-- Publication publié -->
+                    <% if (typeof publicationTitle !== 'undefined' && typeof rejectionReason === 'undefined') { %>
                       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:28px;">
-                        <p style="margin:0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Article</p>
-                        <p style="margin:0 0 16px;color:#1e293b;font-size:17px;font-weight:600;"><%= articleTitle %></p>
-                        <% if (typeof articleUrl !== 'undefined' && articleUrl !== '#') { %>
-                          <a href="<%= articleUrl %>" target="_self"
+                        <p style="margin:0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Publication</p>
+                        <p style="margin:0 0 16px;color:#1e293b;font-size:17px;font-weight:600;"><%= publicationTitle %></p>
+                        <% if (typeof publicationUrl !== 'undefined' && publicationUrl !== '#') { %>
+                          <a href="<%= publicationUrl %>" target="_self"
                              style="display:inline-block;background:#168F6F;color:#fff;text-decoration:none;font-size:14px;font-weight:600;padding:10px 24px;border-radius:8px;">
-                            Voir l'article →
+                            Voir l'publication →
                           </a>
                         <% } %>
                       </div>
                     <% } %>
 
-                    <!-- Article refusé -->
+                    <!-- Publication refusé -->
                     <% if (typeof rejectionReason !== 'undefined') { %>
                       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;margin-bottom:20px;">
-                        <p style="margin:0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Article concerné</p>
-                        <p style="margin:0;color:#1e293b;font-size:17px;font-weight:600;"><%= articleTitle %></p>
+                        <p style="margin:0 0 6px;color:#64748b;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;">Publication concerné</p>
+                        <p style="margin:0;color:#1e293b;font-size:17px;font-weight:600;"><%= publicationTitle %></p>
                       </div>
                       <div style="background:#fef2f2;border-left:4px solid #dc2626;border-radius:0 8px 8px 0;padding:16px;margin-bottom:28px;">
                         <p style="margin:0 0 6px;color:#dc2626;font-size:13px;font-weight:600;">Motif du refus</p>

@@ -1,4 +1,4 @@
-import { Article } from "src/article/entities/article.entity";
+import { Publication } from "src/publication/entities/publication.entity";
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('tags')
@@ -9,6 +9,6 @@ export class Tag {
   @Column({ unique: true })
   name: string;
 
-  @ManyToMany(() => Article, (article) => article.tags)
-  articles: Article[];
+  @ManyToMany(() => Publication, (publication) => publication.tags)
+  publications: Publication[];
 }

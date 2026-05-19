@@ -32,13 +32,13 @@ export class RagService {
 
       const answer = await this.groqRagService.generateRAGResponse(q, chunks);
 
-      // Deduplicate sources by articleId, keeping highest similarity per article
-      const sourceMap = new Map<number, { articleId: number; title: string; chunkIndex: number; similarity: number }>();
+      // Deduplicate sources by publicationId, keeping highest similarity per publication
+      const sourceMap = new Map<number, { publicationId: number; title: string; chunkIndex: number; similarity: number }>();
       for (const chunk of chunks) {
-        const existing = sourceMap.get(chunk.articleId);
+        const existing = sourceMap.get(chunk.publicationId);
         if (!existing || chunk.similarity > existing.similarity) {
-          sourceMap.set(chunk.articleId, {
-            articleId: chunk.articleId,
+          sourceMap.set(chunk.publicationId, {
+            publicationId: chunk.publicationId,
             title: chunk.title,
             chunkIndex: chunk.chunkIndex,
             similarity: chunk.similarity,

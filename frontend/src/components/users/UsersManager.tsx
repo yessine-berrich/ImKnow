@@ -32,7 +32,7 @@ interface UserItem {
   avatar?: string;
   role: 'admin' | 'editor' | 'contributor' | 'reader';
   status: 'active' | 'inactive' | 'pending' | 'email_unverified';
-  articles: number;
+  publications: number;
   joinedAt: string;
   lastActive: string;
   department?: string;
@@ -356,7 +356,7 @@ export default function UsersManager({
           <div className="col-span-4 lg:col-span-3">Utilisateur</div>
           <div className="hidden lg:block col-span-2">Rôle</div>
           <div className="hidden lg:block col-span-2">Statut</div>
-          <div className="hidden lg:block col-span-2">Articles</div>
+          <div className="hidden lg:block col-span-2">Publications</div>
           <div className="hidden lg:block col-span-2">Activité</div>
           <div className="col-span-8 lg:col-span-1 text-right">Actions</div>
         </div>
@@ -429,12 +429,12 @@ export default function UsersManager({
                     </span>
                   </div>
 
-                  {/* Articles (desktop) */}
+                  {/* Publications (desktop) */}
                   <div className="hidden lg:block col-span-2">
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4 text-gray-400" />
-                      <span className="font-medium text-gray-900 dark:text-white">{user.articles}</span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">articles</span>
+                      <span className="font-medium text-gray-900 dark:text-white">{user.publications}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">publications</span>
                     </div>
                   </div>
 
@@ -464,7 +464,7 @@ export default function UsersManager({
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1">
                           <FileText className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm">{user.articles} articles</span>
+                          <span className="text-sm">{user.publications} publications</span>
                         </div>
                         <div className="text-sm text-gray-500">
                           {user.lastActive}

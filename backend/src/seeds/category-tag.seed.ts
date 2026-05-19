@@ -12,11 +12,11 @@ export async function seedCategoriesAndTags(dataSource: DataSource) {
     const categories = [
       {
         name: 'Développement',
-        description: 'Articles liés au développement logiciel',
+        description: 'Publications liés au développement logiciel',
       },
       {
         name: 'Design',
-        description: 'Articles sur le design et l\'UX/UI',
+        description: 'Publications sur le design et l\'UX/UI',
       },
       {
         name: 'Marketing',

@@ -9,7 +9,7 @@ import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { fetchCurrentUser, getToken } from "../../../services/auth.service";
 import Avatar from "../ui/avatar/Avatar";
-import { useArticleModal } from "@/context/ArticleModalContext";
+import { usePublicationModal } from "@/context/PublicationModalContext";
 import { useTranslation } from "@/context/LanguageContext";
 
 const enum NotificationType {
@@ -17,13 +17,13 @@ const enum NotificationType {
   REPLY = 'reply',
   NEW_COMMENT = 'new_comment',
   SYSTEM_ERROR = 'system_error',
-  ARTICLE_PUBLISHED = 'article_published',
-  ARTICLE_PENDING_MODERATION = 'article_pending_moderation',
-  ARTICLE_REJECTED = 'article_rejected',
+  PUBLICATION_PUBLISHED = 'publication_published',
+  PUBLICATION_PENDING_MODERATION = 'publication_pending_moderation',
+  PUBLICATION_REJECTED = 'publication_rejected',
   SYSTEM_INFO = 'system_info',
   COMMENT_LIKED = 'comment_liked',
-  ARTICLE_LIKED = 'article_liked',
-  ARTICLE_BOOKMARKED = 'article_bookmarked',
+  PUBLICATION_LIKED = 'publication_liked',
+  PUBLICATION_BOOKMARKED = 'publication_bookmarked',
   USER_ROLE_CHANGED = 'user_role_changed',
   NEW_FOLLOWER = 'new_follower',
   ACCOUNT_ACTIVATED = 'account_activated',
@@ -46,7 +46,7 @@ interface Notification {
   };
   data?: {
     commentId?: number;
-    articleId?: number;
+    publicationId?: number;
     parentCommentId?: number;
     followerId?: number;
     reason?: string;
@@ -60,7 +60,7 @@ export default function NotificationDropdown() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const { openArticleModal } = useArticleModal();
+  const { openPublicationModal } = usePublicationModal();
   const { t, language } = useTranslation();
 
   const token = getToken() ?? "";
@@ -94,11 +94,11 @@ export default function NotificationDropdown() {
     if (notif.type === NotificationType.NEW_FOLLOWER && notif.data?.followerId) {
       // Navigation vers le profil
       window.location.href = `/profile/${notif.data.followerId}`;
-    } else if (notif.data?.articleId) {
-      // Ouvrir le modal de l'article
-      await handleOpenArticleModal(notif.data.articleId, notif.data.commentId);
+    } else if (notif.data?.publicationId) {
+      // Ouvrir le modal de l'publication
+      await handleOpenPublicationModal(notif.data.publicationId, notif.data.commentId);
     } else {
-      // Si pas d'article, juste fermer le dropdown
+      // Si pas d'publication, juste fermer le dropdown
       closeDropdown();
     }
   };
@@ -185,12 +185,12 @@ export default function NotificationDropdown() {
       case NotificationType.REPLY:                    return t('notifications.type_reply');
       case NotificationType.MENTION:                  return t('notifications.type_mention');
       case NotificationType.NEW_FOLLOWER:             return t('notifications.type_new_follower');
-      case NotificationType.ARTICLE_PUBLISHED:        return t('notifications.type_article_published');
-      case NotificationType.ARTICLE_PENDING_MODERATION: return t('notifications.type_pending_moderation');
-      case NotificationType.ARTICLE_REJECTED:         return t('notifications.type_article_rejected');
-      case NotificationType.ARTICLE_LIKED:            return t('notifications.type_article_liked');
+      case NotificationType.PUBLICATION_PUBLISHED:        return t('notifications.type_publication_published');
+      case NotificationType.PUBLICATION_PENDING_MODERATION: return t('notifications.type_pending_moderation');
+      case NotificationType.PUBLICATION_REJECTED:         return t('notifications.type_publication_rejected');
+      case NotificationType.PUBLICATION_LIKED:            return t('notifications.type_publication_liked');
       case NotificationType.COMMENT_LIKED:            return t('notifications.type_comment_liked');
-      case NotificationType.ARTICLE_BOOKMARKED:       return t('notifications.type_bookmarked');
+      case NotificationType.PUBLICATION_BOOKMARKED:       return t('notifications.type_bookmarked');
       case NotificationType.SYSTEM_INFO:              return t('notifications.type_system_info');
       case NotificationType.SYSTEM_ERROR:             return t('notifications.type_system_error');
       case NotificationType.USER_ROLE_CHANGED:        return t('notifications.type_role_changed');
@@ -207,22 +207,22 @@ export default function NotificationDropdown() {
       case NotificationType.REPLY:               return t('notifications.msg_reply', { name: senderName });
       case NotificationType.MENTION:             return t('notifications.msg_mention', { name: senderName });
       case NotificationType.NEW_FOLLOWER:        return t('notifications.msg_new_follower', { name: senderName });
-      case NotificationType.ARTICLE_LIKED:       return t('notifications.msg_article_liked', { name: senderName });
+      case NotificationType.PUBLICATION_LIKED:       return t('notifications.msg_publication_liked', { name: senderName });
       case NotificationType.COMMENT_LIKED:       return t('notifications.msg_comment_liked', { name: senderName });
-      case NotificationType.ARTICLE_BOOKMARKED:  return t('notifications.msg_bookmarked', { name: senderName });
-      case NotificationType.ARTICLE_PUBLISHED:   return t('notifications.msg_article_published');
-      case NotificationType.ARTICLE_REJECTED:    return t('notifications.msg_article_rejected');
+      case NotificationType.PUBLICATION_BOOKMARKED:  return t('notifications.msg_bookmarked', { name: senderName });
+      case NotificationType.PUBLICATION_PUBLISHED:   return t('notifications.msg_publication_published');
+      case NotificationType.PUBLICATION_REJECTED:    return t('notifications.msg_publication_rejected');
       case NotificationType.ACCOUNT_ACTIVATED:   return t('notifications.msg_account_activated');
       case NotificationType.ACCOUNT_DEACTIVATED: return t('notifications.msg_account_deactivated');
       default:                                   return t('notifications.msg_default', { name: senderName });
     }
   };
 
-  const handleOpenArticleModal = async (articleId: number, commentId?: number) => {
+  const handleOpenPublicationModal = async (publicationId: number, commentId?: number) => {
     try {
       const token = getToken();
 
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+      const response = await fetch(`http://localhost:3000/api/publications/${publicationId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -233,68 +233,68 @@ export default function NotificationDropdown() {
         throw new Error(`Erreur HTTP ${response.status}`);
       }
 
-      const articleData = await response.json();
+      const publicationData = await response.json();
 
-      const formattedArticle: any = {
-        id: articleData.id,
-        title: articleData.title,
-        content: articleData.content,
-        description: articleData.description || articleData.content?.substring(0, 150) + '...' || '',
+      const formattedPublication: any = {
+        id: publicationData.id,
+        title: publicationData.title,
+        content: publicationData.content,
+        description: publicationData.description || publicationData.content?.substring(0, 150) + '...' || '',
 
         author: {
-          id: articleData.author?.id || 0,
-          name: typeof articleData.author?.name === 'string'
-            ? articleData.author.name
-            : `${articleData.author?.firstName || ''} ${articleData.author?.lastName || ''}`.trim() || 'Utilisateur',
-          initials: ((articleData.author?.firstName?.charAt(0) || '') +
-            (articleData.author?.lastName?.charAt(0) || '')).toUpperCase() || 'U',
-          department: typeof articleData.author?.department === 'string'
-            ? articleData.author.department
-            : articleData.author?.role || 'Membre',
-          avatar: articleData.author?.avatar || null,
+          id: publicationData.author?.id || 0,
+          name: typeof publicationData.author?.name === 'string'
+            ? publicationData.author.name
+            : `${publicationData.author?.firstName || ''} ${publicationData.author?.lastName || ''}`.trim() || 'Utilisateur',
+          initials: ((publicationData.author?.firstName?.charAt(0) || '') +
+            (publicationData.author?.lastName?.charAt(0) || '')).toUpperCase() || 'U',
+          department: typeof publicationData.author?.department === 'string'
+            ? publicationData.author.department
+            : publicationData.author?.role || 'Membre',
+          avatar: publicationData.author?.avatar || null,
         },
 
         category: {
-          id: articleData.category?.id || 0,
-          name: typeof articleData.category?.name === 'string'
-            ? articleData.category.name
+          id: publicationData.category?.id || 0,
+          name: typeof publicationData.category?.name === 'string'
+            ? publicationData.category.name
             : 'Général',
-          slug: typeof articleData.category?.slug === 'string'
-            ? articleData.category.slug
+          slug: typeof publicationData.category?.slug === 'string'
+            ? publicationData.category.slug
             : 'general',
         },
 
-        tags: Array.isArray(articleData.tags)
-          ? articleData.tags.map((tag: any) => typeof tag === 'string' ? tag : tag.name || String(tag))
+        tags: Array.isArray(publicationData.tags)
+          ? publicationData.tags.map((tag: any) => typeof tag === 'string' ? tag : tag.name || String(tag))
           : [],
 
         isFeatured: false,
-        publishedAt: articleData.createdAt || articleData.publishedAt || new Date().toISOString(),
-        updatedAt: articleData.updatedAt || null,
-        status: articleData.status || 'published',
+        publishedAt: publicationData.createdAt || publicationData.publishedAt || new Date().toISOString(),
+        updatedAt: publicationData.updatedAt || null,
+        status: publicationData.status || 'published',
 
         stats: {
-          likes: typeof articleData.stats?.likes === 'number'
-            ? articleData.stats.likes
-            : articleData.likes?.length || 0,
-          comments: typeof articleData.stats?.comments === 'number'
-            ? articleData.stats.comments
-            : articleData.comments?.length || 0,
-          views: typeof articleData.stats?.views === 'number'
-            ? articleData.stats.views
-            : articleData.viewsCount || 0,
+          likes: typeof publicationData.stats?.likes === 'number'
+            ? publicationData.stats.likes
+            : publicationData.likes?.length || 0,
+          comments: typeof publicationData.stats?.comments === 'number'
+            ? publicationData.stats.comments
+            : publicationData.comments?.length || 0,
+          views: typeof publicationData.stats?.views === 'number'
+            ? publicationData.stats.views
+            : publicationData.viewsCount || 0,
         },
 
-        isLiked: !!articleData.isLiked,
-        isBookmarked: !!articleData.isBookmarked,
+        isLiked: !!publicationData.isLiked,
+        isBookmarked: !!publicationData.isBookmarked,
       };
 
       // Utiliser le contexte pour ouvrir le modal
-      openArticleModal(formattedArticle, commentId);
+      openPublicationModal(formattedPublication, commentId);
       closeDropdown();
     } catch (error) {
-      console.error('❌ Erreur chargement article:', error);
-      toast.error(t('notifications.err_load_article'));
+      console.error('❌ Erreur chargement publication:', error);
+      toast.error(t('notifications.err_load_publication'));
     }
   };
 
@@ -428,14 +428,14 @@ export default function NotificationDropdown() {
                       </p>
 
                       {/* Afficher la raison du rejet si nécessaire */}
-                      {notif.type === NotificationType.ARTICLE_REJECTED && notif.data?.reason && (
+                      {notif.type === NotificationType.PUBLICATION_REJECTED && notif.data?.reason && (
                         <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                           {t('notifications.reason_label', { reason: notif.data.reason })}
                         </p>
                       )}
 
                       {/* Afficher l'info de modération */}
-                      {notif.type === NotificationType.ARTICLE_PENDING_MODERATION && (
+                      {notif.type === NotificationType.PUBLICATION_PENDING_MODERATION && (
                         <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
                           {t('notifications.pending_moderation_info')}
                         </p>
@@ -450,16 +450,16 @@ export default function NotificationDropdown() {
                             ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                             : notif.type === NotificationType.NEW_FOLLOWER
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : notif.type === NotificationType.ARTICLE_LIKED ||
+                              : notif.type === NotificationType.PUBLICATION_LIKED ||
                                 notif.type === NotificationType.COMMENT_LIKED
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                : notif.type === NotificationType.ARTICLE_BOOKMARKED
+                                : notif.type === NotificationType.PUBLICATION_BOOKMARKED
                                   ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                  : notif.type === NotificationType.ARTICLE_PUBLISHED
+                                  : notif.type === NotificationType.PUBLICATION_PUBLISHED
                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                                    : notif.type === NotificationType.ARTICLE_REJECTED
+                                    : notif.type === NotificationType.PUBLICATION_REJECTED
                                       ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                      : notif.type === NotificationType.ARTICLE_PENDING_MODERATION
+                                      : notif.type === NotificationType.PUBLICATION_PENDING_MODERATION
                                         ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                                         : notif.type === NotificationType.SYSTEM_ERROR
                                           ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
@@ -485,24 +485,24 @@ export default function NotificationDropdown() {
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
                             </svg>
-                          ) : notif.type === NotificationType.ARTICLE_LIKED ||
+                          ) : notif.type === NotificationType.PUBLICATION_LIKED ||
                             notif.type === NotificationType.COMMENT_LIKED ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
                             </svg>
-                          ) : notif.type === NotificationType.ARTICLE_BOOKMARKED ? (
+                          ) : notif.type === NotificationType.PUBLICATION_BOOKMARKED ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
                             </svg>
-                          ) : notif.type === NotificationType.ARTICLE_PUBLISHED ? (
+                          ) : notif.type === NotificationType.PUBLICATION_PUBLISHED ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                             </svg>
-                          ) : notif.type === NotificationType.ARTICLE_REJECTED ? (
+                          ) : notif.type === NotificationType.PUBLICATION_REJECTED ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                             </svg>
-                          ) : notif.type === NotificationType.ARTICLE_PENDING_MODERATION ? (
+                          ) : notif.type === NotificationType.PUBLICATION_PENDING_MODERATION ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>

@@ -67,7 +67,7 @@ export default function CreateTagModal({
                 Créer un nouveau tag
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Ajoutez un tag pour organiser vos articles
+                Ajoutez un tag pour organiser vos publications
               </p>
             </div>
           </div>

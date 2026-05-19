@@ -10,13 +10,13 @@ import { confirm } from '@/components/modals/ConfirmModal';
 import CategoriesManager from '@/components/categories/CategoriesManager';
 import { categoryService, Category as ApiCategory } from '../../../../../../services/category.service';
 import { toast } from '@/components/modals/ToastContainer';
-import { articleService } from '../../../../../../services/article.service';
+import { publicationService } from '../../../../../../services/publication.service';
 
 interface Category {
   id: string;
   name: string;
   description: string;
-  articleCount: number;
+  publicationCount: number;
 }
 
 export default function CategoriesPage() {
@@ -69,18 +69,18 @@ export default function CategoriesPage() {
       // Récupérer les catégories
       const apiCategories = await categoryService.findAll();
       
-      // Récupérer tous les articles pour compter par catégorie
-      let articlesByCategory: Record<number, number> = {};
+      // Récupérer tous les publications pour compter par catégorie
+      let publicationsByCategory: Record<number, number> = {};
       try {
-        const articles = await articleService.findAll();
-        articlesByCategory = articles.reduce((acc, article) => {
-          if (article.category?.id) {
-            acc[article.category.id] = (acc[article.category.id] || 0) + 1;
+        const publications = await publicationService.findAll();
+        publicationsByCategory = publications.reduce((acc, publication) => {
+          if (publication.category?.id) {
+            acc[publication.category.id] = (acc[publication.category.id] || 0) + 1;
           }
           return acc;
         }, {} as Record<number, number>);
       } catch (err) {
-        console.error('Erreur chargement articles:', err);
+        console.error('Erreur chargement publications:', err);
       }
 
       // Transformer pour le frontend
@@ -88,7 +88,7 @@ export default function CategoriesPage() {
         id: cat.id.toString(),
         name: cat.name,
         description: cat.description || '',
-        articleCount: articlesByCategory[cat.id] || 0,
+        publicationCount: publicationsByCategory[cat.id] || 0,
       }));
 
       setCategories(frontendCategories);
@@ -120,8 +120,8 @@ export default function CategoriesPage() {
     const category = categories.find(cat => cat.id === id);
     if (!category) return;
 
-    const message = category.articleCount > 0
-      ? `Êtes-vous sûr de vouloir supprimer "${category.name}" ? Cette catégorie contient ${category.articleCount} article(s).`
+    const message = category.publicationCount > 0
+      ? `Êtes-vous sûr de vouloir supprimer "${category.name}" ? Cette catégorie contient ${category.publicationCount} publication(s).`
       : `Êtes-vous sûr de vouloir supprimer "${category.name}" ?`;
 
     if (await confirm(message)) {
@@ -140,13 +140,13 @@ export default function CategoriesPage() {
     setEditingCategory({
       ...category,
       id: category.id.toString(),
-      articleCount: 0,
+      publicationCount: 0,
     });
     setIsCreateModalOpen(true);
   };
 
-  const handleViewArticles = (categoryId: string | number) => {
-    window.location.href = `/articles?category=${categoryId}`;
+  const handleViewPublications = (categoryId: string | number) => {
+    window.location.href = `/publications?category=${categoryId}`;
   };
 
   const handleCloseModal = () => {
@@ -208,7 +208,7 @@ export default function CategoriesPage() {
             Catégories
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Organisez vos articles par thème et facilitez la navigation
+            Organisez vos publications par thème et facilitez la navigation
           </p>
         </div>
 

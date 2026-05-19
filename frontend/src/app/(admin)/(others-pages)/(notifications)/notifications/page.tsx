@@ -6,23 +6,23 @@ import { Bell, Check, Trash2, Filter, Loader2, Mail, Smartphone, Settings } from
 import { fetchCurrentUser, getToken } from '../../../../../../services/auth.service';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
-import { useArticleModal } from '@/context/ArticleModalContext';
+import { usePublicationModal } from '@/context/PublicationModalContext';
 
 const enum NotificationType {
   MENTION = 'mention',
   REPLY = 'reply',
   NEW_COMMENT = 'new_comment',
   SYSTEM_ERROR = 'system_error',
-  ARTICLE_PUBLISHED = 'article_published',
-  ARTICLE_PENDING_MODERATION = 'article_pending_moderation',
-  ARTICLE_REJECTED = 'article_rejected',
+  PUBLICATION_PUBLISHED = 'publication_published',
+  PUBLICATION_PENDING_MODERATION = 'publication_pending_moderation',
+  PUBLICATION_REJECTED = 'publication_rejected',
   SYSTEM_INFO = 'system_info',
   COMMENT_LIKED = 'comment_liked',
-  ARTICLE_LIKED = 'article_liked',
-  ARTICLE_BOOKMARKED = 'article_bookmarked',
+  PUBLICATION_LIKED = 'publication_liked',
+  PUBLICATION_BOOKMARKED = 'publication_bookmarked',
   USER_ROLE_CHANGED = 'user_role_changed',
-  COMMENT_ON_ARTICLE = 'comment_on_article',
-  LIKE_ON_ARTICLE = 'like_on_article',
+  COMMENT_ON_PUBLICATION = 'comment_on_publication',
+  LIKE_ON_PUBLICATION = 'like_on_publication',
   NEW_FOLLOWER = 'new_follower',
   NEWSLETTER = 'newsletter',
   PLATFORM_UPDATE = 'platform_update'
@@ -44,7 +44,7 @@ interface Notification {
   };
   data?: {
     commentId?: number;
-    articleId?: number;
+    publicationId?: number;
     parentCommentId?: number;
     followerId?: number;
     reason?: string;
@@ -72,7 +72,7 @@ export default function NotificationsPage() {
   const [savingPreferences, setSavingPreferences] = useState(false);
   const [preferencesSaved, setPreferencesSaved] = useState(false);
 
-  const { openArticleModal } = useArticleModal();
+  const { openPublicationModal } = usePublicationModal();
 
   const token = getToken() ?? '';
 
@@ -252,7 +252,7 @@ export default function NotificationsPage() {
   const getNotificationTypeLabel = (type: NotificationType): string => {
     switch (type) {
       case NotificationType.NEW_COMMENT:
-      case NotificationType.COMMENT_ON_ARTICLE:
+      case NotificationType.COMMENT_ON_PUBLICATION:
         return 'Commentaire';
       case NotificationType.REPLY:
         return 'Réponse';
@@ -260,18 +260,18 @@ export default function NotificationsPage() {
         return 'Mention';
       case NotificationType.NEW_FOLLOWER:
         return 'Nouvel abonné';
-      case NotificationType.ARTICLE_PUBLISHED:
-        return 'Article publié';
-      case NotificationType.ARTICLE_PENDING_MODERATION:
+      case NotificationType.PUBLICATION_PUBLISHED:
+        return 'Publication publié';
+      case NotificationType.PUBLICATION_PENDING_MODERATION:
         return 'En attente de modération';
-      case NotificationType.ARTICLE_REJECTED:
-        return 'Article refusé';
-      case NotificationType.ARTICLE_LIKED:
-      case NotificationType.LIKE_ON_ARTICLE:
+      case NotificationType.PUBLICATION_REJECTED:
+        return 'Publication refusé';
+      case NotificationType.PUBLICATION_LIKED:
+      case NotificationType.LIKE_ON_PUBLICATION:
         return "J'aime";
       case NotificationType.COMMENT_LIKED:
         return "J'aime sur commentaire";
-      case NotificationType.ARTICLE_BOOKMARKED:
+      case NotificationType.PUBLICATION_BOOKMARKED:
         return 'Sauvegarde';
       case NotificationType.SYSTEM_INFO:
         return 'Information';
@@ -291,25 +291,25 @@ export default function NotificationsPage() {
   const getDefaultMessage = (type: NotificationType, senderName: string): string => {
     switch (type) {
       case NotificationType.NEW_COMMENT:
-      case NotificationType.COMMENT_ON_ARTICLE:
-        return `${senderName} a commenté votre article`;
+      case NotificationType.COMMENT_ON_PUBLICATION:
+        return `${senderName} a commenté votre publication`;
       case NotificationType.REPLY:
         return `${senderName} a répondu à votre commentaire`;
       case NotificationType.MENTION:
         return `${senderName} vous a mentionné`;
       case NotificationType.NEW_FOLLOWER:
         return `${senderName} veut vous suivre`;
-      case NotificationType.ARTICLE_LIKED:
-      case NotificationType.LIKE_ON_ARTICLE:
-        return `${senderName} a aimé votre article`;
+      case NotificationType.PUBLICATION_LIKED:
+      case NotificationType.LIKE_ON_PUBLICATION:
+        return `${senderName} a aimé votre publication`;
       case NotificationType.COMMENT_LIKED:
         return `${senderName} a aimé votre commentaire`;
-      case NotificationType.ARTICLE_BOOKMARKED:
-        return `${senderName} a sauvegardé votre article`;
-      case NotificationType.ARTICLE_PUBLISHED:
-        return 'Votre article a été publié';
-      case NotificationType.ARTICLE_REJECTED:
-        return 'Votre article a été refusé';
+      case NotificationType.PUBLICATION_BOOKMARKED:
+        return `${senderName} a sauvegardé votre publication`;
+      case NotificationType.PUBLICATION_PUBLISHED:
+        return 'Votre publication a été publié';
+      case NotificationType.PUBLICATION_REJECTED:
+        return 'Votre publication a été refusé';
       case NotificationType.ACCOUNT_ACTIVATED:
         return 'Votre compte a été activé. Vous pouvez maintenant accéder à la plateforme.';
       case NotificationType.ACCOUNT_DEACTIVATED:
@@ -319,9 +319,9 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleOpenArticleModal = async (articleId: number, commentId?: number) => {
+  const handleOpenPublicationModal = async (publicationId: number, commentId?: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+      const response = await fetch(`http://localhost:3000/api/publications/${publicationId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -332,67 +332,67 @@ export default function NotificationsPage() {
         throw new Error(`Erreur HTTP ${response.status}`);
       }
 
-      const articleData = await response.json();
+      const publicationData = await response.json();
       
-      const formattedArticle: any = {
-        id: articleData.id,
-        title: articleData.title,
-        content: articleData.content,
-        description: articleData.description || articleData.content?.substring(0, 150) + '...' || '',
+      const formattedPublication: any = {
+        id: publicationData.id,
+        title: publicationData.title,
+        content: publicationData.content,
+        description: publicationData.description || publicationData.content?.substring(0, 150) + '...' || '',
         
         author: {
-          id: articleData.author?.id || 0,
-          name: typeof articleData.author?.name === 'string' 
-            ? articleData.author.name 
-            : `${articleData.author?.firstName || ''} ${articleData.author?.lastName || ''}`.trim() || 'Utilisateur',
-          initials: ((articleData.author?.firstName?.charAt(0) || '') + 
-                    (articleData.author?.lastName?.charAt(0) || '')).toUpperCase() || 'U',
-          department: typeof articleData.author?.department === 'string'
-            ? articleData.author.department
-            : articleData.author?.role || 'Membre',
-          avatar: articleData.author?.avatar || null,
+          id: publicationData.author?.id || 0,
+          name: typeof publicationData.author?.name === 'string' 
+            ? publicationData.author.name 
+            : `${publicationData.author?.firstName || ''} ${publicationData.author?.lastName || ''}`.trim() || 'Utilisateur',
+          initials: ((publicationData.author?.firstName?.charAt(0) || '') + 
+                    (publicationData.author?.lastName?.charAt(0) || '')).toUpperCase() || 'U',
+          department: typeof publicationData.author?.department === 'string'
+            ? publicationData.author.department
+            : publicationData.author?.role || 'Membre',
+          avatar: publicationData.author?.avatar || null,
         },
         
         category: {
-          id: articleData.category?.id || 0,
-          name: typeof articleData.category?.name === 'string' 
-            ? articleData.category.name 
+          id: publicationData.category?.id || 0,
+          name: typeof publicationData.category?.name === 'string' 
+            ? publicationData.category.name 
             : 'Général',
-          slug: typeof articleData.category?.slug === 'string'
-            ? articleData.category.slug
+          slug: typeof publicationData.category?.slug === 'string'
+            ? publicationData.category.slug
             : 'general',
         },
         
-        tags: Array.isArray(articleData.tags) 
-          ? articleData.tags.map((tag: any) => typeof tag === 'string' ? tag : tag.name || String(tag))
+        tags: Array.isArray(publicationData.tags) 
+          ? publicationData.tags.map((tag: any) => typeof tag === 'string' ? tag : tag.name || String(tag))
           : [],
         
         isFeatured: false,
-        publishedAt: articleData.createdAt || articleData.publishedAt || new Date().toISOString(),
-        updatedAt: articleData.updatedAt || null,
-        status: articleData.status || 'published',
+        publishedAt: publicationData.createdAt || publicationData.publishedAt || new Date().toISOString(),
+        updatedAt: publicationData.updatedAt || null,
+        status: publicationData.status || 'published',
         
         stats: {
-          likes: typeof articleData.stats?.likes === 'number' 
-            ? articleData.stats.likes 
-            : articleData.likes?.length || 0,
-          comments: typeof articleData.stats?.comments === 'number'
-            ? articleData.stats.comments
-            : articleData.comments?.length || 0,
-          views: typeof articleData.stats?.views === 'number'
-            ? articleData.stats.views
-            : articleData.viewsCount || 0,
+          likes: typeof publicationData.stats?.likes === 'number' 
+            ? publicationData.stats.likes 
+            : publicationData.likes?.length || 0,
+          comments: typeof publicationData.stats?.comments === 'number'
+            ? publicationData.stats.comments
+            : publicationData.comments?.length || 0,
+          views: typeof publicationData.stats?.views === 'number'
+            ? publicationData.stats.views
+            : publicationData.viewsCount || 0,
         },
         
-        isLiked: !!articleData.isLiked,
-        isBookmarked: !!articleData.isBookmarked,
+        isLiked: !!publicationData.isLiked,
+        isBookmarked: !!publicationData.isBookmarked,
       };
       
       // Utiliser le contexte pour ouvrir le modal
-      openArticleModal(formattedArticle, commentId);
+      openPublicationModal(formattedPublication, commentId);
     } catch (error) {
-      console.error('❌ Erreur chargement article:', error);
-      toast.error("Impossible de charger l'article");
+      console.error('❌ Erreur chargement publication:', error);
+      toast.error("Impossible de charger l'publication");
     }
   };
 
@@ -437,8 +437,8 @@ export default function NotificationsPage() {
     // Traiter selon le type de notification
     if (notif.type === NotificationType.NEW_FOLLOWER && notif.data?.followerId) {
       window.location.href = `/profile/${notif.data.followerId}`;
-    } else if (notif.data?.articleId) {
-      await handleOpenArticleModal(notif.data.articleId, notif.data.commentId);
+    } else if (notif.data?.publicationId) {
+      await handleOpenPublicationModal(notif.data.publicationId, notif.data.commentId);
     }
   };
 
@@ -687,16 +687,16 @@ export default function NotificationsPage() {
                             </p>
 
                             {/* Rejection reason */}
-                            {notif.type === NotificationType.ARTICLE_REJECTED && notif.data?.reason && (
+                            {notif.type === NotificationType.PUBLICATION_REJECTED && notif.data?.reason && (
                               <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                                 Raison : {notif.data.reason}
                               </p>
                             )}
 
                             {/* Moderation info */}
-                            {notif.type === NotificationType.ARTICLE_PENDING_MODERATION && (
+                            {notif.type === NotificationType.PUBLICATION_PENDING_MODERATION && (
                               <p className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
-                                Votre article est en attente de modération
+                                Votre publication est en attente de modération
                               </p>
                             )}
                           </div>
@@ -737,24 +737,24 @@ export default function NotificationsPage() {
                         <div className="flex items-center gap-2 mt-3 text-xs text-gray-500 dark:text-gray-400">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                             notif.type === NotificationType.NEW_COMMENT || 
-                            notif.type === NotificationType.COMMENT_ON_ARTICLE ||
+                            notif.type === NotificationType.COMMENT_ON_PUBLICATION ||
                             notif.type === NotificationType.REPLY
                               ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                               : notif.type === NotificationType.MENTION
                               ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                               : notif.type === NotificationType.NEW_FOLLOWER
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : notif.type === NotificationType.ARTICLE_LIKED ||
-                                notif.type === NotificationType.LIKE_ON_ARTICLE ||
+                              : notif.type === NotificationType.PUBLICATION_LIKED ||
+                                notif.type === NotificationType.LIKE_ON_PUBLICATION ||
                                 notif.type === NotificationType.COMMENT_LIKED
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                              : notif.type === NotificationType.ARTICLE_BOOKMARKED
+                              : notif.type === NotificationType.PUBLICATION_BOOKMARKED
                               ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                              : notif.type === NotificationType.ARTICLE_PUBLISHED
+                              : notif.type === NotificationType.PUBLICATION_PUBLISHED
                               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                              : notif.type === NotificationType.ARTICLE_REJECTED
+                              : notif.type === NotificationType.PUBLICATION_REJECTED
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                              : notif.type === NotificationType.ARTICLE_PENDING_MODERATION
+                              : notif.type === NotificationType.PUBLICATION_PENDING_MODERATION
                               ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                               : notif.type === NotificationType.SYSTEM_ERROR
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'

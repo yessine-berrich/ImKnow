@@ -4,7 +4,7 @@ import { getToken } from '../../services/auth.service';
 import { ThemeToggleButton } from "@/components/common/ThemeToggleButton";
 import NotificationDropdown from "@/components/header/NotificationDropdown";
 import UserDropdown from "@/components/header/UserDropdown";
-import CreateArticleModal from "@/components/modals/CreateArticleModal";
+import CreatePublicationModal from "@/components/modals/CreatePublicationModal";
 import AIAssistant from "@/components/ia-assistant/AIAssistant";
 import { useSidebar } from "@/context/SidebarContext";
 import Image from "next/image";
@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Menu, BookOpen, Sparkles } from "lucide-react";
 import MessageDropdown from "@/components/header/MessageDropdown";
-import DraftArticlesModal from "@/components/modals/Draftarticlesmodal";
+import DraftPublicationsModal from "@/components/modals/Draftpublicationsmodal";
 import Avatar from "@/components/ui/avatar/Avatar";
 import { useTranslation } from "@/context/LanguageContext";
 
@@ -33,7 +33,7 @@ interface SearchResult {
   likesCount?: number;
   similarity?: number;
   createdAt?: string;
-  articlesCount?: number;
+  publicationsCount?: number;
   description?: string;
   bio?: string;
   department?: string;
@@ -43,7 +43,7 @@ interface SearchResult {
 
 interface GlobalSearchResponse {
   query: string;
-  articles: SearchResult[];
+  publications: SearchResult[];
   categories: SearchResult[];
   tags: SearchResult[];
   users: SearchResult[];
@@ -164,29 +164,29 @@ const AppHeader: React.FC = () => {
   }, [searchQuery]);
 
   // Fonction pour gérer la navigation selon le type de résultat
-  const handleResultClick = (result: SearchResult, type: 'article' | 'category' | 'tag' | 'user') => {
+  const handleResultClick = (result: SearchResult, type: 'publication' | 'category' | 'tag' | 'user') => {
     setShowResults(false);
     setSearchQuery("");
 
     switch (type) {
-      case 'article':
-        router.push(`/home?article=${result.id}`);
+      case 'publication':
+        router.push(`/home?publication=${result.id}`);
         break;
       case 'user':
         router.push(`/profile/${result.id}`);
         break;
       case 'category':
-        router.push(`/categories/${result.id}/articles`);
+        router.push(`/categories/${result.id}/publications`);
         break;
       case 'tag':
-        router.push(`/tags/${result.id}/articles`);
+        router.push(`/tags/${result.id}/publications`);
         break;
     }
   };
 
   // Compter le nombre total de résultats
   const totalResults = searchResults
-    ? (searchResults.articles?.length || 0) +
+    ? (searchResults.publications?.length || 0) +
     (searchResults.categories?.length || 0) +
     (searchResults.tags?.length || 0) +
     (searchResults.users?.length || 0)
@@ -286,29 +286,29 @@ const AppHeader: React.FC = () => {
                     </div>
                   ) : (
                     <div className="py-2">
-                      {/* ARTICLES */}
-                      {searchResults.articles && searchResults.articles.length > 0 && (
+                      {/* PUBLICATIONS */}
+                      {searchResults.publications && searchResults.publications.length > 0 && (
                         <div>
                           <div className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800">
-                            {t('header.section_articles', { count: searchResults.articles.length })}
+                            {t('header.section_publications', { count: searchResults.publications.length })}
                           </div>
-                          {searchResults.articles.map((article) => (
+                          {searchResults.publications.map((publication) => (
                             <button
-                              key={`article-${article.id}`}
-                              onClick={() => handleResultClick(article, 'article')}
+                              key={`publication-${publication.id}`}
+                              onClick={() => handleResultClick(publication, 'publication')}
                               className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
                             >
                               <span className="font-medium text-gray-900 dark:text-white">
-                                {article.title}
+                                {publication.title}
                               </span>
-                              {article.contentPreview && (
+                              {publication.contentPreview && (
                                 <span className="block text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
-                                  {article.contentPreview}
+                                  {publication.contentPreview}
                                 </span>
                               )}
-                              {article.similarity !== undefined && (
+                              {publication.similarity !== undefined && (
                                 <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                  {t('header.relevance', { percent: (article.similarity * 100).toFixed(0) })}
+                                  {t('header.relevance', { percent: (publication.similarity * 100).toFixed(0) })}
                                 </span>
                               )}
                             </button>
@@ -366,9 +366,9 @@ const AppHeader: React.FC = () => {
                                   {category.description}
                                 </span>
                               )}
-                              {category.articlesCount !== undefined && (
+                              {category.publicationsCount !== undefined && (
                                 <span className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                  {t(category.articlesCount > 1 ? 'header.article_count_plural' : 'header.article_count_one', { count: category.articlesCount })}
+                                  {t(category.publicationsCount > 1 ? 'header.publication_count_plural' : 'header.publication_count_one', { count: category.publicationsCount })}
                                 </span>
                               )}
                             </button>
@@ -391,9 +391,9 @@ const AppHeader: React.FC = () => {
                               <span className="font-medium text-gray-900 dark:text-white">
                                 {tag.name}
                               </span>
-                              {tag.articlesCount !== undefined && (
+                              {tag.publicationsCount !== undefined && (
                                 <span className="block text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                                  {t(tag.articlesCount > 1 ? 'header.article_count_plural' : 'header.article_count_one', { count: tag.articlesCount })}
+                                  {t(tag.publicationsCount > 1 ? 'header.publication_count_plural' : 'header.publication_count_one', { count: tag.publicationsCount })}
                                 </span>
                               )}
                             </button>
@@ -439,11 +439,11 @@ const AppHeader: React.FC = () => {
                 <BookOpen size={20} />
               </button>
 
-              {/* Bouton Créer un article */}
+              {/* Bouton Créer un publication */}
               <button
                 onClick={() => setCreateModalOpen(true)}
                 className="relative flex items-center justify-center h-11 w-11 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-                title={t('header.add_article')}
+                title={t('header.add_publication')}
               >
                 <Plus size={20} />
               </button>
@@ -461,11 +461,11 @@ const AppHeader: React.FC = () => {
         </div>
       </header>
 
-      <CreateArticleModal
+      <CreatePublicationModal
         isOpen={isCreateModalOpen}
         onClose={() => setCreateModalOpen(false)}
       />
-      <DraftArticlesModal
+      <DraftPublicationsModal
         isOpen={isDraftModalOpen}
         onClose={() => setDraftModalOpen(false)}
       />

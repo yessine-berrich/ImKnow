@@ -12,24 +12,24 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-import ArticleCard from '@/components/article/ArticleCard';
+import PublicationCard from '@/components/publication/PublicationCard';
 import { confirm } from '@/components/modals/ConfirmModal';
-import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
+import PublicationFilterBar, { FilterOptions } from '@/components/Filter/PublicationFilterBar';
 import { useTranslation } from '@/context/LanguageContext';
 import { commentService } from '../../../../../../services/comment.service';
 import { getToken } from '../../../../../../services/auth.service';
-import { articleService } from '../../../../../../services/article.service';
+import { publicationService } from '../../../../../../services/publication.service';
 
 // ============================================
 // COMPOSANT PRINCIPAL
 // ============================================
 
-export default function CommentedArticlesPage() {
+export default function CommentedPublicationsPage() {
   const router = useRouter();
   const { t, language } = useTranslation();
   
   // États
-  const [articles, setArticles] = useState<any[]>([]);
+  const [publications, setPublications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -52,7 +52,7 @@ export default function CommentedArticlesPage() {
   // FONCTIONS API
   // ============================================
 
-  const fetchCommentedArticles = async () => {
+  const fetchCommentedPublications = async () => {
     setIsLoading(true);
     setError(null);
     
@@ -64,53 +64,53 @@ export default function CommentedArticlesPage() {
         return;
       }
 
-      console.log('🔍 Fetching commented articles...');
-      const response = await commentService.findCommentedArticlesByUser();
+      console.log('🔍 Fetching commented publications...');
+      const response = await commentService.findCommentedPublicationsByUser();
       console.log('📦 Réponse brute:', response);
 
-      // ✅ Extraire le tableau d'articles de la réponse
-      let articlesList = [];
+      // ✅ Extraire le tableau d'publications de la réponse
+      let publicationsList = [];
       
-      if (response && response.success && Array.isArray(response.articles)) {
-        // Format: { success: true, count: 5, articles: [...] }
-        articlesList = response.articles;
-        console.log('✅ Format avec success.articles,', articlesList.length, 'articles');
+      if (response && response.success && Array.isArray(response.publications)) {
+        // Format: { success: true, count: 5, publications: [...] }
+        publicationsList = response.publications;
+        console.log('✅ Format avec success.publications,', publicationsList.length, 'publications');
       } else if (Array.isArray(response)) {
         // Format: [...]
-        articlesList = response;
-        console.log('✅ Format tableau,', articlesList.length, 'articles');
+        publicationsList = response;
+        console.log('✅ Format tableau,', publicationsList.length, 'publications');
       } else {
         console.error('❌ Format de réponse inattendu:', response);
         setError(t('commented.format_error'));
-        setArticles([]);
+        setPublications([]);
         setTotalCount(0);
         setIsLoading(false);
         return;
       }
 
-      // Afficher le premier article pour debug
-      if (articlesList.length > 0) {
-        console.log('📄 Structure du premier article:', {
-          id: articlesList[0].id,
-          title: articlesList[0].title,
-          author: articlesList[0].author,
-          category: articlesList[0].category,
-          tags: articlesList[0].tags,
-          likesCount: articlesList[0].likesCount,
-          commentsCount: articlesList[0].commentsCount,
-          viewsCount: articlesList[0].viewsCount,
-          userCommentsCount: articlesList[0].userCommentsCount,
-          lastCommentDate: articlesList[0].lastCommentDate
+      // Afficher le premier publication pour debug
+      if (publicationsList.length > 0) {
+        console.log('📄 Structure du premier publication:', {
+          id: publicationsList[0].id,
+          title: publicationsList[0].title,
+          author: publicationsList[0].author,
+          category: publicationsList[0].category,
+          tags: publicationsList[0].tags,
+          likesCount: publicationsList[0].likesCount,
+          commentsCount: publicationsList[0].commentsCount,
+          viewsCount: publicationsList[0].viewsCount,
+          userCommentsCount: publicationsList[0].userCommentsCount,
+          lastCommentDate: publicationsList[0].lastCommentDate
         });
       }
 
       const categoriesSet = new Set<string>();
       const tagsSet = new Set<string>();
 
-      const formattedArticles = articlesList.map((article: any) => {
-        const authorName = article.author?.name ||
-          (article.author?.firstName && article.author?.lastName
-            ? `${article.author.firstName} ${article.author.lastName}`
+      const formattedPublications = publicationsList.map((publication: any) => {
+        const authorName = publication.author?.name ||
+          (publication.author?.firstName && publication.author?.lastName
+            ? `${publication.author.firstName} ${publication.author.lastName}`
             : t('activity_common.default_author'));
         
         const initials = authorName
@@ -120,57 +120,57 @@ export default function CommentedArticlesPage() {
           .toUpperCase()
           .slice(0, 2);
 
-        if (article.category?.name) {
-          categoriesSet.add(article.category.name);
+        if (publication.category?.name) {
+          categoriesSet.add(publication.category.name);
         }
 
-        if (article.tags && Array.isArray(article.tags)) {
-          article.tags.forEach((tag: any) => {
+        if (publication.tags && Array.isArray(publication.tags)) {
+          publication.tags.forEach((tag: any) => {
             const tagName = typeof tag === 'string' ? tag : tag.name;
             if (tagName) tagsSet.add(tagName);
           });
         }
 
         return {
-          id: String(article.id),
-          title: article.title,
-          description: article.description || article.content?.substring(0, 180) + '...',
-          content: article.content || '',
+          id: String(publication.id),
+          title: publication.title,
+          description: publication.description || publication.content?.substring(0, 180) + '...',
+          content: publication.content || '',
           author: {
-            id: article.author?.id,
+            id: publication.author?.id,
             name: authorName,
             initials: initials,
-            department: article.author?.department || t('activity_common.default_department'),
-            avatar: article.author?.profileImage || article.author?.avatar || null
+            department: publication.author?.department || t('activity_common.default_department'),
+            avatar: publication.author?.profileImage || publication.author?.avatar || null
           },
           category: {
-            name: article.category?.name || t('activity_common.uncategorized')
+            name: publication.category?.name || t('activity_common.uncategorized')
           },
-          tags: article.tags?.map((tag: any) => typeof tag === 'string' ? tag : tag.name) || [],
-          publishedAt: article.publishedAt || article.createdAt,
-          updatedAt: article.updatedAt,
-          status: article.status || 'published',
+          tags: publication.tags?.map((tag: any) => typeof tag === 'string' ? tag : tag.name) || [],
+          publishedAt: publication.publishedAt || publication.createdAt,
+          updatedAt: publication.updatedAt,
+          status: publication.status || 'published',
           stats: {
-            likes: article.likesCount || article.likes?.length || 0,
-            comments: article.commentsCount || article.comments?.length || 0,
-            views: article.viewsCount || article.stats?.views || 0,
+            likes: publication.likesCount || publication.likes?.length || 0,
+            comments: publication.commentsCount || publication.comments?.length || 0,
+            views: publication.viewsCount || publication.stats?.views || 0,
           },
-          isLiked: article.isLiked || false,
-          isBookmarked: article.isBookmarked || false,
+          isLiked: publication.isLiked || false,
+          isBookmarked: publication.isBookmarked || false,
           isFeatured: false,
-          userCommentsCount: article.userCommentsCount || article.commentCount || 1,
-          lastCommentDate: article.lastCommentDate,
+          userCommentsCount: publication.userCommentsCount || publication.commentCount || 1,
+          lastCommentDate: publication.lastCommentDate,
         };
       });
 
-      console.log('✅ Articles formatés:', formattedArticles.length);
-      setArticles(formattedArticles);
-      setTotalCount(formattedArticles.length);
+      console.log('✅ Publications formatés:', formattedPublications.length);
+      setPublications(formattedPublications);
+      setTotalCount(formattedPublications.length);
       setAvailableCategories(Array.from(categoriesSet).sort());
       setAvailableTags(Array.from(tagsSet).sort());
       
     } catch (err) {
-      console.error('❌ Erreur fetchCommentedArticles:', err);
+      console.error('❌ Erreur fetchCommentedPublications:', err);
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       setError(message);
     } finally {
@@ -178,19 +178,19 @@ export default function CommentedArticlesPage() {
     }
   };
 
-  const handleUnlike = async (articleId: string) => {
+  const handleUnlike = async (publicationId: string) => {
     try {
       const token = getToken();
       if (!token) return;
 
-      const article = articles.find(a => a.id === articleId);
-      if (!article) return;
+      const publication = publications.find(a => a.id === publicationId);
+      if (!publication) return;
 
-      const newLikeState = !article.isLiked;
+      const newLikeState = !publication.isLiked;
       
-      setArticles(prev => 
+      setPublications(prev => 
         prev.map(a => 
-          a.id === articleId 
+          a.id === publicationId 
             ? { 
                 ...a, 
                 isLiked: newLikeState,
@@ -200,46 +200,46 @@ export default function CommentedArticlesPage() {
         )
       );
 
-      await articleService.toggleLike(Number(articleId));
+      await publicationService.toggleLike(Number(publicationId));
     } catch {
       // Silently handle error
     }
   };
 
-  const handleBookmark = async (articleId: string) => {
+  const handleBookmark = async (publicationId: string) => {
     try {
       const token = getToken();
       if (!token) return;
 
-      const article = articles.find(a => a.id === articleId);
-      if (!article) return;
+      const publication = publications.find(a => a.id === publicationId);
+      if (!publication) return;
 
-      const newBookmarkState = !article.isBookmarked;
+      const newBookmarkState = !publication.isBookmarked;
       
-      setArticles(prev => 
+      setPublications(prev => 
         prev.map(a => 
-          a.id === articleId 
+          a.id === publicationId 
             ? { ...a, isBookmarked: newBookmarkState } 
             : a
         )
       );
 
-      await articleService.toggleBookmark(Number(articleId));
+      await publicationService.toggleBookmark(Number(publicationId));
     } catch {
       // Silently handle error
     }
   };
 
-  const handleShare = (articleId: string) => {
-    const article = articles.find(a => a.id === articleId);
-    if (!article) return;
+  const handleShare = (publicationId: string) => {
+    const publication = publications.find(a => a.id === publicationId);
+    if (!publication) return;
 
-    const shareUrl = `${window.location.origin}/articles/${articleId}`;
+    const shareUrl = `${window.location.origin}/publications/${publicationId}`;
     
     if (navigator.share) {
       navigator.share({
-        title: article.title,
-        text: article.description,
+        title: publication.title,
+        text: publication.description,
         url: shareUrl,
       }).catch(() => {
         navigator.clipboard.writeText(shareUrl);
@@ -249,16 +249,16 @@ export default function CommentedArticlesPage() {
     }
   };
 
-  const handleEdit = (articleId: string) => {
-    router.push(`/articles/edit/${articleId}`);
+  const handleEdit = (publicationId: string) => {
+    router.push(`/publications/edit/${publicationId}`);
   };
 
-  const handleDelete = async (articleId: string) => {
+  const handleDelete = async (publicationId: string) => {
     if (!await confirm(t('activity_common.delete_confirm'))) return;
     
     try {
-      await articleService.delete(Number(articleId));
-      setArticles(prev => prev.filter(a => a.id !== articleId));
+      await publicationService.delete(Number(publicationId));
+      setPublications(prev => prev.filter(a => a.id !== publicationId));
       setTotalCount(prev => prev - 1);
     } catch {
       // Silently handle error
@@ -272,17 +272,17 @@ export default function CommentedArticlesPage() {
 
   // Chargement initial
   useEffect(() => {
-    fetchCommentedArticles();
+    fetchCommentedPublications();
   }, []);
 
   // ============================================
   // FILTRAGE ET TRI
   // ============================================
 
-  const filteredArticles = articles
-    .filter(article => {
-      const matchesCategory = filters.selectedCategory === 'all' || article.category.name === filters.selectedCategory;
-      const matchesTag = filters.selectedTag === 'all' || article.tags.includes(filters.selectedTag);
+  const filteredPublications = publications
+    .filter(publication => {
+      const matchesCategory = filters.selectedCategory === 'all' || publication.category.name === filters.selectedCategory;
+      const matchesTag = filters.selectedTag === 'all' || publication.tags.includes(filters.selectedTag);
       
       return matchesCategory && matchesTag;
     })
@@ -301,8 +301,8 @@ export default function CommentedArticlesPage() {
       return 0;
     });
 
-  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
-  const paginatedArticles = filteredArticles.slice(
+  const totalPages = Math.ceil(filteredPublications.length / itemsPerPage);
+  const paginatedPublications = filteredPublications.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -362,7 +362,7 @@ export default function CommentedArticlesPage() {
       </div>
 
       {/* 🔥 COMPOSANT DE FILTRES 🔥 */}
-      <ArticleFilterBar
+      <PublicationFilterBar
         categories={availableCategories}
         tags={availableTags}
         activeFilters={filters}
@@ -393,7 +393,7 @@ export default function CommentedArticlesPage() {
             </Link>
           ) : (
             <button
-              onClick={fetchCommentedArticles}
+              onClick={fetchCommentedPublications}
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
               {t('activity_common.retry')}
@@ -403,7 +403,7 @@ export default function CommentedArticlesPage() {
       )}
 
       {/* État vide */}
-      {!error && filteredArticles.length === 0 && (
+      {!error && filteredPublications.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 rounded-full bg-gray-100 p-4 dark:bg-gray-700">
             <MessageCircle className="h-12 w-12 text-gray-400 dark:text-gray-500" />
@@ -415,40 +415,40 @@ export default function CommentedArticlesPage() {
             {t('commented.empty_desc')}
           </p>
           <Link
-            href="/articles"
+            href="/publications"
             className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
           >
-            {t('activity_common.explore_articles')}
+            {t('activity_common.explore_publications')}
           </Link>
         </div>
       )}
 
-      {/* Grille des articles */}
-      {!error && filteredArticles.length > 0 && (
+      {/* Grille des publications */}
+      {!error && filteredPublications.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {paginatedArticles.map((article) => (
-              <div key={article.id} className="relative">
+            {paginatedPublications.map((publication) => (
+              <div key={publication.id} className="relative">
                 {/* Badge nombre de commentaires */}
                 <div className="absolute -top-2 -right-2 z-10">
                   <div className="flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-1.5 text-xs font-bold text-white shadow-lg">
                     <MessageCircle className="h-3 w-3" />
-                    <span>{article.userCommentsCount || article.stats.comments || 0}</span>
+                    <span>{publication.userCommentsCount || publication.stats.comments || 0}</span>
                   </div>
                 </div>
                 
-                <ArticleCard
-                  article={article}
-                  onLike={() => handleUnlike(article.id)}
-                  onBookmark={() => handleBookmark(article.id)}
-                  onShare={() => handleShare(article.id)}
+                <PublicationCard
+                  publication={publication}
+                  onLike={() => handleUnlike(publication.id)}
+                  onBookmark={() => handleBookmark(publication.id)}
+                  onShare={() => handleShare(publication.id)}
                   showActions={true}
                 />
                 
                 {/* Dernier commentaire */}
-                {article.lastCommentDate && (
+                {publication.lastCommentDate && (
                   <div className="mt-2 text-right text-xs text-gray-500 dark:text-gray-400">
-                    {t('commented.last_comment')} {new Date(article.lastCommentDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
+                    {t('commented.last_comment')} {new Date(publication.lastCommentDate).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric',
@@ -502,9 +502,9 @@ export default function CommentedArticlesPage() {
           <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
             {t('activity_common.displaying', {
               from: ((currentPage - 1) * itemsPerPage) + 1,
-              to: Math.min(currentPage * itemsPerPage, filteredArticles.length),
-              total: filteredArticles.length,
-              plural: filteredArticles.length > 1 ? 's' : '',
+              to: Math.min(currentPage * itemsPerPage, filteredPublications.length),
+              total: filteredPublications.length,
+              plural: filteredPublications.length > 1 ? 's' : '',
             })}
           </div>
         </>

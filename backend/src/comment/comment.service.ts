@@ -9,9 +9,9 @@ import { Comment } from './entities/comment.entity';
 import { NotificationGateway } from 'src/notification/notification.gateway';
 import { NotificationService } from 'src/notification/notification.service';
 import { NotificationType } from 'utils/constants';
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
-import { ArticleService } from 'src/article/article.service';
+import { PublicationService } from 'src/publication/publication.service';
 
 @Injectable()
 export class CommentService {
@@ -23,25 +23,25 @@ export class CommentService {
 
     private readonly notificationService: NotificationService,
     private readonly notificationGateway: NotificationGateway,
-    private readonly articleService: ArticleService,
+    private readonly publicationService: PublicationService,
   ) {}
 
   async create(
     createCommentDto: {
-      articleId: number;
+      publicationId: number;
       content: string;
       parentId?: number;
       mentionedUserIds?: number[];
     },
     userId: number,
   ): Promise<Comment> {
-    // Récupérer l'article (pour connaître son auteur)
-    const article = await this.articleService.findOne(
-      createCommentDto.articleId,
+    // Récupérer l'publication (pour connaître son auteur)
+    const publication = await this.publicationService.findOne(
+      createCommentDto.publicationId,
     );
 
-    if (!article) {
-      throw new NotFoundException('Article non trouvé');
+    if (!publication) {
+      throw new NotFoundException('Publication non trouvé');
     }
 
     // Récupérer l'utilisateur qui commente
@@ -56,7 +56,7 @@ export class CommentService {
     // Créer le commentaire avec les IDs
     const comment = this.commentRepository.create({
       content: createCommentDto.content,
-      article: { id: createCommentDto.articleId } as any, // Référence à l'article par ID
+      publication: { id: createCommentDto.publicationId } as any, // Référence à l'publication par ID
       author: user,
     });
 
@@ -64,17 +64,17 @@ export class CommentService {
     if (createCommentDto.parentId) {
       const parentComment = await this.commentRepository.findOne({
         where: { id: createCommentDto.parentId },
-        relations: ['article'],
+        relations: ['publication'],
       });
 
       if (!parentComment) {
         throw new NotFoundException('Commentaire parent non trouvé');
       }
 
-      // Vérifier que le parent appartient au même article
-      if (parentComment.article.id !== createCommentDto.articleId) {
+      // Vérifier que le parent appartient au même publication
+      if (parentComment.publication.id !== createCommentDto.publicationId) {
         throw new ForbiddenException(
-          'Le commentaire parent ne correspond pas au même article',
+          'Le commentaire parent ne correspond pas au même publication',
         );
       }
 
@@ -105,7 +105,7 @@ export class CommentService {
           `${user.firstName} a répondu à votre commentaire`,
           {
             commentId: savedComment.id,
-            articleId: createCommentDto.articleId,
+            publicationId: createCommentDto.publicationId,
             parentCommentId: comment.parent.id,
           },
         );
@@ -113,17 +113,17 @@ export class CommentService {
     }
 
     if (!comment.parent) {
-      const articleAuthor = article.author;
-      if (articleAuthor.id !== userId) {
+      const publicationAuthor = publication.author;
+      if (publicationAuthor.id !== userId) {
         // ne pas notifier soi-même
         await this.notificationService.createAndNotify(
           NotificationType.NEW_COMMENT,
-          articleAuthor.id,
+          publicationAuthor.id,
           user,
-          `${user.firstName} a commenté votre article`,
+          `${user.firstName} a commenté votre publication`,
           {
             commentId: savedComment.id,
-            articleId: createCommentDto.articleId,
+            publicationId: createCommentDto.publicationId,
           },
         );
       }
@@ -140,7 +140,7 @@ export class CommentService {
             `${user.firstName} vous a mentionné dans un commentaire`,
             {
               commentId: savedComment.id,
-              articleId: createCommentDto.articleId,
+              publicationId: createCommentDto.publicationId,
             },
           );
         }
@@ -152,7 +152,7 @@ export class CommentService {
       where: { id: savedComment.id },
       relations: [
         'author',
-        'article',
+        'publication',
         'parent',
         'mentionedUsers',
         'replies',
@@ -161,13 +161,13 @@ export class CommentService {
     });
   }
 
-  async findByArticle(
-    articleId: number,
+  async findByPublication(
+    publicationId: number,
     currentUserId?: number,
   ): Promise<any[]> {
     const comments = await this.commentRepository.find({
       where: {
-        article: { id: articleId },
+        publication: { id: publicationId },
         parent: IsNull(), // ✅ CORRECTION: utiliser { id: null } au lieu de null
       },
       relations: [
@@ -218,7 +218,7 @@ export class CommentService {
   async toggleLike(commentId: number, userId: number) {
     const comment = await this.commentRepository.findOne({
       where: { id: commentId },
-      relations: ['likes', 'author', 'article'],
+      relations: ['likes', 'author', 'publication'],
     });
 
     if (!comment) {
@@ -244,7 +244,7 @@ export class CommentService {
           `${user.firstName} a aimé votre commentaire`,
           {
             commentId: comment.id,
-            articleId: comment.article?.id,
+            publicationId: comment.publication?.id,
           },
         );
       }
@@ -341,10 +341,10 @@ export class CommentService {
   }
 
   async getCommentStats(
-    articleId: number,
+    publicationId: number,
   ): Promise<{ total: number; withReplies: number }> {
     const comments = await this.commentRepository.find({
-      where: { article: { id: articleId } as any },
+      where: { publication: { id: publicationId } as any },
     });
 
     const withReplies = comments.filter(
@@ -364,78 +364,78 @@ export class CommentService {
     return this.commentRepository.find({
       where: { author: { id: userId } },
       relations: [
-        'article',
-        'article.author',
-        'article.category',
-        'article.tags',
-        'article.likes',
-        'article.bookmarks',
-        'article.comments',
+        'publication',
+        'publication.author',
+        'publication.category',
+        'publication.tags',
+        'publication.likes',
+        'publication.bookmarks',
+        'publication.comments',
       ],
       order: { createdAt: 'DESC' },
     });
   }
 
   /**
-   * Récupérer les articles commentés par l'utilisateur (uniques)
+   * Récupérer les publications commentés par l'utilisateur (uniques)
    */
-  async findCommentedArticlesByUser(userId: number) {
-    // Récupérer tous les commentaires de l'utilisateur avec les articles
+  async findCommentedPublicationsByUser(userId: number) {
+    // Récupérer tous les commentaires de l'utilisateur avec les publications
     const comments = await this.commentRepository.find({
       where: { author: { id: userId } },
       relations: [
-        'article',
-        'article.author',
-        'article.category',
-        'article.tags',
-        'article.likes',
-        'article.bookmarks',
-        'article.comments',
+        'publication',
+        'publication.author',
+        'publication.category',
+        'publication.tags',
+        'publication.likes',
+        'publication.bookmarks',
+        'publication.comments',
       ],
       order: { createdAt: 'DESC' },
     });
 
-    // Grouper par article et ajouter des métadonnées
-    const articleMap = new Map();
+    // Grouper par publication et ajouter des métadonnées
+    const publicationMap = new Map();
 
     comments.forEach((comment) => {
-      if (comment.article && !articleMap.has(comment.article.id)) {
-        const article = comment.article;
+      if (comment.publication && !publicationMap.has(comment.publication.id)) {
+        const publication = comment.publication;
 
-        // Compter le nombre de commentaires de l'utilisateur sur cet article
+        // Compter le nombre de commentaires de l'utilisateur sur cet publication
         const userCommentsCount = comments.filter(
-          (c) => c.article?.id === article.id,
+          (c) => c.publication?.id === publication.id,
         ).length;
 
-        // Dernier commentaire de l'utilisateur sur cet article
+        // Dernier commentaire de l'utilisateur sur cet publication
         const lastUserComment = comments
-          .filter((c) => c.article?.id === article.id)
+          .filter((c) => c.publication?.id === publication.id)
           .sort(
             (a, b) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
           )[0];
 
-        articleMap.set(article.id, {
-          ...article,
+        publicationMap.set(publication.id, {
+          ...publication,
           userCommentsCount,
           lastCommentDate: lastUserComment?.createdAt,
-          isLiked: article.likes?.some((like) => like.id === userId) || false,
+          isLiked: publication.likes?.some((like) => like.id === userId) || false,
           isBookmarked:
-            article.bookmarks?.some((bookmark) => bookmark.id === userId) ||
+            publication.bookmarks?.some((bookmark) => bookmark.id === userId) ||
             false,
-          commentsCount: article.comments?.length || 0,
-          likesCount: article.likes?.length || 0,
-          bookmarksCount: article.bookmarks?.length || 0,
+          commentsCount: publication.comments?.length || 0,
+          likesCount: publication.likes?.length || 0,
+          bookmarksCount: publication.bookmarks?.length || 0,
         });
       }
     });
 
-    const articles = Array.from(articleMap.values());
+    const publications = Array.from(publicationMap.values());
 
     return {
       success: true,
-      count: articles.length,
-      articles,
+      count: publications.length,
+      publications,
     };
   }
 }

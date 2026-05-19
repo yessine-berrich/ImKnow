@@ -198,49 +198,49 @@ describe('MailService', () => {
       expect(mockSendMail).not.toHaveBeenCalled();
     });
 
-    it('should send ARTICLE_PUBLISHED notification', async () => {
+    it('should send PUBLICATION_PUBLISHED notification', async () => {
       await service.sendNotificationEmail(
         'author@example.com',
-        NotificationType.ARTICLE_PUBLISHED,
-        'Article published',
-        { articleId: 1 },
+        NotificationType.PUBLICATION_PUBLISHED,
+        'Publication published',
+        { publicationId: 1 },
       );
 
       expect(mockSendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'author@example.com',
-          subject: 'Votre article a été publié',
+          subject: 'Votre publication a été publié',
         }),
       );
     });
 
-    it('should send ARTICLE_REJECTED notification', async () => {
+    it('should send PUBLICATION_REJECTED notification', async () => {
       await service.sendNotificationEmail(
         'author@example.com',
-        NotificationType.ARTICLE_REJECTED,
-        'Article rejected',
+        NotificationType.PUBLICATION_REJECTED,
+        'Publication rejected',
         { rejectionReason: 'Inappropriate content' },
       );
 
       expect(mockSendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'author@example.com',
-          subject: 'Votre article a été rejeté',
+          subject: 'Votre publication a été rejeté',
         }),
       );
     });
 
-    it('should send ARTICLE_PENDING_MODERATION notification', async () => {
+    it('should send PUBLICATION_PENDING_MODERATION notification', async () => {
       await service.sendNotificationEmail(
         'author@example.com',
-        NotificationType.ARTICLE_PENDING_MODERATION,
+        NotificationType.PUBLICATION_PENDING_MODERATION,
         'Pending review',
-        { articleId: 1 },
+        { publicationId: 1 },
       );
 
       expect(mockSendMail).toHaveBeenCalledWith(
         expect.objectContaining({
-          subject: "Votre article est en attente de modération",
+          subject: "Votre publication est en attente de modération",
         }),
       );
     });

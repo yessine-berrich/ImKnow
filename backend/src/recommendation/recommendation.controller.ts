@@ -10,7 +10,7 @@ import { RecommendationService, FeedFilter } from './recommendation.service';
 import { AuthGuard } from 'src/users/guards/auth.guard';
 import type { JwtPayloadType } from 'utils/types';
 import { CurrentPayload } from 'src/users/decorators/current-payload.decorator';
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 
 @Controller('api/recommendations')
 @UseGuards(AuthGuard)
@@ -26,12 +26,12 @@ export class RecommendationController {
     const userId = payload.sub;
     const safeLimit = Math.min(Math.max(limit, 1), 50);
 
-    const articles = await this.recommendationService.getRecommendations(userId, safeLimit);
+    const publications = await this.recommendationService.getRecommendations(userId, safeLimit);
 
     return {
       success: true,
-      count: articles.length,
-      data: articles.map((a) => this.formatArticle(a, userId)),
+      count: publications.length,
+      data: publications.map((a) => this.formatPublication(a, userId)),
     };
   }
 
@@ -59,12 +59,12 @@ export class RecommendationController {
 
     return {
       success: true,
-      data: result.items.map(({ article, source }) => ({
-        ...this.formatArticle(article, userId),
+      data: result.items.map(({ publication, source }) => ({
+        ...this.formatPublication(publication, userId),
         source,
         isTrending:
           source === 'trending' ||
-          ((article.viewsCount ?? 0) > 50 && (article as any).likes?.length > 5),
+          ((publication.viewsCount ?? 0) > 50 && (publication as any).likes?.length > 5),
       })),
       meta: {
         page: safePage,
@@ -76,52 +76,52 @@ export class RecommendationController {
     };
   }
 
-  // ── Shared article formatter — matches article.controller findAll exactly ────
+  // ── Shared publication formatter — matches publication.controller findAll exactly ────
 
-  private formatArticle(article: Article, userId: number) {
-    const isLiked = article.likes?.some((like) => like.id === userId) ?? false;
-    const isBookmarked = article.bookmarks?.some((b) => b.id === userId) ?? false;
+  private formatPublication(publication: Publication, userId: number) {
+    const isLiked = publication.likes?.some((like) => like.id === userId) ?? false;
+    const isBookmarked = publication.bookmarks?.some((b) => b.id === userId) ?? false;
 
     return {
-      id: article.id,
-      title: article.title,
-      content: article.content,
-      description: article.content
-        ? article.content.substring(0, 150) + (article.content.length > 150 ? '...' : '')
+      id: publication.id,
+      title: publication.title,
+      content: publication.content,
+      description: publication.content
+        ? publication.content.substring(0, 150) + (publication.content.length > 150 ? '...' : '')
         : '',
-      status: article.status,
-      viewsCount: article.viewsCount || 0,
-      createdAt: article.createdAt,
-      updatedAt: article.updatedAt,
+      status: publication.status,
+      viewsCount: publication.viewsCount || 0,
+      createdAt: publication.createdAt,
+      updatedAt: publication.updatedAt,
 
-      author: article.author
+      author: publication.author
         ? {
-            id: article.author.id,
+            id: publication.author.id,
             name:
-              `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim() ||
+              `${publication.author.firstName || ''} ${publication.author.lastName || ''}`.trim() ||
               'User',
             initials:
               (
-                (article.author.firstName?.charAt(0) || '') +
-                (article.author.lastName?.charAt(0) || '')
+                (publication.author.firstName?.charAt(0) || '') +
+                (publication.author.lastName?.charAt(0) || '')
               ).toUpperCase() || 'U',
-            department: article.author.department || 'Member',
-            avatar: article.author.profileImage,
+            department: publication.author.department || 'Member',
+            avatar: publication.author.profileImage,
           }
         : null,
 
-      category: article.category
+      category: publication.category
         ? {
-            id: article.category.id,
-            name: article.category.name,
-            slug: article.category.name?.toLowerCase().replace(/\s+/g, '-') || '',
+            id: publication.category.id,
+            name: publication.category.name,
+            slug: publication.category.name?.toLowerCase().replace(/\s+/g, '-') || '',
           }
         : null,
 
-      tags: article.tags?.map((tag) => ({ id: tag.id, name: tag.name })).filter((t) => t.id) || [],
+      tags: publication.tags?.map((tag) => ({ id: tag.id, name: tag.name })).filter((t) => t.id) || [],
 
       media:
-        article.media?.map((m) => ({
+        publication.media?.map((m) => ({
           id: m.id,
           url: m.url,
           filename: m.filename,
@@ -131,14 +131,14 @@ export class RecommendationController {
         })) || [],
 
       stats: {
-        likes: article.likes?.length || 0,
-        comments: (article as any).comments?.length || 0,
-        views: article.viewsCount || 0,
+        likes: publication.likes?.length || 0,
+        comments: (publication as any).comments?.length || 0,
+        views: publication.viewsCount || 0,
       },
 
       isLiked,
       isBookmarked,
-      isFeatured: (article.viewsCount || 0) > 1000,
+      isFeatured: (publication.viewsCount || 0) > 1000,
     };
   }
 }

@@ -173,7 +173,7 @@ export default function CreateCategoryModal({
                   {editCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {editCategory ? 'Modifiez les informations ci-dessous' : 'Créez une nouvelle catégorie pour organiser vos articles'}
+                  {editCategory ? 'Modifiez les informations ci-dessous' : 'Créez une nouvelle catégorie pour organiser vos publications'}
                 </p>
               </div>
             </div>
@@ -300,7 +300,7 @@ export default function CreateCategoryModal({
                     </li>
                     <li className="flex items-start gap-1.5">
                       <span className="text-blue-500">•</span>
-                      Décrivez le type d'articles que vous y placerez
+                      Décrivez le type d'publications que vous y placerez
                     </li>
                     <li className="flex items-start gap-1.5">
                       <span className="text-blue-500">•</span>

@@ -113,35 +113,35 @@ export class MailService implements OnModuleInit {
       };
 
       switch (type) {
-        case NotificationType.ARTICLE_PUBLISHED:
-          subject = 'Votre article a été publié';
+        case NotificationType.PUBLICATION_PUBLISHED:
+          subject = 'Votre publication a été publié';
           context = {
             ...context,
-            articleTitle: data.articleTitle || 'votre article',
-            articleUrl: this.buildArticleUrl(data),
+            publicationTitle: data.publicationTitle || 'votre publication',
+            publicationUrl: this.buildPublicationUrl(data),
             moderationScore: data.moderationScore,
           };
           break;
 
-        case NotificationType.ARTICLE_PENDING_MODERATION:
-          subject = 'Votre article est en attente de modération';
+        case NotificationType.PUBLICATION_PENDING_MODERATION:
+          subject = 'Votre publication est en attente de modération';
           context = {
             ...context,
-            articleTitle: data.articleTitle || 'votre article',
-            articleUrl: this.buildArticleUrl(data),
+            publicationTitle: data.publicationTitle || 'votre publication',
+            publicationUrl: this.buildPublicationUrl(data),
             moderationScore: data.moderationScore,
-            message: message || 'Votre article nécessite une vérification manuelle',
+            message: message || 'Votre publication nécessite une vérification manuelle',
           };
           break;
 
-        case NotificationType.ARTICLE_REJECTED:
-          subject = 'Votre article a été rejeté';
+        case NotificationType.PUBLICATION_REJECTED:
+          subject = 'Votre publication a été rejeté';
           context = {
             ...context,
-            articleTitle: data.articleTitle || 'votre article',
+            publicationTitle: data.publicationTitle || 'votre publication',
             rejectionReason: data.rejectionReason || message || 'Contenu inapproprié',
             duplicateScore: data.duplicateScore,
-            similarArticles: data.similarArticles,
+            similarPublications: data.similarPublications,
           };
           break;
 
@@ -196,10 +196,10 @@ export class MailService implements OnModuleInit {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  private buildArticleUrl(data: Record<string, any>): string {
-    if (data.articleUrl) return data.articleUrl;
-    if (data.articleSlug) return `${process.env.CLIENT_DOMAIN}/articles/${data.articleSlug}`;
-    if (data.articleId) return `${process.env.CLIENT_DOMAIN}/articles/${data.articleId}`;
+  private buildPublicationUrl(data: Record<string, any>): string {
+    if (data.publicationUrl) return data.publicationUrl;
+    if (data.publicationSlug) return `${process.env.CLIENT_DOMAIN}/publications/${data.publicationSlug}`;
+    if (data.publicationId) return `${process.env.CLIENT_DOMAIN}/publications/${data.publicationId}`;
     return '#';
   }
 }

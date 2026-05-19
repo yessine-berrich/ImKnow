@@ -2,11 +2,11 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ArticleReport } from 'src/article/entities/article-report.entity';
+import { PublicationReport } from 'src/publication/entities/publication-report.entity';
 import { UserReport } from 'src/users/entities/user-report.entity';
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
-import { ArticleStatus, NotificationType, UserStatus } from 'utils/constants';
+import { PublicationStatus, NotificationType, UserStatus } from 'utils/constants';
 import { NotificationService } from 'src/notification/notification.service';
 
 // ─── Configuration IA ─────────────────────────────────────────────────────────
@@ -112,22 +112,22 @@ export class AdminReportsService {
   private moderationConfig: AutoModerationConfig = { ...DEFAULT_MODERATION_CONFIG };
 
   constructor(
-    @InjectRepository(ArticleReport)
-    private readonly articleReportRepo: Repository<ArticleReport>,
+    @InjectRepository(PublicationReport)
+    private readonly publicationReportRepo: Repository<PublicationReport>,
     @InjectRepository(UserReport)
     private readonly userReportRepo: Repository<UserReport>,
-    @InjectRepository(Article)
-    private readonly articleRepo: Repository<Article>,
+    @InjectRepository(Publication)
+    private readonly publicationRepo: Repository<Publication>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly notificationService: NotificationService,
   ) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ARTICLE REPORTS
+  // PUBLICATION REPORTS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  async getReportedArticles(opts: {
+  async getReportedPublications(opts: {
     status?: string;
     riskLevel?: string;
     priority?: string;
@@ -138,10 +138,10 @@ export class AdminReportsService {
     const page  = Math.max(1, opts.page  ?? 1);
     const limit = Math.min(50, opts.limit ?? 20);
 
-    const qb = this.articleReportRepo
+    const qb = this.publicationReportRepo
       .createQueryBuilder('r')
-      .leftJoinAndSelect('r.article', 'article')
-      .leftJoinAndSelect('article.author', 'author')
+      .leftJoinAndSelect('r.publication', 'publication')
+      .leftJoinAndSelect('publication.author', 'author')
       .leftJoinAndSelect('r.reporter', 'reporter')
       .orderBy('r.createdAt', 'DESC');
 
@@ -151,17 +151,17 @@ export class AdminReportsService {
 
     const allReports = await qb.getMany();
 
-    const byArticle = new Map<number, typeof allReports>();
+    const byPublication = new Map<number, typeof allReports>();
     for (const rep of allReports) {
-      if (!rep.article) continue;
-      const id = rep.article.id;
-      if (!byArticle.has(id)) byArticle.set(id, []);
-      byArticle.get(id)!.push(rep);
+      if (!rep.publication) continue;
+      const id = rep.publication.id;
+      if (!byPublication.has(id)) byPublication.set(id, []);
+      byPublication.get(id)!.push(rep);
     }
 
-    let entries = Array.from(byArticle.entries()).map(([articleId, reports]) => {
-      const article = reports[0].article!;
-      const author  = (article as any).author;
+    let entries = Array.from(byPublication.entries()).map(([publicationId, reports]) => {
+      const publication = reports[0].publication!;
+      const author  = (publication as any).author;
       const score   = computeRiskScore(reports, this.moderationConfig.timeWindowHours);
       const recent  = recentReports(reports, this.moderationConfig.timeWindowHours);
       const level   = getRiskLevel(score, recent);
@@ -179,9 +179,9 @@ export class AdminReportsService {
         .sort((a, b) => b.severity - a.severity);
 
       return {
-        articleId,
-        title:          article.title,
-        articleStatus:  article.status,
+        publicationId,
+        title:          publication.title,
+        publicationStatus:  publication.status,
         authorId:       author?.id ?? null,
         authorName:     author ? `${author.firstName} ${author.lastName}`.trim() : 'Inconnu',
         reportCount:    reports.length,
@@ -244,15 +244,15 @@ export class AdminReportsService {
     };
   }
 
-  async getArticleReportDetail(articleId: number) {
-    const article = await this.articleRepo.findOne({
-      where: { id: articleId },
+  async getPublicationReportDetail(publicationId: number) {
+    const publication = await this.publicationRepo.findOne({
+      where: { id: publicationId },
       relations: ['author'],
     });
-    if (!article) throw new NotFoundException('Article introuvable');
+    if (!publication) throw new NotFoundException('Publication introuvable');
 
-    const reports = await this.articleReportRepo.find({
-      where: { article: { id: articleId } },
+    const reports = await this.publicationReportRepo.find({
+      where: { publication: { id: publicationId } },
       relations: ['reporter'],
       order: { createdAt: 'DESC' },
     });
@@ -276,16 +276,16 @@ export class AdminReportsService {
     });
 
     return {
-      article: {
-        id:      article.id,
-        title:   article.title,
-        status:  article.status,
-        content: article.content?.slice(0, 400) + (article.content?.length > 400 ? '…' : ''),
+      publication: {
+        id:      publication.id,
+        title:   publication.title,
+        status:  publication.status,
+        content: publication.content?.slice(0, 400) + (publication.content?.length > 400 ? '…' : ''),
         author: {
-          id:   (article as any).author?.id,
-          name: (article as any).author ? `${(article as any).author.firstName} ${(article as any).author.lastName}`.trim() : 'Inconnu',
+          id:   (publication as any).author?.id,
+          name: (publication as any).author ? `${(publication as any).author.firstName} ${(publication as any).author.lastName}`.trim() : 'Inconnu',
         },
-        createdAt: article.createdAt,
+        createdAt: publication.createdAt,
       },
       intelligence: {
         riskScore:       score,
@@ -296,7 +296,7 @@ export class AdminReportsService {
         topReasons: Array.from(reasonMap.entries())
           .map(([reason, data]) => ({ reason, count: data.count, severity: data.severity }))
           .sort((a, b) => b.severity - a.severity),
-        recommendation: this.getArticleRecommendation(level, reports, score),
+        recommendation: this.getPublicationRecommendation(level, reports, score),
         autoDecision:   autoDecision.decision,
         confidence:     autoDecision.confidence,
         trend,
@@ -315,104 +315,104 @@ export class AdminReportsService {
     };
   }
 
-  async takeActionOnArticle(articleId: number, action: ReportAction, adminId: number, note?: string) {
-    const article = await this.articleRepo.findOne({
-      where: { id: articleId },
+  async takeActionOnPublication(publicationId: number, action: ReportAction, adminId: number, note?: string) {
+    const publication = await this.publicationRepo.findOne({
+      where: { id: publicationId },
       relations: ['author'],
     });
-    if (!article) throw new NotFoundException('Article introuvable');
+    if (!publication) throw new NotFoundException('Publication introuvable');
 
-    const pendingReports = await this.articleReportRepo.find({
-      where: { article: { id: articleId }, status: 'pending' },
+    const pendingReports = await this.publicationReportRepo.find({
+      where: { publication: { id: publicationId }, status: 'pending' },
     });
 
     let message = '';
     switch (action) {
       case 'dismiss_all':
-        await this.articleReportRepo.update(
-          { article: { id: articleId }, status: 'pending' },
+        await this.publicationReportRepo.update(
+          { publication: { id: publicationId }, status: 'pending' },
           { status: 'dismissed' },
         );
         message = `${pendingReports.length} signalement(s) clôturé(s)`;
         break;
 
       case 'review_all':
-        await this.articleReportRepo.update(
-          { article: { id: articleId }, status: 'pending' },
+        await this.publicationReportRepo.update(
+          { publication: { id: publicationId }, status: 'pending' },
           { status: 'reviewed' },
         );
         message = `${pendingReports.length} signalement(s) marqué(s) comme examiné(s)`;
         break;
 
       case 'unpublish':
-        await this.articleRepo.update(articleId, { status: ArticleStatus.REJECTED });
-        await this.articleReportRepo.update(
-          { article: { id: articleId }, status: 'pending' },
+        await this.publicationRepo.update(publicationId, { status: PublicationStatus.REJECTED });
+        await this.publicationReportRepo.update(
+          { publication: { id: publicationId }, status: 'pending' },
           { status: 'reviewed' },
         );
-        if ((article as any).author) {
+        if ((publication as any).author) {
           await this.notificationService.createAndNotify(
-            NotificationType.ARTICLE_REJECTED,
-            (article as any).author,
+            NotificationType.PUBLICATION_REJECTED,
+            (publication as any).author,
             null,
-            `Votre article "${article.title}" a été dépublié suite à des signalements.${note ? ` Note : ${note}` : ''}`,
-            { articleId },
+            `Votre publication "${publication.title}" a été dépublié suite à des signalements.${note ? ` Note : ${note}` : ''}`,
+            { publicationId },
           );
         }
-        message = 'Article dépublié et signalements marqués comme examinés';
+        message = 'Publication dépublié et signalements marqués comme examinés';
         break;
 
       case 'republish':
-        await this.articleRepo.update(articleId, { status: ArticleStatus.PUBLISHED });
-        await this.articleReportRepo.update(
-          { article: { id: articleId } },
+        await this.publicationRepo.update(publicationId, { status: PublicationStatus.PUBLISHED });
+        await this.publicationReportRepo.update(
+          { publication: { id: publicationId } },
           { status: 'dismissed' },
         );
-        if ((article as any).author) {
+        if ((publication as any).author) {
           await this.notificationService.createAndNotify(
-            NotificationType.ARTICLE_PUBLISHED,
-            (article as any).author,
+            NotificationType.PUBLICATION_PUBLISHED,
+            (publication as any).author,
             null,
-            `Votre article "${article.title}" a été réactivé par un administrateur.`,
-            { articleId },
+            `Votre publication "${publication.title}" a été réactivé par un administrateur.`,
+            { publicationId },
           );
         }
-        message = 'Article republié et signalements clôturés';
+        message = 'Publication republié et signalements clôturés';
         break;
 
       case 'warn_author':
-        await this.articleReportRepo.update(
-          { article: { id: articleId }, status: 'pending' },
+        await this.publicationReportRepo.update(
+          { publication: { id: publicationId }, status: 'pending' },
           { status: 'reviewed' },
         );
-        if ((article as any).author) {
+        if ((publication as any).author) {
           await this.notificationService.createAndNotify(
             NotificationType.SYSTEM_INFO,
-            (article as any).author,
+            (publication as any).author,
             null,
-            `Avertissement : votre article "${article.title}" a été signalé plusieurs fois. Merci de respecter les règles de la communauté.${note ? ` Message de l'admin : ${note}` : ''}`,
-            { articleId },
+            `Avertissement : votre publication "${publication.title}" a été signalé plusieurs fois. Merci de respecter les règles de la communauté.${note ? ` Message de l'admin : ${note}` : ''}`,
+            { publicationId },
           );
         }
         message = 'Avertissement envoyé à l\'auteur, signalements marqués comme examinés';
         break;
 
       default:
-        throw new BadRequestException(`Action "${action}" non valide pour un article`);
+        throw new BadRequestException(`Action "${action}" non valide pour un publication`);
     }
 
     return { message, action };
   }
 
-  // ── Bulk article actions ──────────────────────────────────────────────────
+  // ── Bulk publication actions ──────────────────────────────────────────────────
 
-  async bulkArticleAction(articleIds: number[], action: ReportAction, adminId: number, note?: string) {
+  async bulkPublicationAction(publicationIds: number[], action: ReportAction, adminId: number, note?: string) {
     const results = await Promise.allSettled(
-      articleIds.map((id) => this.takeActionOnArticle(id, action, adminId, note)),
+      publicationIds.map((id) => this.takeActionOnPublication(id, action, adminId, note)),
     );
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     const failed    = results.length - succeeded;
-    return { message: `${succeeded} article(s) traité(s)${failed ? `, ${failed} erreur(s)` : ''}`, processed: succeeded };
+    return { message: `${succeeded} publication(s) traité(s)${failed ? `, ${failed} erreur(s)` : ''}`, processed: succeeded };
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -715,15 +715,15 @@ export class AdminReportsService {
   // EXPORT
   // ═══════════════════════════════════════════════════════════════════════════
 
-  async exportReports(type: 'articles' | 'users', format: 'csv' | 'json') {
-    if (type === 'articles') {
-      const result = await this.getReportedArticles({ page: 1, limit: 1000 });
+  async exportReports(type: 'publications' | 'users', format: 'csv' | 'json') {
+    if (type === 'publications') {
+      const result = await this.getReportedPublications({ page: 1, limit: 1000 });
       if (format === 'json') return result.items;
 
-      const headers = 'articleId,title,authorName,riskLevel,riskScore,reportCount,pendingCount,articleStatus,lastReportAt';
+      const headers = 'publicationId,title,authorName,riskLevel,riskScore,reportCount,pendingCount,publicationStatus,lastReportAt';
       const rows = result.items.map((i) =>
-        [i.articleId, `"${i.title.replace(/"/g, '""')}"`, `"${i.authorName}"`,
-          i.riskLevel, i.riskScore, i.reportCount, i.pendingCount, i.articleStatus,
+        [i.publicationId, `"${i.title.replace(/"/g, '""')}"`, `"${i.authorName}"`,
+          i.riskLevel, i.riskScore, i.reportCount, i.pendingCount, i.publicationStatus,
           i.lastReportAt ?? ''].join(','),
       );
       return [headers, ...rows].join('\n');
@@ -743,7 +743,7 @@ export class AdminReportsService {
 
   // ── Smart recommendations ─────────────────────────────────────────────────
 
-  private getArticleRecommendation(
+  private getPublicationRecommendation(
     level: string,
     reports: { reason: string }[],
     score: number,

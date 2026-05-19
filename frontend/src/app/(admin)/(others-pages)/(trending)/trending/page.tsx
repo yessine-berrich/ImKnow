@@ -10,8 +10,8 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { statsService, EmployeeTrendingStats } from '../../../../../../services/stats.service';
-import { articleService } from '../../../../../../services/article.service';
-import { useArticleModal } from '@/context/ArticleModalContext';
+import { publicationService } from '../../../../../../services/publication.service';
+import { usePublicationModal } from '@/context/PublicationModalContext';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ const fmtDate = (d: string) =>
 const fmtDateLong = (d: string) =>
   new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-const engagementScore = (a: EmployeeTrendingStats['topArticles'][0]) => {
+const engagementScore = (a: EmployeeTrendingStats['topPublications'][0]) => {
   const total = a.likesCount + a.commentsCount * 2;
   if (!a.viewsCount) return 0;
   return Math.min(100, Math.round((total / a.viewsCount) * 100));
@@ -151,18 +151,18 @@ function StatCard({ icon, title, value, growth, sub }: {
   );
 }
 
-// ── Hero Article (rank 1) ──────────────────────────────────────────────────────
+// ── Hero Publication (rank 1) ──────────────────────────────────────────────────────
 
-function HeroArticle({ article, onArticleClick }: {
-  article: EmployeeTrendingStats['topArticles'][0];
-  onArticleClick: (article: EmployeeTrendingStats['topArticles'][0]) => void;
+function HeroPublication({ publication, onPublicationClick }: {
+  publication: EmployeeTrendingStats['topPublications'][0];
+  onPublicationClick: (publication: EmployeeTrendingStats['topPublications'][0]) => void;
 }) {
-  const score = engagementScore(article);
-  const initials = article.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const score = engagementScore(publication);
+  const initials = publication.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div
-      onClick={() => onArticleClick(article)}
+      onClick={() => onPublicationClick(publication)}
       className="group block cursor-pointer rounded-xl border border-amber-100 dark:border-amber-900/30 bg-gradient-to-br from-amber-50/80 to-yellow-50/40 dark:from-amber-900/10 dark:to-yellow-900/5 px-5 py-4 hover:from-amber-50 hover:to-yellow-50/60 dark:hover:from-amber-900/15 dark:hover:to-yellow-900/10 transition-all duration-200 active:scale-[0.99]">
         <div className="flex items-start gap-4">
           {/* Big rank badge */}
@@ -172,51 +172,51 @@ function HeroArticle({ article, onArticleClick }: {
             {/* Category + date */}
             <div className="flex items-center gap-2 flex-wrap mb-2">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 dark:bg-[#168F6F]/15 text-[#168F6F] border border-[#168F6F]/20">
-                {article.category.name}
+                {publication.category.name}
               </span>
               <span className="flex items-center gap-1 text-[11px] text-gray-400">
                 <Clock className="h-3 w-3" />
-                {fmtDateLong(article.publishedAt)}
+                {fmtDateLong(publication.publishedAt)}
               </span>
             </div>
 
             {/* Title */}
             <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1.5 line-clamp-2 group-hover:text-[#168F6F] transition-colors leading-snug">
-              {article.title}
+              {publication.title}
             </h3>
 
             {/* Excerpt */}
-            {article.excerpt && (
+            {publication.excerpt && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 leading-relaxed">
-                {article.excerpt}
+                {publication.excerpt}
               </p>
             )}
 
             {/* Author */}
             <div className="flex items-center gap-2 mb-3">
               <div className="h-6 w-6 rounded-full bg-[#168F6F]/15 dark:bg-[#168F6F]/20 flex items-center justify-center text-[#168F6F] text-[10px] font-bold overflow-hidden flex-shrink-0">
-                {article.author.avatar
-                  ? <Image src={article.author.avatar} alt={article.author.name} width={24} height={24} className="object-cover w-full h-full" />
+                {publication.author.avatar
+                  ? <Image src={publication.author.avatar} alt={publication.author.name} width={24} height={24} className="object-cover w-full h-full" />
                   : initials}
               </div>
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{article.author.name}</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{publication.author.name}</span>
             </div>
 
             {/* Stats row */}
             <div className="flex items-center gap-4 flex-wrap">
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <Eye className="h-3.5 w-3.5" />
-                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(article.viewsCount)}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(publication.viewsCount)}</span>
                 <span>vues</span>
               </span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <Heart className="h-3.5 w-3.5 text-rose-400" />
-                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(article.likesCount)}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(publication.likesCount)}</span>
                 <span>j&apos;aime</span>
               </span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <MessageCircle className="h-3.5 w-3.5" />
-                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(article.commentsCount)}</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(publication.commentsCount)}</span>
                 <span>comm.</span>
               </span>
               {score > 0 && (
@@ -234,19 +234,19 @@ function HeroArticle({ article, onArticleClick }: {
   );
 }
 
-// ── Article Row (rank 2+) ──────────────────────────────────────────────────────
+// ── Publication Row (rank 2+) ──────────────────────────────────────────────────────
 
-function ArticleRow({ article, rank, onArticleClick }: {
-  article: EmployeeTrendingStats['topArticles'][0];
+function PublicationRow({ publication, rank, onPublicationClick }: {
+  publication: EmployeeTrendingStats['topPublications'][0];
   rank: number;
-  onArticleClick: (article: EmployeeTrendingStats['topArticles'][0]) => void;
+  onPublicationClick: (publication: EmployeeTrendingStats['topPublications'][0]) => void;
 }) {
-  const score = engagementScore(article);
-  const initials = article.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const score = engagementScore(publication);
+  const initials = publication.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div
-      onClick={() => onArticleClick(article)}
+      onClick={() => onPublicationClick(publication)}
       className="group block cursor-pointer"
     >
       <div className="flex items-start gap-3 px-5 py-3.5 hover:bg-[#168F6F]/5 dark:hover:bg-[#168F6F]/10 transition-colors duration-150 active:scale-[0.99]">
@@ -255,38 +255,38 @@ function ArticleRow({ article, rank, onArticleClick }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 dark:bg-[#168F6F]/15 text-[#168F6F] border border-[#168F6F]/20">
-              {article.category.name}
+              {publication.category.name}
             </span>
           </div>
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-[#168F6F] transition-colors leading-snug">
-            {article.title}
+            {publication.title}
           </h3>
 
           {/* Author + date */}
           <div className="flex items-center gap-2 mb-2">
             <div className="h-5 w-5 rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/20 flex items-center justify-center text-[#168F6F] text-[9px] font-bold overflow-hidden flex-shrink-0">
-              {article.author.avatar
-                ? <Image src={article.author.avatar} alt={article.author.name} width={20} height={20} className="object-cover w-full h-full" />
+              {publication.author.avatar
+                ? <Image src={publication.author.avatar} alt={publication.author.name} width={20} height={20} className="object-cover w-full h-full" />
                 : initials}
             </div>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">{article.author.name}</span>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">{publication.author.name}</span>
             <span className="text-gray-300 dark:text-gray-700 text-[11px]">·</span>
-            <span className="text-[11px] text-gray-400 dark:text-gray-500">{fmtDate(article.publishedAt)}</span>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">{fmtDate(publication.publishedAt)}</span>
           </div>
 
           {/* Stats */}
           <div className="flex items-center gap-3 flex-wrap">
             <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <Eye className="h-3.5 w-3.5" />
-              <span className="font-medium text-gray-600 dark:text-gray-300">{fmt(article.viewsCount)}</span>
+              <span className="font-medium text-gray-600 dark:text-gray-300">{fmt(publication.viewsCount)}</span>
             </span>
             <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <Heart className="h-3.5 w-3.5 text-rose-400" />
-              <span className="font-medium text-gray-600 dark:text-gray-300">{fmt(article.likesCount)}</span>
+              <span className="font-medium text-gray-600 dark:text-gray-300">{fmt(publication.likesCount)}</span>
             </span>
             <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <MessageCircle className="h-3.5 w-3.5" />
-              <span className="font-medium text-gray-600 dark:text-gray-300">{fmt(article.commentsCount)}</span>
+              <span className="font-medium text-gray-600 dark:text-gray-300">{fmt(publication.commentsCount)}</span>
             </span>
             {score > 0 && (
               <span className="flex items-center gap-1 text-xs">
@@ -328,7 +328,7 @@ function TagCard({ tag, maxViews }: { tag: EmployeeTrendingStats['trendingTags']
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${cls}`}>{label}</span>
             </div>
             <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-              {tag.articleCount} article{tag.articleCount > 1 ? 's' : ''} · {fmt(tag.totalViews)} vues
+              {tag.publicationCount} publication{tag.publicationCount > 1 ? 's' : ''} · {fmt(tag.totalViews)} vues
             </p>
           </div>
         </div>
@@ -388,7 +388,7 @@ function AuthorCard({ author, rank }: { author: EmployeeTrendingStats['topAuthor
           <div className="flex items-center gap-3 mb-1.5">
             <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
               <BookOpen className="h-3 w-3" />
-              <span className="font-medium text-gray-600 dark:text-gray-300">{author.articleCount} articles</span>
+              <span className="font-medium text-gray-600 dark:text-gray-300">{author.publicationCount} publications</span>
             </span>
             <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
               <Eye className="h-3 w-3" />
@@ -416,10 +416,10 @@ function AuthorCard({ author, rank }: { author: EmployeeTrendingStats['topAuthor
 
 function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] }) {
   const maxViews    = Math.max(...data.map(d => d.views), 1);
-  const maxArticles = Math.max(...data.map(d => d.articles), 1);
+  const maxPublications = Math.max(...data.map(d => d.publications), 1);
   const BAR_H       = 140;
   const totalViews    = data.reduce((s, d) => s + d.views, 0);
-  const totalArticles = data.reduce((s, d) => s + d.articles, 0);
+  const totalPublications = data.reduce((s, d) => s + d.publications, 0);
   const peakDay = data.reduce((best, d) => d.views > best.views ? d : best, data[0]);
 
   return (
@@ -427,7 +427,7 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: 'Articles total', value: totalArticles, icon: <FileText className="h-3.5 w-3.5 text-[#168F6F]" /> },
+          { label: 'Publications total', value: totalPublications, icon: <FileText className="h-3.5 w-3.5 text-[#168F6F]" /> },
           { label: 'Vues total', value: fmt(totalViews), icon: <Eye className="h-3.5 w-3.5 text-[#168F6F]" /> },
           { label: 'Pic activité', value: fmtDate(peakDay?.date ?? ''), icon: <Star className="h-3.5 w-3.5 text-amber-500" /> },
         ].map(({ label, value, icon }) => (
@@ -442,7 +442,7 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
       <div className="flex items-center gap-5 mb-4">
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-sm bg-[#168F6F]" />
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Articles publiés</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Publications publiés</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-sm bg-[#168F6F]/25" />
@@ -463,7 +463,7 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
 
         <div className="flex items-end gap-1.5" style={{ height: BAR_H + 24 }}>
           {data.map((day, i) => {
-            const articleH = Math.max(3, (day.articles / maxArticles) * BAR_H);
+            const publicationH = Math.max(3, (day.publications / maxPublications) * BAR_H);
             const viewH    = Math.max(3, (day.views / maxViews) * BAR_H);
             const label    = new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'short' });
             const isPeak   = peakDay && day.date === peakDay.date;
@@ -473,13 +473,13 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
                 {/* Tooltip */}
                 <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
                   <p className="font-semibold capitalize">{new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
-                  <p className="text-gray-300">{day.articles} articles · {fmt(day.views)} vues</p>
+                  <p className="text-gray-300">{day.publications} publications · {fmt(day.views)} vues</p>
                 </div>
 
                 <div className="relative w-full flex justify-center gap-0.5" style={{ height: BAR_H }}>
                   <div
                     className={`w-[44%] rounded-t transition-all duration-300 ${isPeak ? 'bg-[#168F6F]' : 'bg-[#168F6F]/70 group-hover:bg-[#168F6F]'}`}
-                    style={{ height: articleH, alignSelf: 'flex-end' }}
+                    style={{ height: publicationH, alignSelf: 'flex-end' }}
                   />
                   <div
                     className={`w-[44%] rounded-t transition-all duration-300 ${isPeak ? 'bg-[#168F6F]/40' : 'bg-[#168F6F]/20 group-hover:bg-[#168F6F]/35'}`}
@@ -508,28 +508,28 @@ export default function TrendingPage() {
   const [data, setData] = useState<EmployeeTrendingStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState<string | null>(null);
-  const { openArticleModal } = useArticleModal();
+  const { openPublicationModal } = usePublicationModal();
 
-  const handleArticleClick = async (article: EmployeeTrendingStats['topArticles'][0]) => {
-    let authorId: number | undefined = article.author.id;
-    let authorAvatar: string | null = article.author.avatar ?? null;
+  const handlePublicationClick = async (publication: EmployeeTrendingStats['topPublications'][0]) => {
+    let authorId: number | undefined = publication.author.id;
+    let authorAvatar: string | null = publication.author.avatar ?? null;
 
     let content = '';
-    let description = article.excerpt ?? '';
+    let description = publication.excerpt ?? '';
     let tags: string[] = [];
     let categorySlug = '';
-    let initials = article.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    let initials = publication.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     let department = '';
     let isLiked = false;
     let isBookmarked = false;
-    let likes = article.likesCount;
-    let comments = article.commentsCount;
-    let views = article.viewsCount;
+    let likes = publication.likesCount;
+    let comments = publication.commentsCount;
+    let views = publication.viewsCount;
 
     try {
-      const full = await articleService.findOne(article.id);
+      const full = await publicationService.findOne(publication.id);
       content      = full.content ?? '';
-      description  = full.description ?? article.excerpt ?? '';
+      description  = full.description ?? publication.excerpt ?? '';
       tags         = full.tags ?? [];
       categorySlug = full.category?.slug ?? '';
       initials     = full.author?.initials ?? initials;
@@ -542,21 +542,21 @@ export default function TrendingPage() {
       views        = full.stats?.views ?? views;
     } catch {}
 
-    openArticleModal({
-      id: String(article.id),
-      title: article.title,
+    openPublicationModal({
+      id: String(publication.id),
+      title: publication.title,
       content,
       description,
       author: {
         id: authorId,
-        name: article.author.name,
+        name: publication.author.name,
         initials,
         department,
         avatar: authorAvatar,
       },
-      category: { name: article.category.name, slug: categorySlug },
+      category: { name: publication.category.name, slug: categorySlug },
       tags,
-      publishedAt: article.publishedAt,
+      publishedAt: publication.publishedAt,
       status: 'published' as const,
       stats: { likes, comments, views },
       isLiked,
@@ -605,11 +605,11 @@ export default function TrendingPage() {
 
   if (!data) return null;
 
-  const [heroArticle, ...restArticles] = data.topArticles;
+  const [heroPublication, ...restPublications] = data.topPublications;
   const maxTagViews = Math.max(...data.trendingTags.map(t => t.totalViews), 1);
 
   // Compute total engagement for the period
-  const totalLikes = data.topArticles.reduce((s, a) => s + a.likesCount, 0);
+  const totalLikes = data.topPublications.reduce((s, a) => s + a.likesCount, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -638,10 +638,10 @@ export default function TrendingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           <StatCard
             icon={<FileText className="h-5 w-5 text-white" />}
-            title="Articles publiés"
-            value={data.stats.totalArticles}
-            growth={data.stats.articlesGrowth}
-            sub={data.stats.articlesGrowth !== 0 ? `vs semaine précédente` : undefined}
+            title="Publications publiés"
+            value={data.stats.totalPublications}
+            growth={data.stats.publicationsGrowth}
+            sub={data.stats.publicationsGrowth !== 0 ? `vs semaine précédente` : undefined}
           />
           <StatCard
             icon={<Eye className="h-5 w-5 text-white" />}
@@ -659,7 +659,7 @@ export default function TrendingPage() {
             icon={<Heart className="h-5 w-5 text-white" />}
             title="J'aime reçus"
             value={totalLikes}
-            sub="Top articles cumulés"
+            sub="Top publications cumulés"
           />
         </div>
 
@@ -669,27 +669,27 @@ export default function TrendingPage() {
           {/* ── Left column ── */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* Articles populaires */}
+            {/* Publications populaires */}
             <Section
               icon={<TrendingUp className="h-4 w-4 text-[#168F6F]" />}
-              title="Articles populaires"
-              subtitle={`Top ${data.topArticles.length} de la semaine`}
+              title="Publications populaires"
+              subtitle={`Top ${data.topPublications.length} de la semaine`}
             >
               <div className="space-y-3">
                 {/* Hero for rank 1 */}
-                {heroArticle && <HeroArticle article={heroArticle} onArticleClick={handleArticleClick} />}
+                {heroPublication && <HeroPublication publication={heroPublication} onPublicationClick={handlePublicationClick} />}
 
                 {/* Compact rows for rank 2+ */}
-                {restArticles.length > 0 && (
+                {restPublications.length > 0 && (
                   <div className="divide-y divide-gray-100 dark:divide-gray-800 -mx-5 -mb-5 mt-1">
-                    {restArticles.map((article, i) => (
-                      <ArticleRow key={article.id} article={article} rank={i + 2} onArticleClick={handleArticleClick} />
+                    {restPublications.map((publication, i) => (
+                      <PublicationRow key={publication.id} publication={publication} rank={i + 2} onPublicationClick={handlePublicationClick} />
                     ))}
                   </div>
                 )}
 
-                {data.topArticles.length === 0 && (
-                  <p className="py-10 text-center text-sm text-gray-400">Aucun article cette semaine.</p>
+                {data.topPublications.length === 0 && (
+                  <p className="py-10 text-center text-sm text-gray-400">Aucun publication cette semaine.</p>
                 )}
               </div>
             </Section>

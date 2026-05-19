@@ -1,4 +1,4 @@
-// app/(admin)/(others-pages)/articles/rejected/moderation/page.tsx
+// app/(admin)/(others-pages)/publications/rejected/moderation/page.tsx
 'use client';
 
 import { getToken } from '../../../../../../../services/auth.service';
@@ -7,7 +7,7 @@ import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ModerationTable from '@/components/tables/ModerationTable';
 
-export interface ModerationArticle {
+export interface ModerationPublication {
   id: number;
   title: string;
   content: string;
@@ -23,7 +23,7 @@ export interface ModerationArticle {
     moderatedAt?: string;
   } | null;
   duplicateScore: number | null;
-  similarArticlesCache: any[] | null;
+  similarPublicationsCache: any[] | null;
   author: {
     id: number;
     name: string;
@@ -41,7 +41,7 @@ export interface ModerationArticle {
 }
 
 export default function ModerationRejectedPage() {
-  const [articles, setArticles] = useState<ModerationArticle[]>([]);
+  const [publications, setPublications] = useState<ModerationPublication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
@@ -62,17 +62,17 @@ export default function ModerationRejectedPage() {
   }, [router]);
 
   useEffect(() => {
-    if (!isCheckingRole) fetchArticles();
+    if (!isCheckingRole) fetchPublications();
   }, [isCheckingRole]);
 
-  const fetchArticles = async () => {
+  const fetchPublications = async () => {
     try {
       setLoading(true);
       setError(null);
       const token = getToken();
       if (!token) throw new Error('Non authentifié');
 
-      const response = await fetch('http://localhost:3000/api/articles/rejected/moderation', {
+      const response = await fetch('http://localhost:3000/api/publications/rejected/moderation', {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
@@ -81,7 +81,7 @@ export default function ModerationRejectedPage() {
       if (!response.ok) throw new Error(`Erreur ${response.status}: ${response.statusText}`);
 
       const data = await response.json();
-      setArticles(data.articles || []);
+      setPublications(data.publications || []);
     } catch (err: any) {
       setError(err.message || 'Erreur de chargement');
     } finally {
@@ -103,13 +103,13 @@ export default function ModerationRejectedPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
       <div className="text-center">
         <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Chargement des articles...</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Chargement des publications...</h3>
         <p className="text-gray-600 dark:text-gray-400">Veuillez patienter</p>
       </div>
     </div>
   );
 
-  if (error && articles.length === 0) return (
+  if (error && publications.length === 0) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 max-w-md w-full text-center shadow-xl">
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -117,7 +117,7 @@ export default function ModerationRejectedPage() {
         </div>
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Erreur de chargement</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
-        <button onClick={fetchArticles} className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium">
+        <button onClick={fetchPublications} className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium">
           <RefreshCw size={18} /> Réessayer
         </button>
       </div>
@@ -127,10 +127,10 @@ export default function ModerationRejectedPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-6 lg:p-8">
       <ModerationTable
-        articles={articles}
-        onRefresh={fetchArticles}
-        title="Articles Rejetés — Modération IA"
-        description="Articles rejetés automatiquement par le système de modération suite à la détection de contenu inapproprié"
+        publications={publications}
+        onRefresh={fetchPublications}
+        title="Publications Rejetés — Modération IA"
+        description="Publications rejetés automatiquement par le système de modération suite à la détection de contenu inapproprié"
       />
     </div>
   );

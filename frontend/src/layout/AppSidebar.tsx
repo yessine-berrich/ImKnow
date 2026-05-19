@@ -159,7 +159,7 @@ const othersItems: NavItem[] = [
     icon: <Flag className="w-5 h-5" />,
     adminOnly: true,
     subItems: [
-      { name: "sidebar.nav_reported_articles", path: "/reported/reported-articles", pro: false },
+      { name: "sidebar.nav_reported_publications", path: "/reported/reported-publications", pro: false },
       { name: "sidebar.nav_reported_users", path: "/reported/reported-users", pro: false },
     ],
   },
@@ -291,11 +291,11 @@ const AppSidebar: React.FC = () => {
   const isActive = useCallback((path: string) => path === pathname, [pathname]);
 
   const isCategoryActive = useCallback((categoryId: string) => {
-    return pathname === `/categories/${categoryId}/articles`;
+    return pathname === `/categories/${categoryId}/publications`;
   }, [pathname]);
 
   const isTagActive = useCallback((tagId: number) => {
-    return pathname === `/tags/${tagId}/articles`;
+    return pathname === `/tags/${tagId}/publications`;
   }, [pathname]);
 
   // ✅ Gérer l'ouverture des sous-menus
@@ -547,7 +547,7 @@ const AppSidebar: React.FC = () => {
                 categories.map((category) => (
                   <li key={category.id}>
                     <Link
-                      href={`/categories/${category.id}/articles`}
+                      href={`/categories/${category.id}/publications`}
                       className={`menu-dropdown-item ${isCategoryActive(category.id)
                           ? "menu-dropdown-item-active"
                           : "menu-dropdown-item-inactive"
@@ -616,7 +616,7 @@ const AppSidebar: React.FC = () => {
                 trendingTags.map((tag) => (
                   <li key={tag.id}>
                     <Link
-                      href={`/tags/${tag.id}/articles`}
+                      href={`/tags/${tag.id}/publications`}
                       className={`menu-dropdown-item ${isTagActive(tag.id)
                           ? "menu-dropdown-item-active"
                           : "menu-dropdown-item-inactive"
@@ -625,7 +625,7 @@ const AppSidebar: React.FC = () => {
                       <span className="truncate">{tag.name}</span>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <span className="text-xs text-gray-500">
-                          {tag.articleCount}
+                          {tag.publicationCount}
                         </span>
                         {getTrendIcon(tag.trend)}
                       </div>

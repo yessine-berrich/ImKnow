@@ -40,8 +40,8 @@ describe('RecommendationController', () => {
   describe('getRecommendations', () => {
     it('should return wrapped recommendations for current user', async () => {
       const mockPayload = { sub: 1, email: 'user@example.com', role: 'employee' };
-      const mockArticles = [{ id: 1, title: 'Recommended Article', viewsCount: 0, likes: [], bookmarks: [], comments: [], tags: [], media: [] }];
-      mockRecommendationService.getRecommendations.mockResolvedValue(mockArticles as any);
+      const mockPublications = [{ id: 1, title: 'Recommended Publication', viewsCount: 0, likes: [], bookmarks: [], comments: [], tags: [], media: [] }];
+      mockRecommendationService.getRecommendations.mockResolvedValue(mockPublications as any);
 
       const result = await controller.getRecommendations(mockPayload as any, 10) as any;
 

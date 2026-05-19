@@ -1,4 +1,4 @@
-export interface ArticleSearchResult {
+export interface PublicationSearchResult {
   id: number;
   title: string;
   contentPreview: string;
@@ -34,13 +34,13 @@ export interface CategorySearchResult {
   id: number;
   name: string;
   description: string | null;
-  articlesCount: number;
+  publicationsCount: number;
 }
 
 export interface TagSearchResult {
   id: number;
   name: string;
-  articlesCount: number;
+  publicationsCount: number;
 }
 
 export interface UserSearchResult {
@@ -56,7 +56,7 @@ export interface UserSearchResult {
 
 export interface GlobalSearchResult {
   query: string;
-  articles: ArticleSearchResult[];
+  publications: PublicationSearchResult[];
   categories: CategorySearchResult[];
   tags: TagSearchResult[];
   users: UserSearchResult[];

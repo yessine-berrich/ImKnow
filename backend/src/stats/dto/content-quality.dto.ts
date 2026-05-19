@@ -5,7 +5,7 @@ export class ContentQualityMetricDto {
   status: 'good' | 'average' | 'poor';
 }
 
-export class ArticleQualityDto {
+export class PublicationQualityDto {
   id: number;
   title: string;
   author: string;
@@ -21,9 +21,9 @@ export class ArticleQualityDto {
 export class ContentQualityResponseDto {
   overallScore: number;
   metrics: ContentQualityMetricDto[];
-  topQualityArticles: ArticleQualityDto[];
-  needsImprovement: ArticleQualityDto[];
+  topQualityPublications: PublicationQualityDto[];
+  needsImprovement: PublicationQualityDto[];
   avgWordCount: number;
-  articlesWithImages: number;
-  articlesWithTags: number;
+  publicationsWithImages: number;
+  publicationsWithTags: number;
 }

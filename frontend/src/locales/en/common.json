@@ -1,5 +1,5 @@
 {
-  "article_card": {
+  "publication_card": {
     "featured": "Featured",
     "menu": {
       "export_pdf": "Export as PDF",
@@ -18,7 +18,7 @@
     "share": {
       "link_copied": "Link copied!"
     },
-    "confirm_delete": "Are you sure you want to delete this article?",
+    "confirm_delete": "Are you sure you want to delete this publication?",
     "time_ago": {
       "years_one": "{{count}} year ago",
       "years_other": "{{count}} years ago",

@@ -105,7 +105,7 @@ describe('NotificationService', () => {
         NotificationType.COMMENT,
         mockUser as User,
         null,
-        'Someone commented on your article',
+        'Someone commented on your publication',
       );
 
       expect(mockNotificationRepo.save).toHaveBeenCalled();

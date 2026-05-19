@@ -14,7 +14,7 @@ export class GroqRagService {
     const contextText = chunks
       .map(
         (c, i) =>
-          `[Article ${i + 1}] "${c.title}" — extrait ${c.chunkIndex + 1} (pertinence ${c.similarity.toFixed(3)})\n${c.content}`,
+          `[Publication ${i + 1}] "${c.title}" — extrait ${c.chunkIndex + 1} (pertinence ${c.similarity.toFixed(3)})\n${c.content}`,
       )
       .join('\n────────────────────\n');
 
@@ -24,12 +24,12 @@ export class GroqRagService {
         messages: [
           {
             role: 'system',
-            content: `Tu es un assistant expert en intelligence artificielle, spécialisé dans la synthèse d'articles techniques.
+            content: `Tu es un assistant expert en intelligence artificielle, spécialisé dans la synthèse d'publications techniques.
 
 Règles absolues :
 1. Réponds UNIQUEMENT à partir des extraits fournis dans le contexte. N'utilise jamais tes connaissances générales.
 2. Si la réponse n'est pas dans le contexte, dis clairement : "Je ne trouve pas cette information dans les documents disponibles."
-3. Cite obligatoirement tes sources avec la notation [Article 1], [Article 2], etc., correspondant aux numéros du contexte.
+3. Cite obligatoirement tes sources avec la notation [Publication 1], [Publication 2], etc., correspondant aux numéros du contexte.
 4. Réponds toujours en français, avec un ton professionnel et concis.
 5. Ne répète pas les extraits mot pour mot ; synthétise et structure la réponse.
 6. N'invente aucune information. En cas de doute, choisis la transparence.`,
@@ -38,10 +38,10 @@ Règles absolues :
             role: 'user',
             content: `Question : ${question}
 
-Contexte extrait des articles :
+Contexte extrait des publications :
 ${contextText}
 
-Réponds en citant les sources [Article N] :`,
+Réponds en citant les sources [Publication N] :`,
           },
         ],
         temperature: 0.2,

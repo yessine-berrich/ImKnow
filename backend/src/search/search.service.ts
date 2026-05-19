@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { Article } from '../article/entities/article.entity';
+import { Publication } from '../publication/entities/publication.entity';
 import { Category } from '../category/entities/category.entity';
 import { Tag } from '../tag/entities/tag.entity';
 import { User } from '../users/entities/user.entity';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 import type {
   GlobalSearchResult,
-  ArticleSearchResult,
+  PublicationSearchResult,
   CategorySearchResult,
   TagSearchResult,
   UserSearchResult,
@@ -22,8 +22,8 @@ export class SearchService {
   private readonly embedModel = 'nomic-embed-text';
 
   constructor(
-    @InjectRepository(Article)
-    private readonly articleRepository: Repository<Article>,
+    @InjectRepository(Publication)
+    private readonly publicationRepository: Repository<Publication>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(Tag)
@@ -40,18 +40,18 @@ export class SearchService {
   ): Promise<GlobalSearchResult> {
     const searchTerm = query.trim();
 
-    const [articles, categories, tags, users] = await Promise.all([
-      this.searchArticlesSemantic(searchTerm, limitPerType, minSimilarity),
+    const [publications, categories, tags, users] = await Promise.all([
+      this.searchPublicationsSemantic(searchTerm, limitPerType, minSimilarity),
       this.searchCategories(searchTerm, limitPerType),
       this.searchTags(searchTerm, limitPerType),
       this.searchUsers(searchTerm, limitPerType),
     ]);
 
-    const totalResults = articles.length + categories.length + tags.length + users.length;
+    const totalResults = publications.length + categories.length + tags.length + users.length;
 
     return {
       query: searchTerm,
-      articles,
+      publications,
       categories,
       tags,
       users,
@@ -59,11 +59,11 @@ export class SearchService {
     };
   }
 
-  private async searchArticlesSemantic(
+  private async searchPublicationsSemantic(
     query: string,
     limit: number,
     minSimilarity: number = 0.65,
-  ): Promise<ArticleSearchResult[]> {
+  ): Promise<PublicationSearchResult[]> {
     try {
       // Generate embedding for the search query
       const queryVector = await this.generateEmbedding(query);
@@ -74,7 +74,7 @@ export class SearchService {
           '[' + queryVector.map((v) => Number(v).toFixed(8)).join(', ') + ']';
 
         // Semantic search using pgvector cosine similarity
-        const results = await this.articleRepository.query(
+        const results = await this.publicationRepository.query(
           `
           SELECT 
             a.id,
@@ -96,9 +96,9 @@ export class SearchService {
             COALESCE(
               (
                 SELECT json_agg(json_build_object('id', t.id, 'name', t.name))
-                FROM article_tags at
+                FROM publication_tags at
                 JOIN tags t ON t.id = at."tagsId"
-                WHERE at."articlesId" = a.id
+                WHERE at."publicationsId" = a.id
               ),
               '[]'::json
             ) AS tags,
@@ -113,16 +113,16 @@ export class SearchService {
                   'size', m.size
                 ))
                 FROM media m
-                WHERE m."articleId" = a.id
+                WHERE m."publicationId" = a.id
               ),
               '[]'::json
             ) AS media,
             (
               SELECT COUNT(*)::int
-              FROM article_likes al
-              WHERE al."articlesId" = a.id
+              FROM publication_likes al
+              WHERE al."publicationsId" = a.id
             ) AS "likesCount"
-          FROM articles a
+          FROM publications a
           LEFT JOIN users u ON u.id = a."authorId"
           LEFT JOIN categories c ON c.id = a."categoryId"
           WHERE a.embedding_vector_pg IS NOT NULL
@@ -131,7 +131,7 @@ export class SearchService {
           ORDER BY similarity DESC
           LIMIT $4
           `,
-          [vectorString, ArticleStatus.PUBLISHED, minSimilarity, limit],
+          [vectorString, PublicationStatus.PUBLISHED, minSimilarity, limit],
         );
 
         if (results && results.length > 0) {
@@ -158,48 +158,48 @@ export class SearchService {
     }
 
     // Fallback to text-based search if semantic search fails or returns no results
-    return this.searchArticlesText(query, limit);
+    return this.searchPublicationsText(query, limit);
   }
 
-  private async searchArticlesText(
+  private async searchPublicationsText(
     query: string,
     limit: number,
-  ): Promise<ArticleSearchResult[]> {
+  ): Promise<PublicationSearchResult[]> {
     const searchPattern = `%${query}%`;
-    const articles = await this.articleRepository.find({
+    const publications = await this.publicationRepository.find({
       where: [
-        { title: ILike(searchPattern), status: ArticleStatus.PUBLISHED },
-        { content: ILike(searchPattern), status: ArticleStatus.PUBLISHED },
+        { title: ILike(searchPattern), status: PublicationStatus.PUBLISHED },
+        { content: ILike(searchPattern), status: PublicationStatus.PUBLISHED },
       ],
       relations: ['author', 'category', 'tags', 'likes', 'media'],
       take: limit,
       order: { createdAt: 'DESC' },
     });
 
-    return articles.map((article) => ({
-      id: article.id,
-      title: article.title,
+    return publications.map((publication) => ({
+      id: publication.id,
+      title: publication.title,
       contentPreview:
-        article.content.length > 200
-          ? article.content.substring(0, 200) + '...'
-          : article.content,
+        publication.content.length > 200
+          ? publication.content.substring(0, 200) + '...'
+          : publication.content,
       author: {
-        id: article.author.id,
-        firstName: article.author.firstName,
-        lastName: article.author.lastName,
-        profileImage: article.author.profileImage || null,
+        id: publication.author.id,
+        firstName: publication.author.firstName,
+        lastName: publication.author.lastName,
+        profileImage: publication.author.profileImage || null,
       },
-      category: article.category
+      category: publication.category
         ? {
-            id: article.category.id,
-            name: article.category.name,
+            id: publication.category.id,
+            name: publication.category.name,
           }
         : null,
-      tags: article.tags?.map((tag) => ({
+      tags: publication.tags?.map((tag) => ({
         id: tag.id,
         name: tag.name,
       })) || [],
-      media: article.media?.map((m) => ({
+      media: publication.media?.map((m) => ({
         id: m.id,
         url: m.url,
         filename: m.filename,
@@ -207,9 +207,9 @@ export class SearchService {
         type: m.type,
         size: m.size,
       })) || [],
-      viewsCount: article.viewsCount,
-      likesCount: article.likes?.length || 0,
-      createdAt: article.createdAt,
+      viewsCount: publication.viewsCount,
+      likesCount: publication.likes?.length || 0,
+      createdAt: publication.createdAt,
     }));
   }
 
@@ -220,22 +220,22 @@ export class SearchService {
     const searchPattern = `%${query}%`;
     const categories = await this.categoryRepository
       .createQueryBuilder('category')
-      .leftJoinAndSelect('category.articles', 'article')
+      .leftJoinAndSelect('category.publications', 'publication')
       .where(
         '(LOWER(category.name) LIKE LOWER(:pattern) OR LOWER(category.description) LIKE LOWER(:pattern))',
         { pattern: searchPattern },
       )
       .getMany();
 
-    // Sort by articles count and limit
+    // Sort by publications count and limit
     const sortedCategories = categories
       .map((category) => ({
         id: category.id,
         name: category.name,
         description: category.description,
-        articlesCount: category.articles?.length || 0,
+        publicationsCount: category.publications?.length || 0,
       }))
-      .sort((a, b) => b.articlesCount - a.articlesCount)
+      .sort((a, b) => b.publicationsCount - a.publicationsCount)
       .slice(0, limit);
 
     return sortedCategories;
@@ -248,18 +248,18 @@ export class SearchService {
     const searchPattern = `%${query}%`;
     const tags = await this.tagRepository
       .createQueryBuilder('tag')
-      .leftJoinAndSelect('tag.articles', 'article')
+      .leftJoinAndSelect('tag.publications', 'publication')
       .where('LOWER(tag.name) LIKE LOWER(:pattern)', { pattern: searchPattern })
       .getMany();
 
-    // Sort by articles count and limit
+    // Sort by publications count and limit
     const sortedTags = tags
       .map((tag) => ({
         id: tag.id,
         name: tag.name,
-        articlesCount: tag.articles?.length || 0,
+        publicationsCount: tag.publications?.length || 0,
       }))
-      .sort((a, b) => b.articlesCount - a.articlesCount)
+      .sort((a, b) => b.publicationsCount - a.publicationsCount)
       .slice(0, limit);
 
     return sortedTags;
@@ -294,12 +294,12 @@ export class SearchService {
     }));
   }
 
-  async searchArticlesOnly(
+  async searchPublicationsOnly(
     query: string,
     limit = 10,
     minSimilarity = 0.65,
-  ): Promise<ArticleSearchResult[]> {
-    return this.searchArticlesSemantic(query.trim(), limit, minSimilarity);
+  ): Promise<PublicationSearchResult[]> {
+    return this.searchPublicationsSemantic(query.trim(), limit, minSimilarity);
   }
 
   async searchCategoriesOnly(query: string, limit = 10): Promise<CategorySearchResult[]> {
@@ -342,7 +342,7 @@ export class SearchService {
     query: string,
     limit = 10,
     minSimilarity = 0.72,
-    status: ArticleStatus = ArticleStatus.PUBLISHED,
+    status: PublicationStatus = PublicationStatus.PUBLISHED,
   ): Promise<
     {
       id: number;
@@ -360,14 +360,14 @@ export class SearchService {
       return [];
     }
 
-    const results = await this.articleRepository.query(
+    const results = await this.publicationRepository.query(
       `
       SELECT
         id,
         title,
         LEFT(content, 280) AS content_preview,
         ROUND(CAST((1 - (embedding_vector <=> $1)) AS numeric), 4) AS similarity
-      FROM articles
+      FROM publications
       WHERE embedding_vector IS NOT NULL
         AND status = $2
         AND (embedding_vector <=> $1) <= (1 - $3)
@@ -387,7 +387,7 @@ export class SearchService {
   ): Promise<
     {
       chunkId: number;
-      articleId: number;
+      publicationId: number;
       title: string;
       chunkIndex: number;
       excerpt: string;
@@ -406,17 +406,17 @@ export class SearchService {
       '[' + queryVector.map((v) => Number(v).toFixed(8)).join(', ') + ']';
 
     try {
-      const rows = await this.articleRepository.query(
+      const rows = await this.publicationRepository.query(
         `
         SELECT
           c.id                                                                      AS "chunkId",
-          a.id                                                                      AS "articleId",
+          a.id                                                                      AS "publicationId",
           a.title,
           c."chunkIndex",
           c.content,
           ROUND(CAST((1 - (c.embedding_vector_pg <=> $1::vector)) AS numeric), 4)  AS similarity
-        FROM article_chunks c
-        JOIN articles a ON a.id = c."articleId"
+        FROM publication_chunks c
+        JOIN publications a ON a.id = c."publicationId"
         WHERE c.embedding_vector_pg IS NOT NULL
           AND a.status = 'published'
           AND (1 - (c.embedding_vector_pg <=> $1::vector)) >= $2
@@ -428,7 +428,7 @@ export class SearchService {
 
       return rows.map((r: Record<string, unknown>) => ({
         chunkId: Number(r.chunkId),
-        articleId: Number(r.articleId),
+        publicationId: Number(r.publicationId),
         title: r.title as string,
         chunkIndex: Number(r.chunkIndex),
         excerpt: this.makeExcerpt(r.content as string),

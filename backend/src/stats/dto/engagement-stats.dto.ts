@@ -1,4 +1,4 @@
-export class MostLikedArticleDto {
+export class MostLikedPublicationDto {
   id: number;
   title: string;
   author: {
@@ -11,7 +11,7 @@ export class MostLikedArticleDto {
   publishedAt: string;
 }
 
-export class MostBookmarkedArticleDto {
+export class MostBookmarkedPublicationDto {
   id: number;
   title: string;
   author: {
@@ -25,10 +25,10 @@ export class MostBookmarkedArticleDto {
 }
 
 export class EngagementStatsResponseDto {
-  mostLikedArticles: MostLikedArticleDto[];
-  mostBookmarkedArticles: MostBookmarkedArticleDto[];
+  mostLikedPublications: MostLikedPublicationDto[];
+  mostBookmarkedPublications: MostBookmarkedPublicationDto[];
   totalLikes: number;
   totalBookmarks: number;
-  avgLikesPerArticle: number;
-  avgBookmarksPerArticle: number;
+  avgLikesPerPublication: number;
+  avgBookmarksPerPublication: number;
 }

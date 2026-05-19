@@ -96,7 +96,7 @@ export default function TagsPage() {
       
       // Adaptation des données NestJS -> Format TagItem
       const formattedTags: TagItem[] = data.map((tag: any) => {
-        const count = tag.count ?? (tag.articles ? tag.articles.length : 0);
+        const count = tag.count ?? (tag.publications ? tag.publications.length : 0);
         return {
           id: tag.id.toString(),
           name: tag.name,

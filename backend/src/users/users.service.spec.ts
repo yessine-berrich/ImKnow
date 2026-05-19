@@ -50,11 +50,11 @@ describe('UsersService', () => {
     emailOnNewFollower: true,
     emailNewsletter: false,
     pushNotificationsEnabled: true,
-    articles: [],
+    publications: [],
     comments: [],
     likedComments: [],
-    likedArticles: [],
-    bookmarkedArticles: [],
+    likedPublications: [],
+    bookmarkedPublications: [],
     notifications: [],
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -156,7 +156,7 @@ describe('UsersService', () => {
       const result = await service.getUserById(1);
 
       expect(result).toEqual(mockUser);
-      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 }, relations: ['articles'] });
+      expect(userRepository.findOne).toHaveBeenCalledWith({ where: { id: 1 }, relations: ['publications'] });
     });
 
     it('should throw NotFoundException if user not found', async () => {
@@ -167,14 +167,14 @@ describe('UsersService', () => {
   });
 
   describe('getAllUsers', () => {
-    it('should return all users with articles', async () => {
+    it('should return all users with publications', async () => {
       userRepository.find.mockResolvedValue([mockUser]);
 
       const result = await service.getAllUsers();
 
       expect(result).toEqual([mockUser]);
       expect(userRepository.find).toHaveBeenCalledWith({
-        relations: ['articles'],
+        relations: ['publications'],
       });
     });
   });

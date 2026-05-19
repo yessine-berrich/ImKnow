@@ -30,19 +30,19 @@ export class CommentController {
     return this.commentService.create(createCommentDto, payload.sub);
   }
 
-  @Get('article/:articleId')
+  @Get('publication/:publicationId')
   @UseGuards(AuthGuard)
-  findAllByArticle(
-    @Param('articleId', ParseIntPipe) articleId: number,
+  findAllByPublication(
+    @Param('publicationId', ParseIntPipe) publicationId: number,
     @CurrentPayload() payload: JwtPayloadType
   ) {
-    return this.commentService.findByArticle(articleId, payload.sub);
+    return this.commentService.findByPublication(publicationId, payload.sub);
   }
 
-  @Get('article/:articleId/stats')
+  @Get('publication/:publicationId/stats')
   @UseGuards(AuthGuard)
-  getArticleCommentStats(@Param('articleId', ParseIntPipe) articleId: number) {
-    return this.commentService.getCommentStats(articleId);
+  getPublicationCommentStats(@Param('publicationId', ParseIntPipe) publicationId: number) {
+    return this.commentService.getCommentStats(publicationId);
   }
 
   @Post(':id/like')
@@ -87,11 +87,11 @@ export class CommentController {
   }
 
   /**
-   * Récupérer les articles commentés par l'utilisateur
+   * Récupérer les publications commentés par l'utilisateur
    */
-  @Get('user/articles')
+  @Get('user/publications')
   @UseGuards(AuthGuard)
-  async getUserCommentedArticles(@CurrentPayload() payload: JwtPayloadType) {
-    return this.commentService.findCommentedArticlesByUser(payload.sub);
+  async getUserCommentedPublications(@CurrentPayload() payload: JwtPayloadType) {
+    return this.commentService.findCommentedPublicationsByUser(payload.sub);
   }
 }

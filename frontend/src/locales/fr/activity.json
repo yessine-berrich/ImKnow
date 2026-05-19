@@ -1,33 +1,33 @@
 {
   "liked": {
-    "title": "Articles aimés",
-    "loading": "Chargement de vos articles aimés...",
-    "count_none": "Vous n'avez pas encore aimé d'articles",
-    "count_one": "{{count}} article dans votre collection",
-    "count_plural": "{{count}} articles dans votre collection",
-    "empty_title": "Aucun article aimé",
-    "empty_desc": "Explorez notre base de connaissances et likez vos articles préférés !",
-    "load_error": "Impossible de charger vos articles aimés"
+    "title": "Publications aimés",
+    "loading": "Chargement de vos publications aimés...",
+    "count_none": "Vous n'avez pas encore aimé d'publications",
+    "count_one": "{{count}} publication dans votre collection",
+    "count_plural": "{{count}} publications dans votre collection",
+    "empty_title": "Aucun publication aimé",
+    "empty_desc": "Explorez notre base de connaissances et likez vos publications préférés !",
+    "load_error": "Impossible de charger vos publications aimés"
   },
   "commented": {
-    "title": "Articles commentés",
-    "loading": "Chargement de vos articles commentés...",
-    "count_none": "Vous n'avez pas encore commenté d'articles",
-    "count_one": "{{count}} article auquel vous avez participé",
-    "count_plural": "{{count}} articles auxquels vous avez participé",
-    "empty_title": "Aucun article commenté",
-    "empty_desc": "Vous n'avez pas encore commenté d'articles. Participez aux discussions en laissant vos commentaires !",
+    "title": "Publications commentés",
+    "loading": "Chargement de vos publications commentés...",
+    "count_none": "Vous n'avez pas encore commenté d'publications",
+    "count_one": "{{count}} publication auquel vous avez participé",
+    "count_plural": "{{count}} publications auxquels vous avez participé",
+    "empty_title": "Aucun publication commenté",
+    "empty_desc": "Vous n'avez pas encore commenté d'publications. Participez aux discussions en laissant vos commentaires !",
     "last_comment": "Votre dernier commentaire",
     "format_error": "Format de réponse inattendu du serveur"
   },
   "bookmarked": {
-    "title": "Articles sauvegardés",
-    "loading": "Chargement de vos articles sauvegardés...",
-    "count_none": "Vous n'avez pas encore sauvegardé d'articles",
-    "count_one": "{{count}} article dans votre bibliothèque",
-    "count_plural": "{{count}} articles dans votre bibliothèque",
-    "empty_title": "Aucun article sauvegardé",
-    "empty_desc": "Vous n'avez pas encore sauvegardé d'articles. Explorez notre base de connaissances et sauvegardez vos articles préférés !",
+    "title": "Publications sauvegardés",
+    "loading": "Chargement de vos publications sauvegardés...",
+    "count_none": "Vous n'avez pas encore sauvegardé d'publications",
+    "count_one": "{{count}} publication dans votre bibliothèque",
+    "count_plural": "{{count}} publications dans votre bibliothèque",
+    "empty_title": "Aucun publication sauvegardé",
+    "empty_desc": "Vous n'avez pas encore sauvegardé d'publications. Explorez notre base de connaissances et sauvegardez vos publications préférés !",
     "saved_badge": "Sauvegardé"
   },
   "filterbar": {
@@ -50,11 +50,11 @@
     "reconnect": "Veuillez vous reconnecter",
     "login": "Se connecter",
     "retry": "Réessayer",
-    "explore_articles": "Explorer les articles",
-    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet article ?",
+    "explore_publications": "Explorer les publications",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cet publication ?",
     "default_author": "Utilisateur",
     "default_department": "Membre",
     "uncategorized": "Non classé",
-    "displaying": "Affichage {{from}} - {{to}} sur {{total}} article{{plural}}"
+    "displaying": "Affichage {{from}} - {{to}} sur {{total}} publication{{plural}}"
   }
 }

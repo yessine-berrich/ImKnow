@@ -18,7 +18,7 @@ describe('TagService', () => {
   const mockTag: Partial<Tag> = {
     id: 1,
     name: 'nestjs',
-    articles: [],
+    publications: [],
   };
 
   const mockTagRepo = {
@@ -57,7 +57,7 @@ describe('TagService', () => {
 
       expect(result).toHaveLength(1);
       expect(mockTagRepo.find).toHaveBeenCalledWith({
-        relations: ['articles'],
+        relations: ['publications'],
         order: { name: 'ASC' },
       });
     });

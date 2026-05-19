@@ -11,8 +11,8 @@ describe('CategoryController', () => {
   const mockCategory = {
     id: 1,
     name: 'Technology',
-    description: 'Tech articles',
-    articles: [],
+    description: 'Tech publications',
+    publications: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -70,7 +70,7 @@ describe('CategoryController', () => {
 
   describe('create', () => {
     it('should create a category', async () => {
-      const dto = { name: 'Science', description: 'Science articles' };
+      const dto = { name: 'Science', description: 'Science publications' };
       mockCategoryService.create.mockResolvedValue({ id: 2, ...dto });
 
       const result = await controller.create(dto as any);

@@ -14,13 +14,13 @@ import {
   TrendingUp,
   Filter,
 } from 'lucide-react';
-import { articleService } from '../../../services/article.service';
+import { publicationService } from '../../../services/publication.service';
 
 interface Category {
   id: string | number;
   name: string;
   description: string;
-  articleCount: number;
+  publicationCount: number;
 }
 
 interface CategoriesManagerProps {
@@ -43,18 +43,18 @@ export default function CategoriesManager({
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [loading, setLoading] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState<Record<string | number, boolean>>({});
-  const [categoryArticles, setCategoryArticles] = useState<Record<string | number, number>>({});
-  const [sortBy, setSortBy] = useState<'name' | 'articleCount'>('name');
+  const [categoryPublications, setCategoryPublications] = useState<Record<string | number, number>>({});
+  const [sortBy, setSortBy] = useState<'name' | 'publicationCount'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  // ✅ Navigation vers la page des articles de la catégorie
-  const handleViewArticles = (categoryId: string | number) => {
-    router.push(`/categories/${categoryId}/articles`);
+  // ✅ Navigation vers la page des publications de la catégorie
+  const handleViewPublications = (categoryId: string | number) => {
+    router.push(`/categories/${categoryId}/publications`);
   };
 
-  // Charger le nombre réel d'articles pour chaque catégorie
+  // Charger le nombre réel d'publications pour chaque catégorie
   useEffect(() => {
-    const loadArticleCounts = async () => {
+    const loadPublicationCounts = async () => {
       if (categories.length === 0) return;
       
       setLoading(true);
@@ -68,17 +68,17 @@ export default function CategoriesManager({
         });
         setLoadingCategories(loadingState);
 
-        // Charger tous les articles une seule fois pour optimiser
+        // Charger tous les publications une seule fois pour optimiser
         try {
-          const allArticles = await articleService.findAll();
+          const allPublications = await publicationService.findAll();
           
-          // Compter les articles par catégorie
+          // Compter les publications par catégorie
           categories.forEach(category => {
             const categoryId = Number(category.id);
-            const articleCount = allArticles.filter(
-              article => article.category?.id === categoryId
+            const publicationCount = allPublications.filter(
+              publication => publication.category?.id === categoryId
             ).length;
-            counts[category.id] = articleCount;
+            counts[category.id] = publicationCount;
             
             // Mettre à jour l'état de chargement pour cette catégorie
             setLoadingCategories(prev => ({
@@ -87,7 +87,7 @@ export default function CategoriesManager({
             }));
           });
         } catch (error) {
-          console.error('Erreur chargement articles:', error);
+          console.error('Erreur chargement publications:', error);
           // En cas d'erreur, mettre tous les compteurs à 0
           categories.forEach(category => {
             counts[category.id] = 0;
@@ -98,7 +98,7 @@ export default function CategoriesManager({
           });
         }
         
-        setCategoryArticles(counts);
+        setCategoryPublications(counts);
       } catch (error) {
         console.error('Erreur globale:', error);
       } finally {
@@ -106,7 +106,7 @@ export default function CategoriesManager({
       }
     };
 
-    loadArticleCounts();
+    loadPublicationCounts();
   }, [categories]);
 
   // Filtrer par recherche et statut
@@ -117,26 +117,26 @@ export default function CategoriesManager({
         category.description.toLowerCase().includes(searchQuery.toLowerCase());
       
       // Filtre par statut
-      const articleCount = categoryArticles[category.id] !== undefined 
-        ? categoryArticles[category.id] 
-        : category.articleCount;
+      const publicationCount = categoryPublications[category.id] !== undefined 
+        ? categoryPublications[category.id] 
+        : category.publicationCount;
       
       const matchesStatus = 
         filterStatus === 'all' ? true :
-        filterStatus === 'active' ? articleCount > 0 :
-        articleCount === 0;
+        filterStatus === 'active' ? publicationCount > 0 :
+        publicationCount === 0;
       
       return matchesSearch && matchesStatus;
     });
-  }, [categories, searchQuery, filterStatus, categoryArticles]);
+  }, [categories, searchQuery, filterStatus, categoryPublications]);
 
   // Trier les catégories
   const sortedAndFilteredCategories = useMemo(() => {
     const categoriesWithCounts = filteredCategories.map(cat => ({
       ...cat,
-      articleCount: categoryArticles[cat.id] !== undefined 
-        ? categoryArticles[cat.id] 
-        : cat.articleCount
+      publicationCount: categoryPublications[cat.id] !== undefined 
+        ? categoryPublications[cat.id] 
+        : cat.publicationCount
     }));
 
     return categoriesWithCounts.sort((a, b) => {
@@ -146,47 +146,47 @@ export default function CategoriesManager({
         comparison = a.name.localeCompare(b.name);
       } else {
         // ✅ CORRECTION: Inverser l'ordre pour que le plus grand nombre apparaisse en premier quand sortOrder = 'desc'
-        comparison = a.articleCount - b.articleCount;
+        comparison = a.publicationCount - b.publicationCount;
       }
       
       return sortOrder === 'asc' ? comparison : -comparison;
     });
-  }, [filteredCategories, categoryArticles, sortBy, sortOrder]);
+  }, [filteredCategories, categoryPublications, sortBy, sortOrder]);
 
   // Statistiques
   const stats = useMemo(() => {
     const categoriesWithCounts = categories.map(cat => ({
       ...cat,
-      articleCount: categoryArticles[cat.id] !== undefined 
-        ? categoryArticles[cat.id] 
-        : cat.articleCount
+      publicationCount: categoryPublications[cat.id] !== undefined 
+        ? categoryPublications[cat.id] 
+        : cat.publicationCount
     }));
     
     const totalCategories = categories.length;
-    const totalArticles = categoriesWithCounts.reduce((sum, cat) => sum + cat.articleCount, 0);
-    const activeCategories = categoriesWithCounts.filter(c => c.articleCount > 0).length;
-    const avgArticles = totalCategories > 0 ? Math.round(totalArticles / totalCategories) : 0;
-    const maxArticles = Math.max(...categoriesWithCounts.map(c => c.articleCount), 0);
-    const mostPopularCategory = categoriesWithCounts.find(c => c.articleCount === maxArticles);
+    const totalPublications = categoriesWithCounts.reduce((sum, cat) => sum + cat.publicationCount, 0);
+    const activeCategories = categoriesWithCounts.filter(c => c.publicationCount > 0).length;
+    const avgPublications = totalCategories > 0 ? Math.round(totalPublications / totalCategories) : 0;
+    const maxPublications = Math.max(...categoriesWithCounts.map(c => c.publicationCount), 0);
+    const mostPopularCategory = categoriesWithCounts.find(c => c.publicationCount === maxPublications);
 
     return {
       totalCategories,
-      totalArticles,
+      totalPublications,
       activeCategories,
-      avgArticles,
-      maxArticles,
+      avgPublications,
+      maxPublications,
       mostPopularCategory
     };
-  }, [categories, categoryArticles]);
+  }, [categories, categoryPublications]);
 
   // Toggle sort
-  const toggleSort = (field: 'name' | 'articleCount') => {
+  const toggleSort = (field: 'name' | 'publicationCount') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(field);
-      // ✅ Pour articleCount, mettre 'desc' par défaut pour voir les plus grandes catégories en premier
-      setSortOrder(field === 'articleCount' ? 'desc' : 'asc');
+      // ✅ Pour publicationCount, mettre 'desc' par défaut pour voir les plus grandes catégories en premier
+      setSortOrder(field === 'publicationCount' ? 'desc' : 'asc');
     }
   };
 
@@ -202,8 +202,8 @@ export default function CategoriesManager({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {([
           { label: 'Total catégories',  value: stats.totalCategories,               gradient: 'from-blue-500 to-blue-600',    icon: <Folder size={18} />,    filter: 'all'    as FilterStatus | null },
-          { label: 'Articles total',    value: loading ? '…' : stats.totalArticles, gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} />,  filter: null     as FilterStatus | null },
-          { label: 'Moyenne articles',  value: loading ? '…' : stats.avgArticles,   gradient: 'from-purple-500 to-purple-600',icon: <BarChart2 size={18} />, filter: null     as FilterStatus | null },
+          { label: 'Publications total',    value: loading ? '…' : stats.totalPublications, gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} />,  filter: null     as FilterStatus | null },
+          { label: 'Moyenne publications',  value: loading ? '…' : stats.avgPublications,   gradient: 'from-purple-500 to-purple-600',icon: <BarChart2 size={18} />, filter: null     as FilterStatus | null },
           { label: 'Catégories actives',value: loading ? '…' : stats.activeCategories, gradient: 'from-amber-500 to-amber-600', icon: <TrendingUp size={18} />, filter: 'active' as FilterStatus | null },
         ]).map(({ label, value, gradient, icon, filter }) => {
           const isActive = filter !== null && filterStatus === filter;
@@ -304,14 +304,14 @@ export default function CategoriesManager({
               Nom {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
             </button>
             <button
-              onClick={() => toggleSort('articleCount')}
+              onClick={() => toggleSort('publicationCount')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                sortBy === 'articleCount'
+                sortBy === 'publicationCount'
                   ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#4db896] border border-[#168F6F]/30'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Articles {sortBy === 'articleCount' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Publications {sortBy === 'publicationCount' && (sortOrder === 'asc' ? '↑' : '↓')}
             </button>
           </div>
           {/* Nouvelle catégorie */}
@@ -348,22 +348,22 @@ export default function CategoriesManager({
               key={category.id}
               className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800 transition-all duration-300"
             >
-              {/* Badge de nombre d'articles */}
+              {/* Badge de nombre d'publications */}
               <div className="absolute top-4 right-4">
                 <div className={`px-2.5 py-1.5 rounded-lg border ${
-                  category.articleCount > 0
+                  category.publicationCount > 0
                     ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-100 dark:border-blue-800'
                     : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}>
                   <span className={`text-xs font-medium ${
-                    category.articleCount > 0
+                    category.publicationCount > 0
                       ? 'text-blue-700 dark:text-blue-400'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}>
                     {loadingCategories[category.id] ? (
                       <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
                     ) : (
-                      `${category.articleCount} article${category.articleCount > 1 ? 's' : ''}`
+                      `${category.publicationCount} publication${category.publicationCount > 1 ? 's' : ''}`
                     )}
                   </span>
                 </div>
@@ -372,19 +372,19 @@ export default function CategoriesManager({
               <div className="p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300 ${
-                    category.articleCount > 0
+                    category.publicationCount > 0
                       ? 'bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-gray-700 dark:to-gray-600'
                       : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700'
                   }`}>
                     <Folder className={`w-7 h-7 ${
-                      category.articleCount > 0
+                      category.publicationCount > 0
                         ? 'text-blue-600 dark:text-blue-400'
                         : 'text-gray-400 dark:text-gray-500'
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className={`font-semibold text-lg truncate ${
-                      category.articleCount > 0
+                      category.publicationCount > 0
                         ? 'text-gray-900 dark:text-white'
                         : 'text-gray-500 dark:text-gray-400'
                     }`}>
@@ -392,12 +392,12 @@ export default function CategoriesManager({
                     </h3>
                     <div className="flex items-center gap-1 mt-0.5">
                       <div className={`w-2 h-2 rounded-full ${
-                        category.articleCount > 0 
+                        category.publicationCount > 0 
                           ? 'bg-green-500 animate-pulse' 
                           : 'bg-gray-400'
                       }`} />
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {category.articleCount > 0 ? 'Active' : 'Inactive'}
+                        {category.publicationCount > 0 ? 'Active' : 'Inactive'}
                       </span>
                     </div>
                   </div>
@@ -405,7 +405,7 @@ export default function CategoriesManager({
 
                 {/* Description */}
                 <p className={`text-sm mb-4 line-clamp-3 min-h-[60px] ${
-                  category.articleCount > 0
+                  category.publicationCount > 0
                     ? 'text-gray-600 dark:text-gray-300'
                     : 'text-gray-400 dark:text-gray-500'
                 }`}>
@@ -416,20 +416,20 @@ export default function CategoriesManager({
                   )}
                 </p>
 
-                {/* Barre de progression (si articles) */}
-                {category.articleCount > 0 && (
+                {/* Barre de progression (si publications) */}
+                {category.publicationCount > 0 && (
                   <div className="mb-4">
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-gray-500 dark:text-gray-400">Occupation</span>
                       <span className="font-medium text-gray-700 dark:text-gray-300">
-                        {Math.min(100, Math.round((category.articleCount / stats.maxArticles) * 100))}%
+                        {Math.min(100, Math.round((category.publicationCount / stats.maxPublications) * 100))}%
                       </span>
                     </div>
                     <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500"
                         style={{ 
-                          width: `${Math.min(100, Math.round((category.articleCount / stats.maxArticles) * 100))}%` 
+                          width: `${Math.min(100, Math.round((category.publicationCount / stats.maxPublications) * 100))}%` 
                         }}
                       />
                     </div>
@@ -439,20 +439,20 @@ export default function CategoriesManager({
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
                   <button
-                    onClick={() => handleViewArticles(category.id)}
-                    disabled={category.articleCount === 0}
+                    onClick={() => handleViewPublications(category.id)}
+                    disabled={category.publicationCount === 0}
                     className={`flex items-center gap-2 text-sm transition-colors ${
-                      category.articleCount > 0
+                      category.publicationCount > 0
                         ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
                         : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                     }`}
-                    title={category.articleCount === 0 ? "Aucun article dans cette catégorie" : "Voir les articles"}
+                    title={category.publicationCount === 0 ? "Aucun publication dans cette catégorie" : "Voir les publications"}
                   >
                     <Eye className="h-4 w-4" />
-                    Voir articles
-                    {category.articleCount > 0 && (
+                    Voir publications
+                    {category.publicationCount > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full">
-                        {category.articleCount}
+                        {category.publicationCount}
                       </span>
                     )}
                   </button>
@@ -499,7 +499,7 @@ export default function CategoriesManager({
                 }. Essayez avec d'autres termes ou créez une nouvelle catégorie.`
               : filterStatus !== 'all'
               ? `Aucune catégorie ${filterStatus === 'active' ? 'active' : 'inactive'} trouvée.`
-              : 'Vous n\'avez pas encore créé de catégorie. Commencez par organiser vos articles en créant votre première catégorie.'}
+              : 'Vous n\'avez pas encore créé de catégorie. Commencez par organiser vos publications en créant votre première catégorie.'}
           </p>
           
           {searchQuery || filterStatus !== 'all' ? (
@@ -543,7 +543,7 @@ export default function CategoriesManager({
           </p>
           <p>
             {stats.activeCategories} active{stats.activeCategories > 1 ? 's' : ''} •{' '}
-            {stats.totalArticles} article{stats.totalArticles > 1 ? 's' : ''} au total
+            {stats.totalPublications} publication{stats.totalPublications > 1 ? 's' : ''} au total
           </p>
         </div>
       )}

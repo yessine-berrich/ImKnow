@@ -3,14 +3,14 @@ export class AuthorPerformanceDto {
   fullName: string;
   initials: string;
   department?: string;
-  totalArticles: number;
-  publishedArticles: number;
+  totalPublications: number;
+  publishedPublications: number;
   totalViews: number;
   totalLikes: number;
   totalComments: number;
-  avgViewsPerArticle: number;
+  avgViewsPerPublication: number;
   engagementRate: number;
-  topPerformingArticle: {
+  topPerformingPublication: {
     id: number;
     title: string;
     views: number;
@@ -21,5 +21,5 @@ export class AuthorPerformanceResponseDto {
   authors: AuthorPerformanceDto[];
   totalAuthors: number;
   topAuthor: AuthorPerformanceDto | null;
-  avgArticlesPerAuthor: number;
+  avgPublicationsPerAuthor: number;
 }

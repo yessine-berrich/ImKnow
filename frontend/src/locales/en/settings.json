@@ -132,7 +132,7 @@
     "email_change_info": "A confirmation link will be sent to your current email address. You must click it to complete the change. The link expires in 1 hour.",
     "delete_account_title": "Delete Account",
     "delete_account_error": "Error deleting account",
-    "delete_data_articles": "All your articles and content",
+    "delete_data_publications": "All your publications and content",
     "delete_data_comments": "All your comments and interactions",
     "delete_data_profile": "Your profile and personal information",
     "enter_password_to_confirm": "Enter your password to confirm"

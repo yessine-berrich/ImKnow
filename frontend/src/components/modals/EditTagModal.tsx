@@ -119,7 +119,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
                   />
                   {tag.count !== undefined && (
                     <p className="mt-2 text-sm text-gray-500">
-                      Utilisé dans <span className="font-medium text-gray-900 dark:text-white">{tag.count}</span> article(s)
+                      Utilisé dans <span className="font-medium text-gray-900 dark:text-white">{tag.count}</span> publication(s)
                     </p>
                   )}
                 </div>

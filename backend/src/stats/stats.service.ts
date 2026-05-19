@@ -2,29 +2,29 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 import { TopContributorDto, TopContributorsResponseDto } from './dto/top-contributor.dto';
-import { TrendingArticleDto, TrendingArticlesResponseDto } from './dto/trending-article.dto';
+import { TrendingPublicationDto, TrendingPublicationsResponseDto } from './dto/trending-publication.dto';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { CategoryStatsResponseDto, CategoryStatDto } from './dto/category-stats.dto';
 import { UserActivityResponseDto, MonthlyUserActivityDto } from './dto/user-activity.dto';
 import { ContentAnalyticsResponseDto, DailyPublicationDto } from './dto/content-analytics.dto';
-import { EngagementStatsResponseDto, MostLikedArticleDto, MostBookmarkedArticleDto } from './dto/engagement-stats.dto';
+import { EngagementStatsResponseDto, MostLikedPublicationDto, MostBookmarkedPublicationDto } from './dto/engagement-stats.dto';
 import { AuthorPerformanceResponseDto, AuthorPerformanceDto } from './dto/author-performance.dto';
-import { ContentQualityResponseDto, ContentQualityMetricDto, ArticleQualityDto } from './dto/content-quality.dto';
+import { ContentQualityResponseDto, ContentQualityMetricDto, PublicationQualityDto } from './dto/content-quality.dto';
 import { ModerationStatsResponseDto, ModerationStatusDto, ModerationCategoryDto, DailyModerationDto } from './dto/moderation-stats.dto';
-import { ReadingTimeResponseDto, ReadingTimeRangeDto, ArticleReadingStatsDto } from './dto/reading-time.dto';
+import { ReadingTimeResponseDto, ReadingTimeRangeDto, PublicationReadingStatsDto } from './dto/reading-time.dto';
 import { TagStatsResponseDto, TagPerformanceDto } from './dto/tag-performance.dto';
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Category } from 'src/category/entities/category.entity';
 import { Tag } from 'src/tag/entities/tag.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
-import { ArticleReport } from 'src/article/entities/article-report.entity';
+import { PublicationReport } from 'src/publication/entities/publication-report.entity';
 import { UserReport } from 'src/users/entities/user-report.entity';
 
 const WEIGHTS = {
-  articles: 40,
+  publications: 40,
   views: 35,
   likes: 25,
 } as const;
@@ -61,8 +61,8 @@ function normalizedScore(value: number, max: number): number {
 @Injectable()
 export class StatsService {
   constructor(
-    @InjectRepository(Article)
-    private readonly articleRepo: Repository<Article>,
+    @InjectRepository(Publication)
+    private readonly publicationRepo: Repository<Publication>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     @InjectRepository(Category)
@@ -71,8 +71,8 @@ export class StatsService {
     private readonly tagRepo: Repository<Tag>,
     @InjectRepository(Comment)
     private readonly commentRepo: Repository<Comment>,
-    @InjectRepository(ArticleReport)
-    private readonly articleReportRepo: Repository<ArticleReport>,
+    @InjectRepository(PublicationReport)
+    private readonly publicationReportRepo: Repository<PublicationReport>,
     @InjectRepository(UserReport)
     private readonly userReportRepo: Repository<UserReport>,
   ) { }
@@ -80,12 +80,12 @@ export class StatsService {
   async getTopContributors(limit = 5): Promise<TopContributorsResponseDto> {
     const { from, to } = getWeekBounds();
 
-    const articles = await this.articleRepo
-      .createQueryBuilder('article')
-      .leftJoinAndSelect('article.author', 'author')
-      .loadRelationCountAndMap('article.likesCount', 'article.likes')
-      .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-      .andWhere('article.createdAt BETWEEN :from AND :to', { from, to })
+    const publications = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .leftJoinAndSelect('publication.author', 'author')
+      .loadRelationCountAndMap('publication.likesCount', 'publication.likes')
+      .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+      .andWhere('publication.createdAt BETWEEN :from AND :to', { from, to })
       .getMany();
 
     type AuthorAgg = {
@@ -93,32 +93,32 @@ export class StatsService {
       fullName: string;
       department?: string;
       profileImage?: string | null;
-      articlesCount: number;
+      publicationsCount: number;
       totalViews: number;
       totalLikes: number;
     };
 
     const map = new Map<number, AuthorAgg>();
 
-    for (const article of articles) {
-      if (!article.author) continue;
+    for (const publication of publications) {
+      if (!publication.author) continue;
 
-      const uid = article.author.id;
+      const uid = publication.author.id;
       const existing = map.get(uid);
-      const likesCount = (article as any).likesCount ?? 0;
+      const likesCount = (publication as any).likesCount ?? 0;
 
       if (existing) {
-        existing.articlesCount += 1;
-        existing.totalViews += article.viewsCount ?? 0;
+        existing.publicationsCount += 1;
+        existing.totalViews += publication.viewsCount ?? 0;
         existing.totalLikes += likesCount;
       } else {
         map.set(uid, {
           userId: uid,
-          fullName: `${article.author.firstName ?? ''} ${article.author.lastName ?? ''}`.trim(),
-          department: article.author.department ?? undefined,
-          profileImage: article.author.profileImage ?? null,
-          articlesCount: 1,
-          totalViews: article.viewsCount ?? 0,
+          fullName: `${publication.author.firstName ?? ''} ${publication.author.lastName ?? ''}`.trim(),
+          department: publication.author.department ?? undefined,
+          profileImage: publication.author.profileImage ?? null,
+          publicationsCount: 1,
+          totalViews: publication.viewsCount ?? 0,
           totalLikes: likesCount,
         });
       }
@@ -133,13 +133,13 @@ export class StatsService {
       };
     }
 
-    const maxArticles = Math.max(...raw.map((r) => r.articlesCount));
+    const maxPublications = Math.max(...raw.map((r) => r.publicationsCount));
     const maxViews = Math.max(...raw.map((r) => r.totalViews));
     const maxLikes = Math.max(...raw.map((r) => r.totalLikes));
 
     const scored = raw.map((r): Omit<TopContributorDto, 'rank'> => {
       const score =
-        normalizedScore(r.articlesCount, maxArticles) * WEIGHTS.articles +
+        normalizedScore(r.publicationsCount, maxPublications) * WEIGHTS.publications +
         normalizedScore(r.totalViews, maxViews) * WEIGHTS.views +
         normalizedScore(r.totalLikes, maxLikes) * WEIGHTS.likes;
 
@@ -167,29 +167,29 @@ export class StatsService {
     comments: 25,
   } as const;
 
-  async getTrendingArticles(limit = 5): Promise<TrendingArticlesResponseDto> {
+  async getTrendingPublications(limit = 5): Promise<TrendingPublicationsResponseDto> {
     const { from, to } = getWeekBounds();
 
-    const articles = await this.articleRepo
-      .createQueryBuilder('article')
-      .leftJoinAndSelect('article.author', 'author')
-      .leftJoinAndSelect('article.category', 'category')
-      .leftJoinAndSelect('article.tags', 'tags')
-      .loadRelationCountAndMap('article.likesCount', 'article.likes')
-      .loadRelationCountAndMap('article.commentsCount', 'article.comments')
-      .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-      .andWhere('article.createdAt BETWEEN :from AND :to', { from, to })
+    const publications = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .leftJoinAndSelect('publication.author', 'author')
+      .leftJoinAndSelect('publication.category', 'category')
+      .leftJoinAndSelect('publication.tags', 'tags')
+      .loadRelationCountAndMap('publication.likesCount', 'publication.likes')
+      .loadRelationCountAndMap('publication.commentsCount', 'publication.comments')
+      .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+      .andWhere('publication.createdAt BETWEEN :from AND :to', { from, to })
       .getMany();
 
-    if (articles.length === 0) {
+    if (publications.length === 0) {
       return {
         period: { from: from.toISOString(), to: to.toISOString() },
-        articles: [],
+        publications: [],
       };
     }
 
-    const withCounts = articles.map((a) => ({
-      article: a,
+    const withCounts = publications.map((a) => ({
+      publication: a,
       views: a.viewsCount ?? 0,
       likes: (a as any).likesCount ?? 0,
       comments: (a as any).commentsCount ?? 0,
@@ -202,7 +202,7 @@ export class StatsService {
     const W = StatsService.TREND_WEIGHTS;
 
     const scored = withCounts.map((x) => ({
-      article: x.article,
+      publication: x.publication,
       views: x.views,
       likes: x.likes,
       comments: x.comments,
@@ -217,8 +217,8 @@ export class StatsService {
       .sort((a, b) => b.trendScore - a.trendScore)
       .slice(0, limit);
 
-    const result: TrendingArticleDto[] = trending.map((x, i) => {
-      const a = x.article;
+    const result: TrendingPublicationDto[] = trending.map((x, i) => {
+      const a = x.publication;
       const author = a.author;
       const cat = a.category;
 
@@ -253,29 +253,29 @@ export class StatsService {
 
     return {
       period: { from: from.toISOString(), to: to.toISOString() },
-      articles: result,
+      publications: result,
     };
   }
 
   async getDashboardStats(): Promise<DashboardStatsDto> {
     const [
-      totalArticles,
+      totalPublications,
       totalUsers,
       totalCategories,
       totalTags,
       totalComments,
     ] = await Promise.all([
-      this.articleRepo.count(),
+      this.publicationRepo.count(),
       this.userRepo.count(),
       this.categoryRepo.count(),
       this.tagRepo.count(),
       this.commentRepo.count(),
     ]);
 
-    const totalLikes = await this.articleRepo
-      .createQueryBuilder('article')
+    const totalLikes = await this.publicationRepo
+      .createQueryBuilder('publication')
       .select('COUNT(*)', 'count')
-      .from('article_likes', 'al')
+      .from('publication_likes', 'al')
       .getRawOne()
       .then((r) => parseInt(r?.count || '0', 10));
 
@@ -283,19 +283,19 @@ export class StatsService {
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const [articlesThisWeek, articlesThisMonth, newUsersThisMonth] = await Promise.all([
-      this.articleRepo.count({ where: { createdAt: Between(weekAgo, now) } }),
-      this.articleRepo.count({ where: { createdAt: Between(monthAgo, now) } }),
+    const [publicationsThisWeek, publicationsThisMonth, newUsersThisMonth] = await Promise.all([
+      this.publicationRepo.count({ where: { createdAt: Between(weekAgo, now) } }),
+      this.publicationRepo.count({ where: { createdAt: Between(monthAgo, now) } }),
       this.userRepo.count({ where: { createdAt: Between(monthAgo, now) } }),
     ]);
 
     const mostActiveCategory = await this.categoryRepo
       .createQueryBuilder('category')
-      .leftJoin('category.articles', 'article')
+      .leftJoin('category.publications', 'publication')
       .select(['category.id', 'category.name'])
-      .addSelect('COUNT(article.id)', 'articleCount')
+      .addSelect('COUNT(publication.id)', 'publicationCount')
       .groupBy('category.id')
-      .orderBy('COUNT(article.id)', 'DESC')
+      .orderBy('COUNT(publication.id)', 'DESC')
       .limit(1)
       .getRawOne()
       .then((r) =>
@@ -303,19 +303,19 @@ export class StatsService {
           ? {
             id: r.category_id,
             name: r.category_name,
-            articleCount: parseInt(r.articleCount, 10),
+            publicationCount: parseInt(r.publicationCount, 10),
           }
           : null,
       );
 
-    const topContributor = await this.articleRepo
-      .createQueryBuilder('article')
-      .leftJoin('article.author', 'author')
+    const topContributor = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .leftJoin('publication.author', 'author')
       .select(['author.id', 'author.firstName', 'author.lastName'])
-      .addSelect('COUNT(article.id)', 'articlesCount')
-      .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
+      .addSelect('COUNT(publication.id)', 'publicationsCount')
+      .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
       .groupBy('author.id')
-      .orderBy('COUNT(article.id)', 'DESC')
+      .orderBy('COUNT(publication.id)', 'DESC')
       .limit(1)
       .getRawOne()
       .then((r) =>
@@ -323,20 +323,20 @@ export class StatsService {
           ? {
             userId: r.author_id,
             fullName: `${r.author_firstName || ''} ${r.author_lastName || ''}`.trim(),
-            articlesCount: parseInt(r.articlesCount, 10),
+            publicationsCount: parseInt(r.publicationsCount, 10),
           }
           : null,
       );
 
     return {
-      totalArticles,
+      totalPublications,
       totalUsers,
       totalCategories,
       totalTags,
       totalComments,
       totalLikes,
-      articlesThisWeek,
-      articlesThisMonth,
+      publicationsThisWeek,
+      publicationsThisMonth,
       newUsersThisMonth,
       mostActiveCategory,
       topContributor,
@@ -345,35 +345,35 @@ export class StatsService {
 
   async getCategoryStats(): Promise<CategoryStatsResponseDto> {
     const categories = await this.categoryRepo.find({
-      relations: ['articles', 'articles.likes', 'articles.comments'],
+      relations: ['publications', 'publications.likes', 'publications.comments'],
     });
 
-    let totalArticles = 0;
+    let totalPublications = 0;
     const categoryStats: CategoryStatDto[] = categories.map((cat) => {
-      const articles = cat.articles || [];
-      const articleCount = articles.length;
-      totalArticles += articleCount;
+      const publications = cat.publications || [];
+      const publicationCount = publications.length;
+      totalPublications += publicationCount;
 
-      const totalViews = articles.reduce((sum, a) => sum + (a.viewsCount || 0), 0);
-      const totalLikes = articles.reduce(
+      const totalViews = publications.reduce((sum, a) => sum + (a.viewsCount || 0), 0);
+      const totalLikes = publications.reduce(
         (sum, a) => sum + ((a as any).likes?.length || 0),
         0,
       );
-      const totalComments = articles.reduce(
+      const totalComments = publications.reduce(
         (sum, a) => sum + ((a as any).comments?.length || 0),
         0,
       );
 
       const avgEngagementScore =
-        articleCount > 0
-          ? Math.round((totalViews + totalLikes * 2 + totalComments * 3) / articleCount)
+        publicationCount > 0
+          ? Math.round((totalViews + totalLikes * 2 + totalComments * 3) / publicationCount)
           : 0;
 
       return {
         id: cat.id,
         name: cat.name,
         description: cat.description,
-        articleCount,
+        publicationCount,
         totalViews,
         totalLikes,
         totalComments,
@@ -381,11 +381,11 @@ export class StatsService {
       };
     });
 
-    const sorted = categoryStats.sort((a, b) => b.articleCount - a.articleCount);
+    const sorted = categoryStats.sort((a, b) => b.publicationCount - a.publicationCount);
 
     return {
       categories: sorted,
-      totalArticles,
+      totalPublications,
       mostPopularCategory: sorted[0] || null,
     };
   }
@@ -402,11 +402,11 @@ export class StatsService {
         year: 'numeric',
       });
 
-      const [newUsers, activeUsers, articlesPublished, commentsMade] = await Promise.all([
+      const [newUsers, activeUsers, publicationsPublished, commentsMade] = await Promise.all([
         this.userRepo.count({ where: { createdAt: Between(monthStart, monthEnd) } }),
         this.getActiveUsersCount(monthStart, monthEnd),
-        this.articleRepo.count({
-          where: { createdAt: Between(monthStart, monthEnd), status: ArticleStatus.PUBLISHED },
+        this.publicationRepo.count({
+          where: { createdAt: Between(monthStart, monthEnd), status: PublicationStatus.PUBLISHED },
         }),
         this.commentRepo.count({ where: { createdAt: Between(monthStart, monthEnd) } }),
       ]);
@@ -415,7 +415,7 @@ export class StatsService {
         month: monthLabel,
         newUsers,
         activeUsers,
-        articlesPublished,
+        publicationsPublished,
         commentsMade,
       });
     }
@@ -426,9 +426,9 @@ export class StatsService {
     const growthRate = {
       newUsers: this.calculateGrowthRate(previousMonth.newUsers, currentMonth.newUsers),
       activeUsers: this.calculateGrowthRate(previousMonth.activeUsers, currentMonth.activeUsers),
-      articlesPublished: this.calculateGrowthRate(
-        previousMonth.articlesPublished,
-        currentMonth.articlesPublished,
+      publicationsPublished: this.calculateGrowthRate(
+        previousMonth.publicationsPublished,
+        currentMonth.publicationsPublished,
       ),
     };
 
@@ -441,10 +441,10 @@ export class StatsService {
   }
 
   private async getActiveUsersCount(from: Date, to: Date): Promise<number> {
-    const activeAuthors = await this.articleRepo
-      .createQueryBuilder('article')
-      .select('DISTINCT article.authorId')
-      .where('article.createdAt BETWEEN :from AND :to', { from, to })
+    const activeAuthors = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .select('DISTINCT publication.authorId')
+      .where('publication.createdAt BETWEEN :from AND :to', { from, to })
       .getRawMany();
 
     const activeCommenters = await this.commentRepo
@@ -478,17 +478,17 @@ export class StatsService {
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
 
       const [published, draft, pending, rejected] = await Promise.all([
-        this.articleRepo.count({
-          where: { createdAt: Between(dayStart, dayEnd), status: ArticleStatus.PUBLISHED },
+        this.publicationRepo.count({
+          where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.PUBLISHED },
         }),
-        this.articleRepo.count({
-          where: { createdAt: Between(dayStart, dayEnd), status: ArticleStatus.DRAFT },
+        this.publicationRepo.count({
+          where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.DRAFT },
         }),
-        this.articleRepo.count({
-          where: { createdAt: Between(dayStart, dayEnd), status: ArticleStatus.PENDING },
+        this.publicationRepo.count({
+          where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.PENDING },
         }),
-        this.articleRepo.count({
-          where: { createdAt: Between(dayStart, dayEnd), status: ArticleStatus.REJECTED },
+        this.publicationRepo.count({
+          where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.REJECTED },
         }),
       ]);
 
@@ -522,15 +522,15 @@ export class StatsService {
   }
 
   async getEngagementStats(limit = 10): Promise<EngagementStatsResponseDto> {
-    const articles = await this.articleRepo.find({
-      where: { status: ArticleStatus.PUBLISHED },
+    const publications = await this.publicationRepo.find({
+      where: { status: PublicationStatus.PUBLISHED },
       relations: ['author', 'category', 'likes', 'bookmarks'],
     });
 
-    const withEngagement = articles.map((article) => ({
-      article,
-      likesCount: (article as any).likes?.length || 0,
-      bookmarksCount: (article as any).bookmarks?.length || 0,
+    const withEngagement = publications.map((publication) => ({
+      publication,
+      likesCount: (publication as any).likes?.length || 0,
+      bookmarksCount: (publication as any).bookmarks?.length || 0,
     }));
 
     const mostLiked = [...withEngagement]
@@ -544,74 +544,74 @@ export class StatsService {
     const totalLikes = withEngagement.reduce((sum, a) => sum + a.likesCount, 0);
     const totalBookmarks = withEngagement.reduce((sum, a) => sum + a.bookmarksCount, 0);
 
-    const avgLikesPerArticle = articles.length > 0 ? Math.round(totalLikes / articles.length) : 0;
-    const avgBookmarksPerArticle =
-      articles.length > 0 ? Math.round(totalBookmarks / articles.length) : 0;
+    const avgLikesPerPublication = publications.length > 0 ? Math.round(totalLikes / publications.length) : 0;
+    const avgBookmarksPerPublication =
+      publications.length > 0 ? Math.round(totalBookmarks / publications.length) : 0;
 
-    const mostLikedArticles: MostLikedArticleDto[] = mostLiked.map((item) => ({
-      id: item.article.id,
-      title: item.article.title,
+    const mostLikedPublications: MostLikedPublicationDto[] = mostLiked.map((item) => ({
+      id: item.publication.id,
+      title: item.publication.title,
       author: {
-        id: item.article.author?.id || 0,
-        fullName: `${item.article.author?.firstName || ''} ${item.article.author?.lastName || ''}`.trim() || 'Unknown',
+        id: item.publication.author?.id || 0,
+        fullName: `${item.publication.author?.firstName || ''} ${item.publication.author?.lastName || ''}`.trim() || 'Unknown',
       },
       likesCount: item.likesCount,
-      viewsCount: item.article.viewsCount || 0,
-      category: item.article.category?.name || 'Uncategorized',
-      publishedAt: item.article.createdAt.toISOString(),
+      viewsCount: item.publication.viewsCount || 0,
+      category: item.publication.category?.name || 'Uncategorized',
+      publishedAt: item.publication.createdAt.toISOString(),
     }));
 
-    const mostBookmarkedArticles: MostBookmarkedArticleDto[] = mostBookmarked.map((item) => ({
-      id: item.article.id,
-      title: item.article.title,
+    const mostBookmarkedPublications: MostBookmarkedPublicationDto[] = mostBookmarked.map((item) => ({
+      id: item.publication.id,
+      title: item.publication.title,
       author: {
-        id: item.article.author?.id || 0,
-        fullName: `${item.article.author?.firstName || ''} ${item.article.author?.lastName || ''}`.trim() || 'Unknown',
+        id: item.publication.author?.id || 0,
+        fullName: `${item.publication.author?.firstName || ''} ${item.publication.author?.lastName || ''}`.trim() || 'Unknown',
       },
       bookmarksCount: item.bookmarksCount,
-      viewsCount: item.article.viewsCount || 0,
-      category: item.article.category?.name || 'Uncategorized',
-      publishedAt: item.article.createdAt.toISOString(),
+      viewsCount: item.publication.viewsCount || 0,
+      category: item.publication.category?.name || 'Uncategorized',
+      publishedAt: item.publication.createdAt.toISOString(),
     }));
 
     return {
-      mostLikedArticles,
-      mostBookmarkedArticles,
+      mostLikedPublications,
+      mostBookmarkedPublications,
       totalLikes,
       totalBookmarks,
-      avgLikesPerArticle,
-      avgBookmarksPerArticle,
+      avgLikesPerPublication,
+      avgBookmarksPerPublication,
     };
   }
 
   async getAuthorPerformance(limit = 20): Promise<AuthorPerformanceResponseDto> {
     const authors = await this.userRepo.find({
-      relations: ['articles', 'articles.likes', 'articles.comments'],
+      relations: ['publications', 'publications.likes', 'publications.comments'],
     });
 
     const authorStats: AuthorPerformanceDto[] = authors.map((author) => {
-      const articles = author.articles || [];
-      const publishedArticles = articles.filter(
-        (a) => a.status === ArticleStatus.PUBLISHED,
+      const publications = author.publications || [];
+      const publishedPublications = publications.filter(
+        (a) => a.status === PublicationStatus.PUBLISHED,
       );
 
-      const totalViews = articles.reduce((sum, a) => sum + (a.viewsCount || 0), 0);
-      const totalLikes = articles.reduce(
+      const totalViews = publications.reduce((sum, a) => sum + (a.viewsCount || 0), 0);
+      const totalLikes = publications.reduce(
         (sum, a) => sum + ((a as any).likes?.length || 0),
         0,
       );
-      const totalComments = articles.reduce(
+      const totalComments = publications.reduce(
         (sum, a) => sum + ((a as any).comments?.length || 0),
         0,
       );
 
-      const avgViewsPerArticle =
-        articles.length > 0 ? Math.round(totalViews / articles.length) : 0;
+      const avgViewsPerPublication =
+        publications.length > 0 ? Math.round(totalViews / publications.length) : 0;
 
       const engagementRate =
         totalViews > 0 ? Math.round(((totalLikes + totalComments) / totalViews) * 100) : 0;
 
-      const topArticle = publishedArticles.sort(
+      const topPublication = publishedPublications.sort(
         (a, b) => (b.viewsCount || 0) - (a.viewsCount || 0),
       )[0];
 
@@ -620,39 +620,39 @@ export class StatsService {
         fullName: `${author.firstName} ${author.lastName}`.trim(),
         initials: this.buildInitials(`${author.firstName} ${author.lastName}`),
         department: author.department,
-        totalArticles: articles.length,
-        publishedArticles: publishedArticles.length,
+        totalPublications: publications.length,
+        publishedPublications: publishedPublications.length,
         totalViews,
         totalLikes,
         totalComments,
-        avgViewsPerArticle,
+        avgViewsPerPublication,
         engagementRate,
-        topPerformingArticle: topArticle
+        topPerformingPublication: topPublication
           ? {
-            id: topArticle.id,
-            title: topArticle.title,
-            views: topArticle.viewsCount || 0,
+            id: topPublication.id,
+            title: topPublication.title,
+            views: topPublication.viewsCount || 0,
           }
           : null,
       };
     });
 
     const sorted = authorStats
-      .filter((a) => a.totalArticles > 0)
+      .filter((a) => a.totalPublications > 0)
       .sort((a, b) => b.totalViews - a.totalViews)
       .slice(0, limit);
 
     const totalAuthors = sorted.length;
-    const avgArticlesPerAuthor =
+    const avgPublicationsPerAuthor =
       totalAuthors > 0
-        ? Math.round(sorted.reduce((sum, a) => sum + a.totalArticles, 0) / totalAuthors)
+        ? Math.round(sorted.reduce((sum, a) => sum + a.totalPublications, 0) / totalAuthors)
         : 0;
 
     return {
       authors: sorted,
       totalAuthors,
       topAuthor: sorted[0] || null,
-      avgArticlesPerAuthor,
+      avgPublicationsPerAuthor,
     };
   }
 
@@ -665,18 +665,18 @@ export class StatsService {
   }
 
   async getContentQuality(limit = 10): Promise<ContentQualityResponseDto> {
-    const articles = await this.articleRepo.find({
+    const publications = await this.publicationRepo.find({
       relations: ['author', 'category', 'tags', 'media'],
     });
 
-    const analyzedArticles: ArticleQualityDto[] = articles.map((article) => {
-      const wordCount = article.content?.split(/\s+/).length || 0;
-      const hasImages = (article.media?.length || 0) > 0;
-      const hasTags = (article.tags?.length || 0) > 0;
-      const hasCategory = !!article.category;
+    const analyzedPublications: PublicationQualityDto[] = publications.map((publication) => {
+      const wordCount = publication.content?.split(/\s+/).length || 0;
+      const hasImages = (publication.media?.length || 0) > 0;
+      const hasTags = (publication.tags?.length || 0) > 0;
+      const hasCategory = !!publication.category;
 
-      const readabilityScore = this.calculateReadability(article.content);
-      const moderationScore = article.moderationScore || 0;
+      const readabilityScore = this.calculateReadability(publication.content);
+      const moderationScore = publication.moderationScore || 0;
 
       const qualityScore = Math.round(
         Math.min(100, (
@@ -690,9 +690,9 @@ export class StatsService {
       );
 
       return {
-        id: article.id,
-        title: article.title,
-        author: `${article.author?.firstName || ''} ${article.author?.lastName || ''}`.trim() || 'Unknown',
+        id: publication.id,
+        title: publication.title,
+        author: `${publication.author?.firstName || ''} ${publication.author?.lastName || ''}`.trim() || 'Unknown',
         wordCount,
         readabilityScore: Math.round(readabilityScore),
         hasImages,
@@ -703,23 +703,23 @@ export class StatsService {
       };
     });
 
-    const sortedByQuality = [...analyzedArticles].sort((a, b) => b.qualityScore - a.qualityScore);
-    const topQualityArticles = sortedByQuality.slice(0, limit);
-    const needsImprovement = [...analyzedArticles]
+    const sortedByQuality = [...analyzedPublications].sort((a, b) => b.qualityScore - a.qualityScore);
+    const topQualityPublications = sortedByQuality.slice(0, limit);
+    const needsImprovement = [...analyzedPublications]
       .sort((a, b) => a.qualityScore - b.qualityScore)
       .slice(0, limit);
 
     const avgWordCount =
-      articles.length > 0
-        ? Math.round(analyzedArticles.reduce((sum, a) => sum + a.wordCount, 0) / articles.length)
+      publications.length > 0
+        ? Math.round(analyzedPublications.reduce((sum, a) => sum + a.wordCount, 0) / publications.length)
         : 0;
 
-    const articlesWithImages = analyzedArticles.filter((a) => a.hasImages).length;
-    const articlesWithTags = analyzedArticles.filter((a) => a.hasTags).length;
+    const publicationsWithImages = analyzedPublications.filter((a) => a.hasImages).length;
+    const publicationsWithTags = analyzedPublications.filter((a) => a.hasTags).length;
 
     const overallScore =
-      analyzedArticles.length > 0
-        ? Math.round(analyzedArticles.reduce((sum, a) => sum + a.qualityScore, 0) / analyzedArticles.length)
+      analyzedPublications.length > 0
+        ? Math.round(analyzedPublications.reduce((sum, a) => sum + a.qualityScore, 0) / analyzedPublications.length)
         : 0;
 
     const metrics: ContentQualityMetricDto[] = [
@@ -731,26 +731,26 @@ export class StatsService {
       },
       {
         metric: 'Images Usage',
-        value: Math.round((articlesWithImages / (articles.length || 1)) * 100),
+        value: Math.round((publicationsWithImages / (publications.length || 1)) * 100),
         benchmark: 70,
-        status: articlesWithImages / (articles.length || 1) >= 0.7 ? 'good' : 'average',
+        status: publicationsWithImages / (publications.length || 1) >= 0.7 ? 'good' : 'average',
       },
       {
         metric: 'Tags Usage',
-        value: Math.round((articlesWithTags / (articles.length || 1)) * 100),
+        value: Math.round((publicationsWithTags / (publications.length || 1)) * 100),
         benchmark: 80,
-        status: articlesWithTags / (articles.length || 1) >= 0.8 ? 'good' : 'average',
+        status: publicationsWithTags / (publications.length || 1) >= 0.8 ? 'good' : 'average',
       },
     ];
 
     return {
       overallScore,
       metrics,
-      topQualityArticles,
+      topQualityPublications,
       needsImprovement,
       avgWordCount,
-      articlesWithImages,
-      articlesWithTags,
+      publicationsWithImages,
+      publicationsWithTags,
     };
   }
 
@@ -788,35 +788,35 @@ export class StatsService {
     const now = new Date();
     const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-    const articles = await this.articleRepo.find({
+    const publications = await this.publicationRepo.find({
       where: { createdAt: Between(from, now) },
     });
 
     const statusCounts = {
-      [ArticleStatus.PUBLISHED]: 0,
-      [ArticleStatus.DRAFT]: 0,
-      [ArticleStatus.PENDING]: 0,
-      [ArticleStatus.REJECTED]: 0,
+      [PublicationStatus.PUBLISHED]: 0,
+      [PublicationStatus.DRAFT]: 0,
+      [PublicationStatus.PENDING]: 0,
+      [PublicationStatus.REJECTED]: 0,
     };
 
-    articles.forEach((a) => {
+    publications.forEach((a) => {
       if (statusCounts[a.status] !== undefined) {
         statusCounts[a.status]++;
       }
     });
 
-    const total = articles.length;
+    const total = publications.length;
     const statusBreakdown: ModerationStatusDto[] = [
-      { status: 'published', count: statusCounts[ArticleStatus.PUBLISHED], percentage: total > 0 ? Math.round((statusCounts[ArticleStatus.PUBLISHED] / total) * 100) : 0 },
-      { status: 'draft', count: statusCounts[ArticleStatus.DRAFT], percentage: total > 0 ? Math.round((statusCounts[ArticleStatus.DRAFT] / total) * 100) : 0 },
-      { status: 'pending', count: statusCounts[ArticleStatus.PENDING], percentage: total > 0 ? Math.round((statusCounts[ArticleStatus.PENDING] / total) * 100) : 0 },
-      { status: 'rejected', count: statusCounts[ArticleStatus.REJECTED], percentage: total > 0 ? Math.round((statusCounts[ArticleStatus.REJECTED] / total) * 100) : 0 },
+      { status: 'published', count: statusCounts[PublicationStatus.PUBLISHED], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.PUBLISHED] / total) * 100) : 0 },
+      { status: 'draft', count: statusCounts[PublicationStatus.DRAFT], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.DRAFT] / total) * 100) : 0 },
+      { status: 'pending', count: statusCounts[PublicationStatus.PENDING], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.PENDING] / total) * 100) : 0 },
+      { status: 'rejected', count: statusCounts[PublicationStatus.REJECTED], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.REJECTED] / total) * 100) : 0 },
     ];
 
     const flaggedCategories: ModerationCategoryDto[] = [];
     const categoryMap = new Map<string, number>();
 
-    articles.forEach((a) => {
+    publications.forEach((a) => {
       const cats = a.moderationResult?.categories;
       if (cats) {
         const catKeys: string[] = Array.isArray(cats) ? cats : Object.keys(cats);
@@ -840,21 +840,21 @@ export class StatsService {
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
 
-      const dayArticles = articles.filter(
+      const dayPublications = publications.filter(
         (a) => a.createdAt >= dayStart && a.createdAt <= dayEnd,
       );
 
       dailyTrend.push({
         date: dayStart.toISOString().split('T')[0],
-        approved: dayArticles.filter((a) => a.status === ArticleStatus.PUBLISHED).length,
-        rejected: dayArticles.filter((a) => a.status === ArticleStatus.REJECTED).length,
-        pending: dayArticles.filter((a) => a.status === ArticleStatus.PENDING).length,
-        flagged: dayArticles.filter((a) => a.moderationResult?.isFlagged).length,
+        approved: dayPublications.filter((a) => a.status === PublicationStatus.PUBLISHED).length,
+        rejected: dayPublications.filter((a) => a.status === PublicationStatus.REJECTED).length,
+        pending: dayPublications.filter((a) => a.status === PublicationStatus.PENDING).length,
+        flagged: dayPublications.filter((a) => a.moderationResult?.isFlagged).length,
       });
     }
 
-    const autoModerated = articles.filter((a) => a.isAutoModerated).length;
-    const rejected = statusCounts[ArticleStatus.REJECTED];
+    const autoModerated = publications.filter((a) => a.isAutoModerated).length;
+    const rejected = statusCounts[PublicationStatus.REJECTED];
 
     return {
       totalModerated: total,
@@ -868,86 +868,86 @@ export class StatsService {
   }
 
   async getReadingTimeStats(): Promise<ReadingTimeResponseDto> {
-    const articles = await this.articleRepo.find({
-      where: { status: ArticleStatus.PUBLISHED },
+    const publications = await this.publicationRepo.find({
+      where: { status: PublicationStatus.PUBLISHED },
       relations: ['author'],
     });
 
-    const analyzedArticles = articles.map((article) => {
-      const wordCount = article.content?.split(/\s+/).length || 0;
+    const analyzedPublications = publications.map((publication) => {
+      const wordCount = publication.content?.split(/\s+/).length || 0;
       const estimatedReadTime = Math.ceil(wordCount / 200);
 
       return {
-        article,
+        publication,
         wordCount,
         estimatedReadTime,
       };
     });
 
     const ranges: ReadingTimeRangeDto[] = [
-      { range: 'Quick Read (< 3 min)', min: 0, max: 3, articleCount: 0, avgEngagement: 0 },
-      { range: 'Short (3-5 min)', min: 3, max: 5, articleCount: 0, avgEngagement: 0 },
-      { range: 'Medium (5-10 min)', min: 5, max: 10, articleCount: 0, avgEngagement: 0 },
-      { range: 'Long (10-15 min)', min: 10, max: 15, articleCount: 0, avgEngagement: 0 },
-      { range: 'Deep Dive (> 15 min)', min: 15, max: Infinity, articleCount: 0, avgEngagement: 0 },
+      { range: 'Quick Read (< 3 min)', min: 0, max: 3, publicationCount: 0, avgEngagement: 0 },
+      { range: 'Short (3-5 min)', min: 3, max: 5, publicationCount: 0, avgEngagement: 0 },
+      { range: 'Medium (5-10 min)', min: 5, max: 10, publicationCount: 0, avgEngagement: 0 },
+      { range: 'Long (10-15 min)', min: 10, max: 15, publicationCount: 0, avgEngagement: 0 },
+      { range: 'Deep Dive (> 15 min)', min: 15, max: Infinity, publicationCount: 0, avgEngagement: 0 },
     ];
 
-    analyzedArticles.forEach(({ article, estimatedReadTime }) => {
+    analyzedPublications.forEach(({ publication, estimatedReadTime }) => {
       const range = ranges.find(
         (r) => estimatedReadTime >= r.min && estimatedReadTime < r.max,
       );
       if (range) {
-        range.articleCount++;
+        range.publicationCount++;
       }
     });
 
     const avgWordCount =
-      analyzedArticles.length > 0
-        ? Math.round(analyzedArticles.reduce((sum, a) => sum + a.wordCount, 0) / analyzedArticles.length)
+      analyzedPublications.length > 0
+        ? Math.round(analyzedPublications.reduce((sum, a) => sum + a.wordCount, 0) / analyzedPublications.length)
         : 0;
 
     const avgReadTime =
-      analyzedArticles.length > 0
-        ? Math.round(analyzedArticles.reduce((sum, a) => sum + a.estimatedReadTime, 0) / analyzedArticles.length)
+      analyzedPublications.length > 0
+        ? Math.round(analyzedPublications.reduce((sum, a) => sum + a.estimatedReadTime, 0) / analyzedPublications.length)
         : 0;
 
-    const sortedByLength = [...analyzedArticles].sort((a, b) => b.wordCount - a.wordCount);
+    const sortedByLength = [...analyzedPublications].sort((a, b) => b.wordCount - a.wordCount);
 
-    const longestArticles: ArticleReadingStatsDto[] = sortedByLength.slice(0, 5).map((item) => ({
-      id: item.article.id,
-      title: item.article.title,
-      author: `${item.article.author?.firstName || ''} ${item.article.author?.lastName || ''}`.trim() || 'Unknown',
+    const longestPublications: PublicationReadingStatsDto[] = sortedByLength.slice(0, 5).map((item) => ({
+      id: item.publication.id,
+      title: item.publication.title,
+      author: `${item.publication.author?.firstName || ''} ${item.publication.author?.lastName || ''}`.trim() || 'Unknown',
       wordCount: item.wordCount,
       estimatedReadTime: item.estimatedReadTime,
       actualAvgTime: null,
       completionRate: null,
-      views: item.article.viewsCount || 0,
+      views: item.publication.viewsCount || 0,
     }));
 
-    const shortestArticles: ArticleReadingStatsDto[] = sortedByLength
+    const shortestPublications: PublicationReadingStatsDto[] = sortedByLength
       .slice(-5)
       .reverse()
       .map((item) => ({
-        id: item.article.id,
-        title: item.article.title,
-        author: `${item.article.author?.firstName || ''} ${item.article.author?.lastName || ''}`.trim() || 'Unknown',
+        id: item.publication.id,
+        title: item.publication.title,
+        author: `${item.publication.author?.firstName || ''} ${item.publication.author?.lastName || ''}`.trim() || 'Unknown',
         wordCount: item.wordCount,
         estimatedReadTime: item.estimatedReadTime,
         actualAvgTime: null,
         completionRate: null,
-        views: item.article.viewsCount || 0,
+        views: item.publication.viewsCount || 0,
       }));
 
     const optimalRange = ranges
-      .filter((r) => r.articleCount > 0)
+      .filter((r) => r.publicationCount > 0)
       .sort((a, b) => b.avgEngagement - a.avgEngagement)[0];
 
     return {
       ranges,
       avgWordCount,
       avgReadTime,
-      longestArticles,
-      shortestArticles,
+      longestPublications,
+      shortestPublications,
       optimalLength: optimalRange
         ? {
           wordCount: Math.round((optimalRange.min + optimalRange.max) / 2 * 200),
@@ -959,29 +959,29 @@ export class StatsService {
 
   async getTagPerformance(): Promise<TagStatsResponseDto> {
     const tags = await this.tagRepo.find({
-      relations: ['articles', 'articles.likes'],
+      relations: ['publications', 'publications.likes'],
     });
 
     const now = new Date();
     const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const tagStats: TagPerformanceDto[] = tags.map((tag) => {
-      const articles = tag.articles || [];
-      const articleCount = articles.length;
+      const publications = tag.publications || [];
+      const publicationCount = publications.length;
 
-      const totalViews = articles.reduce((sum, a) => sum + (a.viewsCount || 0), 0);
-      const totalLikes = articles.reduce(
+      const totalViews = publications.reduce((sum, a) => sum + (a.viewsCount || 0), 0);
+      const totalLikes = publications.reduce(
         (sum, a) => sum + ((a as any).likes?.length || 0),
         0,
       );
 
       const avgEngagement =
-        articleCount > 0 ? Math.round((totalViews + totalLikes * 2) / articleCount) : 0;
+        publicationCount > 0 ? Math.round((totalViews + totalLikes * 2) / publicationCount) : 0;
 
-      const recentArticles = articles.filter((a) => a.createdAt >= monthAgo).length;
-      const trending = recentArticles > 0 && recentArticles >= articleCount * 0.3;
+      const recentPublications = publications.filter((a) => a.createdAt >= monthAgo).length;
+      const trending = recentPublications > 0 && recentPublications >= publicationCount * 0.3;
 
-      const previousMonthArticles = articles.filter(
+      const previousMonthPublications = publications.filter(
         (a) => {
           const prevMonth = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
           return a.createdAt >= prevMonth && a.createdAt < monthAgo;
@@ -989,16 +989,16 @@ export class StatsService {
       ).length;
 
       const growthRate =
-        previousMonthArticles > 0
-          ? Math.round(((recentArticles - previousMonthArticles) / previousMonthArticles) * 100)
-          : recentArticles > 0
+        previousMonthPublications > 0
+          ? Math.round(((recentPublications - previousMonthPublications) / previousMonthPublications) * 100)
+          : recentPublications > 0
             ? 100
             : 0;
 
       return {
         id: tag.id,
         name: tag.name,
-        articleCount,
+        publicationCount,
         totalViews,
         totalLikes,
         avgEngagement,
@@ -1007,12 +1007,12 @@ export class StatsService {
       };
     });
 
-    const sortedByUsage = [...tagStats].sort((a, b) => b.articleCount - a.articleCount);
+    const sortedByUsage = [...tagStats].sort((a, b) => b.publicationCount - a.publicationCount);
     const sortedByTrending = [...tagStats]
       .filter((t) => t.trending)
       .sort((a, b) => b.growthRate - a.growthRate);
 
-    const unusedTags = tagStats.filter((t) => t.articleCount === 0).length;
+    const unusedTags = tagStats.filter((t) => t.publicationCount === 0).length;
 
     return {
       tags: sortedByUsage,
@@ -1033,16 +1033,16 @@ export class StatsService {
     monthFrom.setDate(monthFrom.getDate() - 30);
 
     const [
-      totalArticlesThisWeek,
+      totalPublicationsThisWeek,
       totalViewsThisWeek,
-      topArticles,
+      topPublications,
       trendingTags,
       topAuthors,
       dailyActivity,
     ] = await Promise.all([
-      this.getTotalArticlesInPeriod(weekFrom, weekTo),
+      this.getTotalPublicationsInPeriod(weekFrom, weekTo),
       this.getTotalViewsInPeriod(weekFrom, weekTo),
-      this.getPopularArticlesForEmployees(5, 'week'),
+      this.getPopularPublicationsForEmployees(5, 'week'),
       this.getTrendingTagsForEmployees(10),
       this.getTopAuthorsForEmployees(5, 'month'),
       this.getActivityTimelineForEmployees(30),
@@ -1053,10 +1053,10 @@ export class StatsService {
     const previousWeekTo = new Date(weekTo);
     previousWeekTo.setDate(previousWeekTo.getDate() - 7);
 
-    const previousWeekArticles = await this.getTotalArticlesInPeriod(previousWeekFrom, previousWeekTo);
-    const articlesGrowth = previousWeekArticles === 0
+    const previousWeekPublications = await this.getTotalPublicationsInPeriod(previousWeekFrom, previousWeekTo);
+    const publicationsGrowth = previousWeekPublications === 0
       ? 100
-      : ((totalArticlesThisWeek - previousWeekArticles) / previousWeekArticles) * 100;
+      : ((totalPublicationsThisWeek - previousWeekPublications) / previousWeekPublications) * 100;
 
     const previousWeekViews = await this.getTotalViewsInPeriod(previousWeekFrom, previousWeekTo);
     const viewsGrowth = previousWeekViews === 0
@@ -1069,39 +1069,39 @@ export class StatsService {
         to: weekTo.toISOString(),
       },
       stats: {
-        totalArticles: totalArticlesThisWeek,
-        articlesGrowth: Math.round(articlesGrowth),
+        totalPublications: totalPublicationsThisWeek,
+        publicationsGrowth: Math.round(publicationsGrowth),
         totalViews: totalViewsThisWeek,
         viewsGrowth: Math.round(viewsGrowth),
         activeAuthors: topAuthors.length,
       },
-      topArticles,
+      topPublications,
       trendingTags,
       topAuthors,
       dailyActivity,
     };
   }
 
-  private async getTotalArticlesInPeriod(from: Date, to: Date): Promise<number> {
-    return this.articleRepo.count({
+  private async getTotalPublicationsInPeriod(from: Date, to: Date): Promise<number> {
+    return this.publicationRepo.count({
       where: {
         createdAt: Between(from, to),
-        status: ArticleStatus.PUBLISHED,
+        status: PublicationStatus.PUBLISHED,
       },
     });
   }
 
   private async getTotalViewsInPeriod(from: Date, to: Date): Promise<number> {
-    const result = await this.articleRepo
-      .createQueryBuilder('article')
-      .select('SUM(article.viewsCount)', 'total')
-      .where('article.createdAt BETWEEN :from AND :to', { from, to })
-      .andWhere('article.status = :status', { status: ArticleStatus.PUBLISHED })
+    const result = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .select('SUM(publication.viewsCount)', 'total')
+      .where('publication.createdAt BETWEEN :from AND :to', { from, to })
+      .andWhere('publication.status = :status', { status: PublicationStatus.PUBLISHED })
       .getRawOne();
     return parseInt(result?.total || '0', 10);
   }
 
-  async getPopularArticlesForEmployees(limit: number, period: 'week' | 'month' | 'year') {
+  async getPopularPublicationsForEmployees(limit: number, period: 'week' | 'month' | 'year') {
     const from = new Date();
     switch (period) {
       case 'week':
@@ -1115,37 +1115,37 @@ export class StatsService {
         break;
     }
 
-    const articles = await this.articleRepo
-      .createQueryBuilder('article')
-      .leftJoinAndSelect('article.author', 'author')
-      .leftJoinAndSelect('article.category', 'category')
-      .loadRelationCountAndMap('article.likesCount', 'article.likes')
-      .loadRelationCountAndMap('article.commentsCount', 'article.comments')
-      .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-      .andWhere('article.createdAt >= :from', { from })
-      .orderBy('article.viewsCount', 'DESC')
+    const publications = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .leftJoinAndSelect('publication.author', 'author')
+      .leftJoinAndSelect('publication.category', 'category')
+      .loadRelationCountAndMap('publication.likesCount', 'publication.likes')
+      .loadRelationCountAndMap('publication.commentsCount', 'publication.comments')
+      .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+      .andWhere('publication.createdAt >= :from', { from })
+      .orderBy('publication.viewsCount', 'DESC')
       .limit(limit)
       .getMany();
 
-    return articles.map(article => ({
-      id: article.id,
-      title: article.title,
+    return publications.map(publication => ({
+      id: publication.id,
+      title: publication.title,
       // Générer un slug à partir de l'ID (plus simple et unique)
-      slug: `article-${article.id}`,
-      excerpt: article.content?.substring(0, 150).replace(/[#*`]/g, '') + '...',
-      viewsCount: article.viewsCount || 0,
-      likesCount: (article as any).likesCount || 0,
-      commentsCount: (article as any).commentsCount || 0,
+      slug: `publication-${publication.id}`,
+      excerpt: publication.content?.substring(0, 150).replace(/[#*`]/g, '') + '...',
+      viewsCount: publication.viewsCount || 0,
+      likesCount: (publication as any).likesCount || 0,
+      commentsCount: (publication as any).commentsCount || 0,
       author: {
-        id: article.author?.id,
-        name: `${article.author?.firstName || ''} ${article.author?.lastName || ''}`.trim(),
+        id: publication.author?.id,
+        name: `${publication.author?.firstName || ''} ${publication.author?.lastName || ''}`.trim(),
         avatar: null, // Si pas de champ avatar dans User
       },
       category: {
-        id: article.category?.id,
-        name: article.category?.name,
+        id: publication.category?.id,
+        name: publication.category?.name,
       },
-      publishedAt: article.createdAt,
+      publishedAt: publication.createdAt,
     }));
   }
 
@@ -1154,26 +1154,26 @@ export class StatsService {
 
     const tags = await this.tagRepo
       .createQueryBuilder('tag')
-      .leftJoin('tag.articles', 'article')
+      .leftJoin('tag.publications', 'publication')
       .select(['tag.id', 'tag.name'])
-      .addSelect('COUNT(DISTINCT article.id)', 'articleCount')
-      .addSelect('SUM(article.viewsCount)', 'totalViews')
-      .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-      .andWhere('article.createdAt BETWEEN :from AND :to', { from, to })
+      .addSelect('COUNT(DISTINCT publication.id)', 'publicationCount')
+      .addSelect('SUM(publication.viewsCount)', 'totalViews')
+      .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+      .andWhere('publication.createdAt BETWEEN :from AND :to', { from, to })
       .groupBy('tag.id')
-      .orderBy('COUNT(DISTINCT article.id)', 'DESC')
+      .orderBy('COUNT(DISTINCT publication.id)', 'DESC')
       .limit(limit)
       .getRawMany();
 
-    const maxCount = Math.max(...tags.map(t => parseInt(t.articleCount, 10)), 1);
+    const maxCount = Math.max(...tags.map(t => parseInt(t.publicationCount, 10)), 1);
 
     return tags.map((tag, index) => ({
       id: tag.tag_id,
       name: tag.tag_name,
-      articleCount: parseInt(tag.articleCount, 10),
+      publicationCount: parseInt(tag.publicationCount, 10),
       totalViews: parseInt(tag.totalViews || '0', 10),
       trend: index < 3 ? 'up' : index < 7 ? 'stable' : 'down',
-      热度: Math.round((parseInt(tag.articleCount, 10) / maxCount) * 100),
+      热度: Math.round((parseInt(tag.publicationCount, 10) / maxCount) * 100),
     }));
   }
 
@@ -1193,20 +1193,20 @@ export class StatsService {
 
   const authors = await this.userRepo
     .createQueryBuilder('user')
-    .leftJoin('user.articles', 'article')
+    .leftJoin('user.publications', 'publication')
     .select([
       'user.id',
       'user.firstName',
       'user.lastName',
       'user.department',
     ])
-    .addSelect('COUNT(DISTINCT article.id)', 'articleCount')
-    .addSelect('SUM(article.viewsCount)', 'totalViews')
-    .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-    .andWhere('article.createdAt >= :from', { from })
+    .addSelect('COUNT(DISTINCT publication.id)', 'publicationCount')
+    .addSelect('SUM(publication.viewsCount)', 'totalViews')
+    .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+    .andWhere('publication.createdAt >= :from', { from })
     .groupBy('user.id')
-    .having('COUNT(DISTINCT article.id) > 0')
-    .orderBy('SUM(article.viewsCount)', 'DESC')
+    .having('COUNT(DISTINCT publication.id) > 0')
+    .orderBy('SUM(publication.viewsCount)', 'DESC')
     .limit(limit)
     .getRawMany();
 
@@ -1215,7 +1215,7 @@ export class StatsService {
     name: `${author.user_firstName || ''} ${author.user_lastName || ''}`.trim(),
     avatar: null,
     department: author.user_department,
-    articleCount: parseInt(author.articleCount, 10),
+    publicationCount: parseInt(author.publicationCount, 10),
     totalViews: parseInt(author.totalViews || '0', 10),
     totalLikes: 0, // Valeur par défaut
     engagementRate: 0, // Valeur par défaut
@@ -1228,7 +1228,7 @@ export class StatsService {
     from.setHours(0, 0, 0, 0);
 
     // Correction: Définir le type explicite du tableau
-    const timeline: Array<{ date: string; articles: number; views: number }> = [];
+    const timeline: Array<{ date: string; publications: number; views: number }> = [];
 
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
@@ -1238,11 +1238,11 @@ export class StatsService {
       const nextDate = new Date(date);
       nextDate.setDate(nextDate.getDate() + 1);
 
-      const [articles, views] = await Promise.all([
-        this.articleRepo.count({
+      const [publications, views] = await Promise.all([
+        this.publicationRepo.count({
           where: {
             createdAt: Between(date, nextDate),
-            status: ArticleStatus.PUBLISHED,
+            status: PublicationStatus.PUBLISHED,
           },
         }),
         this.getTotalViewsOnDate(date),
@@ -1250,7 +1250,7 @@ export class StatsService {
 
       timeline.push({
         date: date.toISOString().split('T')[0],
-        articles,
+        publications,
         views,
       });
     }
@@ -1262,11 +1262,11 @@ export class StatsService {
     const nextDate = new Date(date);
     nextDate.setDate(nextDate.getDate() + 1);
 
-    const result = await this.articleRepo
-      .createQueryBuilder('article')
-      .select('SUM(article.viewsCount)', 'total')
-      .where('article.createdAt BETWEEN :from AND :to', { from: date, to: nextDate })
-      .andWhere('article.status = :status', { status: ArticleStatus.PUBLISHED })
+    const result = await this.publicationRepo
+      .createQueryBuilder('publication')
+      .select('SUM(publication.viewsCount)', 'total')
+      .where('publication.createdAt BETWEEN :from AND :to', { from: date, to: nextDate })
+      .andWhere('publication.status = :status', { status: PublicationStatus.PUBLISHED })
       .getRawOne();
     return parseInt(result?.total || '0', 10);
   }
@@ -1277,34 +1277,34 @@ export class StatsService {
 
   async getReportsStats() {
     const [
-      totalArticleReports,
+      totalPublicationReports,
       totalUserReports,
-      pendingArticleReports,
+      pendingPublicationReports,
       pendingUserReports,
-      reviewedArticleReports,
+      reviewedPublicationReports,
       reviewedUserReports,
-      dismissedArticleReports,
+      dismissedPublicationReports,
       dismissedUserReports,
     ] = await Promise.all([
-      this.articleReportRepo.count(),
+      this.publicationReportRepo.count(),
       this.userReportRepo.count(),
-      this.articleReportRepo.count({ where: { status: 'pending' } }),
+      this.publicationReportRepo.count({ where: { status: 'pending' } }),
       this.userReportRepo.count({ where: { status: 'pending' } }),
-      this.articleReportRepo.count({ where: { status: 'reviewed' } }),
+      this.publicationReportRepo.count({ where: { status: 'reviewed' } }),
       this.userReportRepo.count({ where: { status: 'reviewed' } }),
-      this.articleReportRepo.count({ where: { status: 'dismissed' } }),
+      this.publicationReportRepo.count({ where: { status: 'dismissed' } }),
       this.userReportRepo.count({ where: { status: 'dismissed' } }),
     ]);
 
-    // Article reports by reason
-    const articleReasonRaw = await this.articleReportRepo
+    // Publication reports by reason
+    const publicationReasonRaw = await this.publicationReportRepo
       .createQueryBuilder('r')
       .select('r.reason', 'reason')
       .addSelect('COUNT(*)', 'count')
       .groupBy('r.reason')
       .getRawMany();
 
-    const articleByReason = articleReasonRaw.map((row) => ({
+    const publicationByReason = publicationReasonRaw.map((row) => ({
       reason: row.reason as string,
       count: parseInt(row.count, 10),
     }));
@@ -1322,11 +1322,11 @@ export class StatsService {
       count: parseInt(row.count, 10),
     }));
 
-    // Last 30 days trend for article reports
+    // Last 30 days trend for publication reports
     const now = new Date();
     const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const recentArticleReports = await this.articleReportRepo
+    const recentPublicationReports = await this.publicationReportRepo
       .createQueryBuilder('r')
       .select("DATE_TRUNC('day', r.createdAt)", 'day')
       .addSelect('COUNT(*)', 'count')
@@ -1344,13 +1344,13 @@ export class StatsService {
       .orderBy("DATE_TRUNC('day', r.createdAt)", 'ASC')
       .getRawMany();
 
-    // Most reported articles (top 5)
-    const topReportedArticles = await this.articleReportRepo
+    // Most reported publications (top 5)
+    const topReportedPublications = await this.publicationReportRepo
       .createQueryBuilder('r')
-      .leftJoin('r.article', 'article')
-      .select(['article.id', 'article.title'])
+      .leftJoin('r.publication', 'publication')
+      .select(['publication.id', 'publication.title'])
       .addSelect('COUNT(r.id)', 'reportCount')
-      .groupBy('article.id')
+      .groupBy('publication.id')
       .orderBy('COUNT(r.id)', 'DESC')
       .limit(5)
       .getRawMany();
@@ -1367,19 +1367,19 @@ export class StatsService {
       .getRawMany();
 
     return {
-      articles: {
-        total: totalArticleReports,
-        pending: pendingArticleReports,
-        reviewed: reviewedArticleReports,
-        dismissed: dismissedArticleReports,
-        byReason: articleByReason,
-        recentTrend: recentArticleReports.map((r) => ({
+      publications: {
+        total: totalPublicationReports,
+        pending: pendingPublicationReports,
+        reviewed: reviewedPublicationReports,
+        dismissed: dismissedPublicationReports,
+        byReason: publicationByReason,
+        recentTrend: recentPublicationReports.map((r) => ({
           day: new Date(r.day).toISOString().split('T')[0],
           count: parseInt(r.count, 10),
         })),
-        topReported: topReportedArticles.map((r) => ({
-          id: r.article_id,
-          title: r.article_title,
+        topReported: topReportedPublications.map((r) => ({
+          id: r.publication_id,
+          title: r.publication_title,
           reportCount: parseInt(r.reportCount, 10),
         })),
       },

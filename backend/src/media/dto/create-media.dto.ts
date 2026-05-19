@@ -22,7 +22,7 @@ export class CreateMediaDto {
 
   @IsInt()
   @IsOptional()
-  articleId?: number;
+  publicationId?: number;
 
   @IsNumber()
   @IsOptional()

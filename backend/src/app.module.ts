@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { ArticleModule } from './article/article.module';
+import { PublicationModule } from './publication/publication.module';
 import { CategoryModule } from './category/category.module';
 import { TagModule } from './tag/tag.module';
 import { CommentModule } from './comment/comment.module';
@@ -38,7 +38,7 @@ import { AdminReportsModule } from './admin-reports/admin-reports.module';
       autoLoadEntities: true,
       synchronize: false, // dev only
     }),
-    ArticleModule,
+    PublicationModule,
     CategoryModule,
     TagModule,
     CommentModule,

@@ -4,7 +4,7 @@ import { SearchService } from '../search/search.service';
 
 export interface ChunkSearchResult {
   chunkId: number;
-  articleId: number;
+  publicationId: number;
   title: string;
   chunkIndex: number;
   content: string;
@@ -39,13 +39,13 @@ export class RagRetrievalService {
         `
         SELECT
           c.id                                                                           AS "chunkId",
-          a.id                                                                           AS "articleId",
+          a.id                                                                           AS "publicationId",
           a.title,
           c."chunkIndex",
           c.content,
           ROUND(CAST((1 - (c.embedding_vector_pg <=> $1::vector)) AS numeric), 4)       AS similarity
-        FROM article_chunks c
-        JOIN articles a ON a.id = c."articleId"
+        FROM publication_chunks c
+        JOIN publications a ON a.id = c."publicationId"
         WHERE c.embedding_vector_pg IS NOT NULL
           AND a.status = 'published'
           AND (1 - (c.embedding_vector_pg <=> $1::vector)) >= $2
@@ -57,7 +57,7 @@ export class RagRetrievalService {
 
       return results.map((r: any) => ({
         chunkId: Number(r.chunkId),
-        articleId: Number(r.articleId),
+        publicationId: Number(r.publicationId),
         title: r.title as string,
         chunkIndex: Number(r.chunkIndex),
         content: r.content as string,

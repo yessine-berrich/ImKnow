@@ -2,11 +2,11 @@ export class ReadingTimeRangeDto {
   range: string;
   min: number;
   max: number;
-  articleCount: number;
+  publicationCount: number;
   avgEngagement: number;
 }
 
-export class ArticleReadingStatsDto {
+export class PublicationReadingStatsDto {
   id: number;
   title: string;
   author: string;
@@ -21,8 +21,8 @@ export class ReadingTimeResponseDto {
   ranges: ReadingTimeRangeDto[];
   avgWordCount: number;
   avgReadTime: number;
-  longestArticles: ArticleReadingStatsDto[];
-  shortestArticles: ArticleReadingStatsDto[];
+  longestPublications: PublicationReadingStatsDto[];
+  shortestPublications: PublicationReadingStatsDto[];
   optimalLength: {
     wordCount: number;
     engagement: number;

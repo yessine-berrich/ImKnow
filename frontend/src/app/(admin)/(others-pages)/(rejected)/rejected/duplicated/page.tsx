@@ -1,4 +1,4 @@
-// app/(admin)/(others-pages)/articles/rejected/duplicates/page.tsx
+// app/(admin)/(others-pages)/publications/rejected/duplicates/page.tsx
 'use client';
 
 import { getToken } from '../../../../../../../services/auth.service';
@@ -7,7 +7,7 @@ import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import DuplicatesTable from '@/components/tables/DuplicatesTable';
 
-export interface DuplicateArticle {
+export interface DuplicatePublication {
   id: number;
   title: string;
   content: string;
@@ -15,7 +15,7 @@ export interface DuplicateArticle {
   moderationScore: number | null;
   moderationResult: string | null;
   duplicateScore: number;
-  similarArticlesCache: {
+  similarPublicationsCache: {
     id: number;
     score: number;
     title: string;
@@ -36,8 +36,8 @@ export interface DuplicateArticle {
   updatedAt: string;
 }
 
-export default function DuplicateArticlesPage() {
-  const [articles, setArticles] = useState<DuplicateArticle[]>([]);
+export default function DuplicatePublicationsPage() {
+  const [publications, setPublications] = useState<DuplicatePublication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
@@ -69,11 +69,11 @@ export default function DuplicateArticlesPage() {
 
   useEffect(() => {
     if (!isCheckingRole) {
-      fetchArticles();
+      fetchPublications();
     }
   }, [isCheckingRole]);
 
-  const fetchArticles = async () => {
+  const fetchPublications = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -81,7 +81,7 @@ export default function DuplicateArticlesPage() {
       const token = getToken();
       if (!token) throw new Error('Non authentifié');
 
-      const response = await fetch('http://localhost:3000/api/articles/rejected/duplicates', {
+      const response = await fetch('http://localhost:3000/api/publications/rejected/duplicates', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -93,9 +93,9 @@ export default function DuplicateArticlesPage() {
       if (!response.ok) throw new Error(`Erreur ${response.status}: ${response.statusText}`);
 
       const data = await response.json();
-      setArticles(data.articles || []);
+      setPublications(data.publications || []);
     } catch (err: any) {
-      setError(err.message || 'Erreur de chargement des articles');
+      setError(err.message || 'Erreur de chargement des publications');
     } finally {
       setLoading(false);
     }
@@ -118,14 +118,14 @@ export default function DuplicateArticlesPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Chargement des articles...</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Chargement des publications...</h3>
           <p className="text-gray-600 dark:text-gray-400">Veuillez patienter</p>
         </div>
       </div>
     );
   }
 
-  if (error && articles.length === 0) {
+  if (error && publications.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-8 max-w-md w-full text-center shadow-xl">
@@ -135,7 +135,7 @@ export default function DuplicateArticlesPage() {
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Erreur de chargement</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
-            onClick={fetchArticles}
+            onClick={fetchPublications}
             className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
           >
             <RefreshCw size={18} />
@@ -149,10 +149,10 @@ export default function DuplicateArticlesPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 md:p-6 lg:p-8">
       <DuplicatesTable
-        articles={articles}
-        onRefresh={fetchArticles}
-        title="Articles Rejetés — Doublons"
-        description="Articles rejetés automatiquement en raison d'une similarité élevée avec des articles existants"
+        publications={publications}
+        onRefresh={fetchPublications}
+        title="Publications Rejetés — Doublons"
+        description="Publications rejetés automatiquement en raison d'une similarité élevée avec des publications existants"
       />
     </div>
   );

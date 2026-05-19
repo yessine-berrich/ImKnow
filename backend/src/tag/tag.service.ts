@@ -27,7 +27,7 @@ export class TagService {
   async findAll(): Promise<{ id: number; name: string; count: number }[]> {
     const tags = await this.tagRepository
       .createQueryBuilder('tag')
-      .loadRelationCountAndMap('tag.count', 'tag.articles')
+      .loadRelationCountAndMap('tag.count', 'tag.publications')
       .orderBy('tag.name', 'ASC')
       .getMany();
 
@@ -41,7 +41,7 @@ export class TagService {
   async findOne(id: number): Promise<Tag> {
     const tag = await this.tagRepository.findOne({
       where: { id },
-      relations: ['articles'],
+      relations: ['publications'],
     });
     if (!tag) throw new NotFoundException(`Tag with ID ${id} not found`);
     return tag;
@@ -97,7 +97,7 @@ export class TagService {
   }
 
   /**
-   * Suggest relevant tags for an article using Ollama AI.
+   * Suggest relevant tags for an publication using Ollama AI.
    * Returns existing tags (with IDs) + new tag name suggestions.
    */
   async suggestTags(
@@ -115,15 +115,15 @@ export class TagService {
     // Detect language hint from title (heuristic: French characters present)
     const looksLikeFrench = /[àâäéèêëîïôùûüçœæ]/i.test(title + content);
     const langHint = looksLikeFrench
-      ? 'The article is in French. Suggest tags in French when appropriate.'
-      : 'Suggest tags in the same language as the article.';
+      ? 'The publication is in French. Suggest tags in French when appropriate.'
+      : 'Suggest tags in the same language as the publication.';
 
     const prompt = `You are a precise tagging assistant for a technical knowledge-sharing platform.
 
 ${langHint}
 
-Article title: "${title}"
-${plainContent ? `\nArticle content (excerpt):\n${plainContent}\n` : ''}
+Publication title: "${title}"
+${plainContent ? `\nPublication content (excerpt):\n${plainContent}\n` : ''}
 Available tags on the platform (use their exact spelling when matching):
 ${existingTagNames.length > 0 ? existingTagNames.join(', ') : '(none yet)'}
 

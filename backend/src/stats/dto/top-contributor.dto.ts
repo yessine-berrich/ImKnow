@@ -4,7 +4,7 @@ export class TopContributorDto {
   initials: string;
   department?: string;
   profileImage?: string | null;
-  articlesCount: number;
+  publicationsCount: number;
   totalViews: number;
   totalLikes: number;
   score: number;

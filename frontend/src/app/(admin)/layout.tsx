@@ -3,7 +3,7 @@
 
 import { useSidebar } from "@/context/SidebarContext";
 import { ThemeProvider } from "@/context/ThemeContext";
-import { ArticleModalProvider } from "@/context/ArticleModalContext";
+import { PublicationModalProvider } from "@/context/PublicationModalContext";
 import AppHeader from "@/layout/AppHeader";
 import AppSidebar from "@/layout/AppSidebar";
 import Backdrop from "@/layout/Backdrop";
@@ -24,7 +24,7 @@ export default function AdminLayout({
 
   return (
     <ThemeProvider>
-      <ArticleModalProvider>
+      <PublicationModalProvider>
         <div className="h-screen overflow-hidden xl:flex">
           <AppSidebar />
           <Backdrop />
@@ -38,7 +38,7 @@ export default function AdminLayout({
             </div>
           </div>
         </div>
-      </ArticleModalProvider>
+      </PublicationModalProvider>
     </ThemeProvider>
   );
 }

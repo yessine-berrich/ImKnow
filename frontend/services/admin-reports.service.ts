@@ -3,16 +3,16 @@ import { getToken } from './auth.service';
 
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low';
 export type ReportStatus = 'pending' | 'reviewed' | 'dismissed' | 'all';
-export type ArticleAction = 'dismiss_all' | 'review_all' | 'unpublish' | 'republish' | 'warn_author';
+export type PublicationAction = 'dismiss_all' | 'review_all' | 'unpublish' | 'republish' | 'warn_author';
 export type UserAction    = 'dismiss_all' | 'review_all' | 'warn' | 'ban' | 'unban';
 export type PriorityLevel = 'urgent' | 'high' | 'normal' | 'low';
 
 export interface ReasonCount { reason: string; count: number; severity: number; }
 
-export interface ReportedArticleItem {
-  articleId:      number;
+export interface ReportedPublicationItem {
+  publicationId:      number;
   title:          string;
-  articleStatus:  string;
+  publicationStatus:  string;
   authorId:       number | null;
   authorName:     string;
   reportCount:    number;
@@ -63,8 +63,8 @@ export interface ListSummary {
   bannedUsers?: number;
 }
 
-export interface ArticleReportListResponse {
-  items:      ReportedArticleItem[];
+export interface PublicationReportListResponse {
+  items:      ReportedPublicationItem[];
   total:      number;
   page:       number;
   totalPages: number;
@@ -88,8 +88,8 @@ export interface IndividualReport {
   reporter:  { id: number; name: string };
 }
 
-export interface ArticleReportDetail {
-  article: {
+export interface PublicationReportDetail {
+  publication: {
     id:        number;
     title:     string;
     status:    string;
@@ -136,7 +136,7 @@ export interface UserReportDetail {
 }
 
 export interface BulkAction {
-  action: ArticleAction | UserAction;
+  action: PublicationAction | UserAction;
   ids: number[];
   note?: string;
 }
@@ -169,16 +169,16 @@ class AdminReportsService {
     return res.json() as Promise<T>;
   }
 
-  // ── Articles ────────────────────────────────────────────────────────────
+  // ── Publications ────────────────────────────────────────────────────────────
 
-  async getReportedArticles(params: {
+  async getReportedPublications(params: {
     status?:    string;
     riskLevel?: string;
     priority?:  string;
     search?:    string;
     page?:      number;
     limit?:     number;
-  }): Promise<ArticleReportListResponse> {
+  }): Promise<PublicationReportListResponse> {
     const q = new URLSearchParams();
     if (params.status)     q.set('status',     params.status);
     if (params.riskLevel)  q.set('riskLevel',  params.riskLevel);
@@ -186,17 +186,17 @@ class AdminReportsService {
     if (params.search)     q.set('search',     params.search);
     if (params.page)       q.set('page',       String(params.page));
     if (params.limit)      q.set('limit',      String(params.limit));
-    const res = await fetch(`${API_URL}/admin/reports/articles?${q}`, { headers: this.getHeaders() });
-    return this.handle<ArticleReportListResponse>(res);
+    const res = await fetch(`${API_URL}/admin/reports/publications?${q}`, { headers: this.getHeaders() });
+    return this.handle<PublicationReportListResponse>(res);
   }
 
-  async getArticleReportDetail(articleId: number): Promise<ArticleReportDetail> {
-    const res = await fetch(`${API_URL}/admin/reports/articles/${articleId}`, { headers: this.getHeaders() });
-    return this.handle<ArticleReportDetail>(res);
+  async getPublicationReportDetail(publicationId: number): Promise<PublicationReportDetail> {
+    const res = await fetch(`${API_URL}/admin/reports/publications/${publicationId}`, { headers: this.getHeaders() });
+    return this.handle<PublicationReportDetail>(res);
   }
 
-  async takeArticleAction(articleId: number, action: ArticleAction, note?: string): Promise<{ message: string; action: string }> {
-    const res = await fetch(`${API_URL}/admin/reports/articles/${articleId}/action`, {
+  async takePublicationAction(publicationId: number, action: PublicationAction, note?: string): Promise<{ message: string; action: string }> {
+    const res = await fetch(`${API_URL}/admin/reports/publications/${publicationId}/action`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ action, note }),
@@ -241,8 +241,8 @@ class AdminReportsService {
 
   // ── Bulk Actions ───────────────────────────────────────────────────────
 
-  async bulkArticleAction(bulkAction: BulkAction): Promise<{ message: string; processed: number }> {
-    const res = await fetch(`${API_URL}/admin/reports/articles/bulk`, {
+  async bulkPublicationAction(bulkAction: BulkAction): Promise<{ message: string; processed: number }> {
+    const res = await fetch(`${API_URL}/admin/reports/publications/bulk`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(bulkAction),
@@ -277,7 +277,7 @@ class AdminReportsService {
 
   // ── Export ─────────────────────────────────────────────────────────────
 
-  async exportReports(type: 'articles' | 'users', format: 'csv' | 'json'): Promise<Blob> {
+  async exportReports(type: 'publications' | 'users', format: 'csv' | 'json'): Promise<Blob> {
     const res = await fetch(`${API_URL}/admin/reports/export?type=${type}&format=${format}`, {
       headers: this.getHeaders(),
     });

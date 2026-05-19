@@ -1,4 +1,4 @@
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { Notification } from 'src/notification/entities/notification.entity';
 import {
@@ -111,8 +111,8 @@ export class User {
 
   // ── Relations ─────────────────────────────────────────────────────────────
 
-  @OneToMany(() => Article, (article) => article.author)
-  articles: Article[];
+  @OneToMany(() => Publication, (publication) => publication.author)
+  publications: Publication[];
 
   @OneToMany(() => Comment, (comment) => comment.author, { onDelete: 'CASCADE' })
   comments: Comment[];
@@ -120,11 +120,11 @@ export class User {
   @ManyToMany(() => Comment, (comment) => comment.likes, { onDelete: 'CASCADE' })
   likedComments: Comment[];
 
-  @ManyToMany(() => Article, (article) => article.likes, { onDelete: 'CASCADE' })
-  likedArticles: Article[];
+  @ManyToMany(() => Publication, (publication) => publication.likes, { onDelete: 'CASCADE' })
+  likedPublications: Publication[];
 
-  @ManyToMany(() => Article, (article) => article.bookmarks, { onDelete: 'CASCADE' })
-  bookmarkedArticles: Article[];
+  @ManyToMany(() => Publication, (publication) => publication.bookmarks, { onDelete: 'CASCADE' })
+  bookmarkedPublications: Publication[];
 
   @OneToMany(() => Notification, (notification) => notification.recipient)
   notifications: Notification[];

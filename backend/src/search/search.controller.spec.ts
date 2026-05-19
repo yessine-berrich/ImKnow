@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
 import { AuthGuard } from '../users/guards/auth.guard';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 
 describe('SearchController', () => {
   let controller: SearchController;
@@ -10,7 +10,7 @@ describe('SearchController', () => {
 
   // ── Fixture data ─────────────────────────────────────────────────────────
 
-  const mockArticle = {
+  const mockPublication = {
     id: 1,
     title: 'NestJS Deep Dive',
     contentPreview: 'Content preview...',
@@ -24,14 +24,14 @@ describe('SearchController', () => {
     createdAt: new Date(),
   };
 
-  const mockCategory = { id: 1, name: 'Technology', description: 'Tech', articlesCount: 10 };
-  const mockTag      = { id: 1, name: 'nestjs', articlesCount: 7 };
+  const mockCategory = { id: 1, name: 'Technology', description: 'Tech', publicationsCount: 10 };
+  const mockTag      = { id: 1, name: 'nestjs', publicationsCount: 7 };
   const mockUser     = { id: 1, firstName: 'John', lastName: 'Doe', email: 'john@example.com',
                          profileImage: null, bio: null, department: null, country: null };
 
   const mockGlobalResult = {
     query: 'nestjs',
-    articles: [mockArticle],
+    publications: [mockPublication],
     categories: [mockCategory],
     tags: [mockTag],
     users: [mockUser],
@@ -40,7 +40,7 @@ describe('SearchController', () => {
 
   const mockService = {
     globalSearch:         jest.fn(),
-    searchArticlesOnly:   jest.fn(),
+    searchPublicationsOnly:   jest.fn(),
     searchCategoriesOnly: jest.fn(),
     searchTagsOnly:       jest.fn(),
     searchUsersOnly:      jest.fn(),
@@ -100,34 +100,34 @@ describe('SearchController', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // searchArticles
+  // searchPublications
   // ═══════════════════════════════════════════════════════════════
 
-  describe('searchArticles', () => {
-    it('should return articles wrapped in { query, articles }', async () => {
-      mockService.searchArticlesOnly.mockResolvedValue([mockArticle]);
+  describe('searchPublications', () => {
+    it('should return publications wrapped in { query, publications }', async () => {
+      mockService.searchPublicationsOnly.mockResolvedValue([mockPublication]);
 
-      const result = await controller.searchArticles({ query: 'nestjs' } as any);
+      const result = await controller.searchPublications({ query: 'nestjs' } as any);
 
       expect(result.query).toBe('nestjs');
-      expect(result.articles).toEqual([mockArticle]);
-      expect(mockService.searchArticlesOnly).toHaveBeenCalledWith('nestjs', 10, 0.65);
+      expect(result.publications).toEqual([mockPublication]);
+      expect(mockService.searchPublicationsOnly).toHaveBeenCalledWith('nestjs', 10, 0.65);
     });
 
     it('should forward custom limit and minSimilarity', async () => {
-      mockService.searchArticlesOnly.mockResolvedValue([]);
+      mockService.searchPublicationsOnly.mockResolvedValue([]);
 
-      await controller.searchArticles({ query: 'test', limit: 20, minSimilarity: 0.8 } as any);
+      await controller.searchPublications({ query: 'test', limit: 20, minSimilarity: 0.8 } as any);
 
-      expect(mockService.searchArticlesOnly).toHaveBeenCalledWith('test', 20, 0.8);
+      expect(mockService.searchPublicationsOnly).toHaveBeenCalledWith('test', 20, 0.8);
     });
 
-    it('should return empty articles array when service returns nothing', async () => {
-      mockService.searchArticlesOnly.mockResolvedValue([]);
+    it('should return empty publications array when service returns nothing', async () => {
+      mockService.searchPublicationsOnly.mockResolvedValue([]);
 
-      const result = await controller.searchArticles({ query: 'zzz' } as any);
+      const result = await controller.searchPublications({ query: 'zzz' } as any);
 
-      expect(result.articles).toEqual([]);
+      expect(result.publications).toEqual([]);
     });
   });
 

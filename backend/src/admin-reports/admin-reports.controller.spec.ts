@@ -10,8 +10,8 @@ describe('AdminReportsController', () => {
 
   const mockPayload = { sub: 99, email: 'admin@example.com', role: 'ADMIN' };
 
-  const mockArticleReportsResult = {
-    items: [{ articleId: 1, title: 'Test', reportCount: 2 }],
+  const mockPublicationReportsResult = {
+    items: [{ publicationId: 1, title: 'Test', reportCount: 2 }],
     total: 1,
     page: 1,
     totalPages: 1,
@@ -27,9 +27,9 @@ describe('AdminReportsController', () => {
   };
 
   const mockService = {
-    getReportedArticles: jest.fn(),
-    getArticleReportDetail: jest.fn(),
-    takeActionOnArticle: jest.fn(),
+    getReportedPublications: jest.fn(),
+    getPublicationReportDetail: jest.fn(),
+    takeActionOnPublication: jest.fn(),
     getReportedUsers: jest.fn(),
     getUserReportDetail: jest.fn(),
     takeActionOnUser: jest.fn(),
@@ -58,44 +58,44 @@ describe('AdminReportsController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('getReportedArticles', () => {
+  describe('getReportedPublications', () => {
     it('should call service with correct params and return result', async () => {
-      mockService.getReportedArticles.mockResolvedValue(mockArticleReportsResult);
+      mockService.getReportedPublications.mockResolvedValue(mockPublicationReportsResult);
 
-      const result = await controller.getReportedArticles('pending', 'all', 'all', '', 1, 20);
+      const result = await controller.getReportedPublications('pending', 'all', 'all', '', 1, 20);
 
-      expect(result).toEqual(mockArticleReportsResult);
-      expect(mockService.getReportedArticles).toHaveBeenCalledWith({
+      expect(result).toEqual(mockPublicationReportsResult);
+      expect(mockService.getReportedPublications).toHaveBeenCalledWith({
         status: 'pending', riskLevel: 'all', priority: 'all', search: '', page: 1, limit: 20,
       });
     });
   });
 
-  describe('getArticleReportDetail', () => {
-    it('should return detail for a given article', async () => {
-      const mockDetail = { article: { id: 1, title: 'Test' }, intelligence: {}, reports: [] };
-      mockService.getArticleReportDetail.mockResolvedValue(mockDetail);
+  describe('getPublicationReportDetail', () => {
+    it('should return detail for a given publication', async () => {
+      const mockDetail = { publication: { id: 1, title: 'Test' }, intelligence: {}, reports: [] };
+      mockService.getPublicationReportDetail.mockResolvedValue(mockDetail);
 
-      const result = await controller.getArticleReportDetail(1);
+      const result = await controller.getPublicationReportDetail(1);
 
       expect(result).toEqual(mockDetail);
-      expect(mockService.getArticleReportDetail).toHaveBeenCalledWith(1);
+      expect(mockService.getPublicationReportDetail).toHaveBeenCalledWith(1);
     });
   });
 
-  describe('takeActionOnArticle', () => {
-    it('should call takeActionOnArticle with correct params', async () => {
+  describe('takeActionOnPublication', () => {
+    it('should call takeActionOnPublication with correct params', async () => {
       const mockResult = { message: 'Action done', action: 'dismiss_all' };
-      mockService.takeActionOnArticle.mockResolvedValue(mockResult);
+      mockService.takeActionOnPublication.mockResolvedValue(mockResult);
 
-      const result = await controller.takeActionOnArticle(
+      const result = await controller.takeActionOnPublication(
         1,
         { action: 'dismiss_all', note: 'Spam cleared' },
         mockPayload as any,
       );
 
       expect(result).toEqual(mockResult);
-      expect(mockService.takeActionOnArticle).toHaveBeenCalledWith(1, 'dismiss_all', 99, 'Spam cleared');
+      expect(mockService.takeActionOnPublication).toHaveBeenCalledWith(1, 'dismiss_all', 99, 'Spam cleared');
     });
   });
 

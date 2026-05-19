@@ -1,5 +1,5 @@
 export interface RagSource {
-  articleId: number;
+  publicationId: number;
   title: string;
   chunkIndex: number;
   similarity: number;

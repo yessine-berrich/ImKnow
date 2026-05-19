@@ -4,31 +4,31 @@ import { getToken } from './auth.service';
 // ─── Admin stats interfaces ──────────────────────────────────────────────────
 
 export interface DashboardStats {
-  totalArticles: number;
+  totalPublications: number;
   totalUsers: number;
   totalCategories: number;
   totalTags: number;
   totalComments: number;
   totalLikes: number;
-  articlesThisWeek: number;
-  articlesThisMonth: number;
+  publicationsThisWeek: number;
+  publicationsThisMonth: number;
   newUsersThisMonth: number;
-  mostActiveCategory: { id: number; name: string; articleCount: number } | null;
-  topContributor: { userId: number; fullName: string; articlesCount: number } | null;
+  mostActiveCategory: { id: number; name: string; publicationCount: number } | null;
+  topContributor: { userId: number; fullName: string; publicationsCount: number } | null;
 }
 
 export interface MonthlyUserActivity {
   month: string;
   newUsers: number;
   activeUsers: number;
-  articlesPublished: number;
+  publicationsPublished: number;
   commentsMade: number;
 }
 
 export interface UserActivityStats {
   currentMonth: MonthlyUserActivity;
   previousMonth: MonthlyUserActivity;
-  growthRate: { newUsers: number; activeUsers: number; articlesPublished: number };
+  growthRate: { newUsers: number; activeUsers: number; publicationsPublished: number };
   history: MonthlyUserActivity[];
 }
 
@@ -48,18 +48,18 @@ export interface ModerationStats {
 }
 
 export interface EngagementStats {
-  mostLikedArticles: { id: number; title: string; likesCount: number; viewsCount: number; category: string; author: { fullName: string } }[];
-  mostBookmarkedArticles: { id: number; title: string; bookmarksCount: number; viewsCount: number; category: string; author: { fullName: string } }[];
+  mostLikedPublications: { id: number; title: string; likesCount: number; viewsCount: number; category: string; author: { fullName: string } }[];
+  mostBookmarkedPublications: { id: number; title: string; bookmarksCount: number; viewsCount: number; category: string; author: { fullName: string } }[];
   totalLikes: number;
   totalBookmarks: number;
-  avgLikesPerArticle: number;
-  avgBookmarksPerArticle: number;
+  avgLikesPerPublication: number;
+  avgBookmarksPerPublication: number;
 }
 
 export interface CategoryStat {
   id: number;
   name: string;
-  articleCount: number;
+  publicationCount: number;
   totalViews: number;
   totalLikes: number;
   totalComments: number;
@@ -68,14 +68,14 @@ export interface CategoryStat {
 
 export interface CategoryStats {
   categories: CategoryStat[];
-  totalArticles: number;
+  totalPublications: number;
   mostPopularCategory: CategoryStat | null;
 }
 
 export interface TagPerformance {
   id: number;
   name: string;
-  articleCount: number;
+  publicationCount: number;
   totalViews: number;
   totalLikes: number;
   avgEngagement: number;
@@ -96,7 +96,7 @@ export interface ReportTrendDay { day: string; count: number; }
 export interface TopReportedItem { id: number; title?: string; name?: string; reportCount: number; }
 
 export interface ReportsStats {
-  articles: {
+  publications: {
     total: number;
     pending: number;
     reviewed: number;
@@ -118,24 +118,24 @@ export interface ReportsStats {
 
 // ─── Employee-facing interfaces ──────────────────────────────────────────────
 
-export interface TrendingArticleAuthor {
+export interface TrendingPublicationAuthor {
   name: string;
   initials: string;
   department?: string;
 }
 
-export interface TrendingArticleCategory {
+export interface TrendingPublicationCategory {
   name: string;
   slug: string;
 }
 
-export interface TrendingArticle {
+export interface TrendingPublication {
   id: number;
   title: string;
   description: string;
   content: string;
-  category: TrendingArticleCategory;
-  author: TrendingArticleAuthor;
+  category: TrendingPublicationCategory;
+  author: TrendingPublicationAuthor;
   tags: string[];
   publishedAt: string;
   stats: {
@@ -147,9 +147,9 @@ export interface TrendingArticle {
   rank: number;
 }
 
-export interface TrendingArticlesResponse {
+export interface TrendingPublicationsResponse {
   period: { from: string; to: string };
-  articles: TrendingArticle[];
+  publications: TrendingPublication[];
 }
 
 export interface TopContributor {
@@ -158,7 +158,7 @@ export interface TopContributor {
   initials: string;
   department?: string;
   profileImage?: string | null;
-  articlesCount: number;
+  publicationsCount: number;
   totalViews: number;
   totalLikes: number;
   score: number;
@@ -171,7 +171,7 @@ export interface TopContributorsResponse {
 }
 
 // Types pour la page trending (employee)
-export interface EmployeeTrendingArticle {
+export interface EmployeeTrendingPublication {
   id: number;
   title: string;
   slug: string;
@@ -194,7 +194,7 @@ export interface EmployeeTrendingArticle {
 export interface EmployeeTrendingTag {
   id: number;
   name: string;
-  articleCount: number;
+  publicationCount: number;
   totalViews: number;
   trend: 'up' | 'down' | 'stable';
   热度: number;
@@ -205,7 +205,7 @@ export interface EmployeeTopAuthor {
   name: string;
   avatar?: string | null;
   department?: string;
-  articleCount: number;
+  publicationCount: number;
   totalViews: number;
   totalLikes: number;
   engagementRate: number;
@@ -213,20 +213,20 @@ export interface EmployeeTopAuthor {
 
 export interface EmployeeDailyActivity {
   date: string;
-  articles: number;
+  publications: number;
   views: number;
 }
 
 export interface EmployeeTrendingStats {
   period: { from: string; to: string };
   stats: {
-    totalArticles: number;
-    articlesGrowth: number;
+    totalPublications: number;
+    publicationsGrowth: number;
     totalViews: number;
     viewsGrowth: number;
     activeAuthors: number;
   };
-  topArticles: EmployeeTrendingArticle[];
+  topPublications: EmployeeTrendingPublication[];
   trendingTags: EmployeeTrendingTag[];
   topAuthors: EmployeeTopAuthor[];
   dailyActivity: EmployeeDailyActivity[];
@@ -259,13 +259,13 @@ class StatsService {
     return response.json() as Promise<T>;
   }
 
-  async getTrendingArticles(limit: number = 5): Promise<TrendingArticlesResponse> {
-    const response = await fetch(`${API_URL}/stats/trending-articles?limit=${limit}`, {
+  async getTrendingPublications(limit: number = 5): Promise<TrendingPublicationsResponse> {
+    const response = await fetch(`${API_URL}/stats/trending-publications?limit=${limit}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
     
-    return this.handleResponse<TrendingArticlesResponse>(response);
+    return this.handleResponse<TrendingPublicationsResponse>(response);
   }
 
   async getTopContributors(limit: number = 5): Promise<TopContributorsResponse> {
@@ -287,13 +287,13 @@ class StatsService {
     return this.handleResponse<EmployeeTrendingStats>(response);
   }
 
-  async getPopularArticlesForEmployees(limit: number = 10, period: 'week' | 'month' | 'year' = 'week'): Promise<EmployeeTrendingArticle[]> {
-    const response = await fetch(`${API_URL}/stats/employee/popular-articles?limit=${limit}&period=${period}`, {
+  async getPopularPublicationsForEmployees(limit: number = 10, period: 'week' | 'month' | 'year' = 'week'): Promise<EmployeeTrendingPublication[]> {
+    const response = await fetch(`${API_URL}/stats/employee/popular-publications?limit=${limit}&period=${period}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
     
-    return this.handleResponse<EmployeeTrendingArticle[]>(response);
+    return this.handleResponse<EmployeeTrendingPublication[]>(response);
   }
 
   async getTrendingTagsForEmployees(limit: number = 5): Promise<EmployeeTrendingTag[]> {

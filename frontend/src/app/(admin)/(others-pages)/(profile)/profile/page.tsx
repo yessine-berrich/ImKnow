@@ -8,15 +8,15 @@ import { useUser } from '@/context/UserContext';
 import { useTranslation } from '@/context/LanguageContext';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
-import { articleService } from '../../../../../../services/article.service';
+import { publicationService } from '../../../../../../services/publication.service';
 import EditableUserProfileHeader from '@/components/user-profile/EditableUserProfileHeader';
 import EditableUserAboutCard from '@/components/user-profile/EditableUserAboutCard';
 import UserStatsCard from '@/components/public-profile/UserStatsCard';
-import ArticleCard from '@/components/article/ArticleCard';
+import PublicationCard from '@/components/publication/PublicationCard';
 import { followService } from '../../../../../../services/follow.service';
-import CreateArticleModal from '@/components/modals/CreateArticleModal';
+import CreatePublicationModal from '@/components/modals/CreatePublicationModal';
 
-interface UserArticle {
+interface UserPublication {
   id: string;
   title: string;
   description: string;
@@ -50,9 +50,9 @@ export default function CurrentUserProfilePageWithAPI() {
   const router = useRouter();
   const { user: userData, loading: userLoading } = useUser();
   const { t, language } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'articles' | 'drafts' | 'pending' | 'rejected'>('articles');
-  const [userArticles, setUserArticles] = useState<UserArticle[]>([]);
-  const [articlesLoading, setArticlesLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'publications' | 'drafts' | 'pending' | 'rejected'>('publications');
+  const [userPublications, setUserPublications] = useState<UserPublication[]>([]);
+  const [publicationsLoading, setPublicationsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Follow system states
@@ -60,15 +60,15 @@ export default function CurrentUserProfilePageWithAPI() {
   const [followingCount, setFollowingCount] = useState(0);
   const [friendsCount, setFriendsCount] = useState(0);
 
-  const loading = userLoading || articlesLoading;
+  const loading = userLoading || publicationsLoading;
 
   useEffect(() => {
     if (!userData) return;
-    setArticlesLoading(true);
+    setPublicationsLoading(true);
     Promise.all([
-      loadUserArticles(userData.id),
+      loadUserPublications(userData.id),
       loadFollowStats(userData.id),
-    ]).finally(() => setArticlesLoading(false));
+    ]).finally(() => setPublicationsLoading(false));
   }, [userData?.id]);
 
   const loadFollowStats = async (userId: number | string) => {
@@ -82,27 +82,27 @@ export default function CurrentUserProfilePageWithAPI() {
     }
   };
 
-  const loadUserArticles = async (userId: number | string) => {
+  const loadUserPublications = async (userId: number | string) => {
     try {
-      const articles = await articleService.getArticlesByUserId(Number(userId));
+      const publications = await publicationService.getPublicationsByUserId(Number(userId));
 
       const uid = parseInt(userId);
-      const formattedArticles: UserArticle[] = articles.map((article: any) => {
-        const likesCount = article.likes?.length || article.likesCount || article.stats?.likes || 0;
-        const commentsCount = article.comments?.length || article.commentsCount || article.stats?.comments || 0;
-        const viewsCount = article.viewsCount || article.stats?.views || 0;
+      const formattedPublications: UserPublication[] = publications.map((publication: any) => {
+        const likesCount = publication.likes?.length || publication.likesCount || publication.stats?.likes || 0;
+        const commentsCount = publication.comments?.length || publication.commentsCount || publication.stats?.comments || 0;
+        const viewsCount = publication.viewsCount || publication.stats?.views || 0;
 
-        const isLiked = article.likes?.some((like: any) =>
+        const isLiked = publication.likes?.some((like: any) =>
           like.id === uid || like.userId === uid
-        ) || article.isLiked || false;
+        ) || publication.isLiked || false;
 
-        const isBookmarked = article.bookmarks?.some((bookmark: any) =>
+        const isBookmarked = publication.bookmarks?.some((bookmark: any) =>
           bookmark.id === uid || bookmark.userId === uid
-        ) || article.isBookmarked || false;
+        ) || publication.isBookmarked || false;
 
         let tags: { id: number; name: string }[] = [];
-        if (Array.isArray(article.tags)) {
-          tags = article.tags.map((tag: any) => {
+        if (Array.isArray(publication.tags)) {
+          tags = publication.tags.map((tag: any) => {
             if (typeof tag === 'object' && tag !== null) {
               return { id: tag.id || 0, name: tag.name || '' };
             }
@@ -114,25 +114,25 @@ export default function CurrentUserProfilePageWithAPI() {
         }
 
         return {
-          id: article.id.toString(),
-          title: article.title,
-          description: article.description || article.content?.substring(0, 150) + '...' || '',
-          content: article.content,
+          id: publication.id.toString(),
+          title: publication.title,
+          description: publication.description || publication.content?.substring(0, 150) + '...' || '',
+          content: publication.content,
           author: {
-            id: article.author?.id || uid,
-            name: article.author?.name || `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || t('profile_page.default_role'),
-            initials: article.author?.initials ||
+            id: publication.author?.id || uid,
+            name: publication.author?.name || `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim() || t('profile_page.default_role'),
+            initials: publication.author?.initials ||
               ((userData?.firstName?.charAt(0) || '') + (userData?.lastName?.charAt(0) || '')).toUpperCase() || 'U',
-            department: article.author?.department || t('profile_page.default_department'),
-            avatar: article.author?.avatar || article.author?.profileImage || userData?.profileImage,
+            department: publication.author?.department || t('profile_page.default_department'),
+            avatar: publication.author?.avatar || publication.author?.profileImage || userData?.profileImage,
           },
-          category: article.category ? {
-            name: article.category.name,
-            slug: article.category.name?.toLowerCase().replace(/\s+/g, '-') || 'general',
+          category: publication.category ? {
+            name: publication.category.name,
+            slug: publication.category.name?.toLowerCase().replace(/\s+/g, '-') || 'general',
           } : { name: t('profile_page.default_category'), slug: 'general' },
           tags: tags,
-          publishedAt: article.publishedAt || article.createdAt,
-          status: article.status || 'published',
+          publishedAt: publication.publishedAt || publication.createdAt,
+          status: publication.status || 'published',
           stats: {
             likes: likesCount,
             comments: commentsCount,
@@ -140,23 +140,23 @@ export default function CurrentUserProfilePageWithAPI() {
           },
           isLiked: isLiked,
           isBookmarked: isBookmarked,
-          isFeatured: article.isFeatured || false,
-          rejectionReason: article.rejectionReason || null,
+          isFeatured: publication.isFeatured || false,
+          rejectionReason: publication.rejectionReason || null,
         };
       });
 
-      setUserArticles(formattedArticles);
+      setUserPublications(formattedPublications);
     } catch (error) {
-      console.error('Error loading articles:', error);
+      console.error('Error loading publications:', error);
     }
   };
 
   // Calculate statistics from real data
   const userStats = {
-    totalArticles: userArticles.filter(a => a.status === 'published').length,
-    totalLikes: userArticles.reduce((sum, article) => sum + (article.stats?.likes || 0), 0),
-    totalComments: userArticles.reduce((sum, article) => sum + (article.stats?.comments || 0), 0),
-    totalViews: userArticles.reduce((sum, article) => sum + (article.stats?.views || 0), 0),
+    totalPublications: userPublications.filter(a => a.status === 'published').length,
+    totalLikes: userPublications.reduce((sum, publication) => sum + (publication.stats?.likes || 0), 0),
+    totalComments: userPublications.reduce((sum, publication) => sum + (publication.stats?.comments || 0), 0),
+    totalViews: userPublications.reduce((sum, publication) => sum + (publication.stats?.views || 0), 0),
   };
 
 
@@ -173,36 +173,36 @@ export default function CurrentUserProfilePageWithAPI() {
         return;
       }
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
-          const newIsLiked = !article.isLiked;
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
+          const newIsLiked = !publication.isLiked;
           return {
-            ...article,
+            ...publication,
             isLiked: newIsLiked,
             stats: {
-              ...article.stats,
-              likes: article.stats.likes + (newIsLiked ? 1 : -1)
+              ...publication.stats,
+              likes: publication.stats.likes + (newIsLiked ? 1 : -1)
             }
           };
         }
-        return article;
+        return publication;
       }));
 
-      const result = await articleService.toggleLike(parseInt(id));
+      const result = await publicationService.toggleLike(parseInt(id));
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
           return {
-            ...article,
-            isLiked: result.article.isLiked,
-            stats: { ...article.stats, likes: result.article.likesCount }
+            ...publication,
+            isLiked: result.publication.isLiked,
+            stats: { ...publication.stats, likes: result.publication.likesCount }
           };
         }
-        return article;
+        return publication;
       }));
     } catch (error) {
-      console.error('Error liking article:', error);
-      if (userData) await loadUserArticles(userData.id);
+      console.error('Error liking publication:', error);
+      if (userData) await loadUserPublications(userData.id);
     }
   };
 
@@ -213,35 +213,35 @@ export default function CurrentUserProfilePageWithAPI() {
         return;
       }
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
           return {
-            ...article,
-            isBookmarked: !article.isBookmarked
+            ...publication,
+            isBookmarked: !publication.isBookmarked
           };
         }
-        return article;
+        return publication;
       }));
 
-      const result = await articleService.toggleBookmark(parseInt(id));
+      const result = await publicationService.toggleBookmark(parseInt(id));
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
-          return { ...article, isBookmarked: result.article.isBookmarked };
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
+          return { ...publication, isBookmarked: result.publication.isBookmarked };
         }
-        return article;
+        return publication;
       }));
     } catch (error) {
-      console.error('Error bookmarking article:', error);
-      if (userData) await loadUserArticles(userData.id);
+      console.error('Error bookmarking publication:', error);
+      if (userData) await loadUserPublications(userData.id);
     }
   };
 
   const handleShare = (id: string) => {
-    const url = `${window.location.origin}/articles/${id}`;
+    const url = `${window.location.origin}/publications/${id}`;
     if (navigator.share) {
       navigator.share({
-        title: 'Partager cet article',
+        title: 'Partager cet publication',
         url: url,
       }).catch(() => {
         navigator.clipboard.writeText(url);
@@ -252,23 +252,23 @@ export default function CurrentUserProfilePageWithAPI() {
   };
 
   const handleEdit = (id: string) => {
-    console.log('Edit article:', id);
+    console.log('Edit publication:', id);
   };
 
   const handleDelete = async (id: string) => {
     if (!await confirm(t('profile_page.delete_confirm'))) return;
 
     try {
-      await articleService.delete(parseInt(id));
-      if (userData) await loadUserArticles(userData.id);
+      await publicationService.delete(parseInt(id));
+      if (userData) await loadUserPublications(userData.id);
     } catch (error) {
-      console.error('Error deleting article:', error);
+      console.error('Error deleting publication:', error);
       toast.error(t('profile_page.delete_error'));
     }
   };
 
-  const handleArticleUpdated = () => {
-    if (userData) loadUserArticles(userData.id);
+  const handlePublicationUpdated = () => {
+    if (userData) loadUserPublications(userData.id);
   };
 
   const handleNavigateToRelations = (tab: 'followers' | 'following' | 'friends') => {
@@ -326,24 +326,24 @@ export default function CurrentUserProfilePageWithAPI() {
     );
   }
 
-  const publishedArticles = userArticles.filter(a => a.status === 'published');
-  const draftArticles    = userArticles.filter(a => a.status === 'draft');
-  const pendingArticles  = userArticles.filter(a => a.status === 'pending');
-  const rejectedArticles = userArticles.filter(a => a.status === 'rejected');
+  const publishedPublications = userPublications.filter(a => a.status === 'published');
+  const draftPublications    = userPublications.filter(a => a.status === 'draft');
+  const pendingPublications  = userPublications.filter(a => a.status === 'pending');
+  const rejectedPublications = userPublications.filter(a => a.status === 'rejected');
 
   const getTabContent = () => {
     switch (activeTab) {
-      case 'articles':  return publishedArticles;
-      case 'drafts':    return draftArticles;
-      case 'pending':   return pendingArticles;
-      case 'rejected':  return rejectedArticles;
+      case 'publications':  return publishedPublications;
+      case 'drafts':    return draftPublications;
+      case 'pending':   return pendingPublications;
+      case 'rejected':  return rejectedPublications;
       default:          return [];
     }
   };
 
   const getEmptyMessage = () => {
     switch (activeTab) {
-      case 'articles':
+      case 'publications':
         return {
           title: t('profile_page.empty_published_title'),
           message: t('profile_page.empty_published_msg'),
@@ -367,7 +367,7 @@ export default function CurrentUserProfilePageWithAPI() {
   };
 
   const emptyState = getEmptyMessage();
-  const currentArticles = getTabContent();
+  const currentPublications = getTabContent();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -416,7 +416,7 @@ export default function CurrentUserProfilePageWithAPI() {
             <UserStatsCard stats={userStats} />
           </div>
 
-          {/* Right Column: Articles */}
+          {/* Right Column: Publications */}
           <div className="lg:col-span-2">
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
               {/* Header */}
@@ -424,10 +424,10 @@ export default function CurrentUserProfilePageWithAPI() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-800 dark:text-white/90">
-                      {t('profile_page.my_articles')}
+                      {t('profile_page.my_publications')}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mt-1">
-                      {t('profile_page.articles_subtitle')}
+                      {t('profile_page.publications_subtitle')}
                     </p>
                   </div>
                 </div>
@@ -435,13 +435,13 @@ export default function CurrentUserProfilePageWithAPI() {
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200 dark:border-gray-800">
                   <button
-                    onClick={() => setActiveTab('articles')}
-                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'articles'
+                    onClick={() => setActiveTab('publications')}
+                    className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'publications'
                       ? 'border-[#168F6F] text-[#168F6F] dark:text-[#00B383]'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    {t('profile_page.tab_published')} ({publishedArticles.length})
+                    {t('profile_page.tab_published')} ({publishedPublications.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('drafts')}
@@ -450,7 +450,7 @@ export default function CurrentUserProfilePageWithAPI() {
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    {t('profile_page.tab_drafts')} ({draftArticles.length})
+                    {t('profile_page.tab_drafts')} ({draftPublications.length})
                   </button>
                   <button
                     onClick={() => setActiveTab('pending')}
@@ -460,13 +460,13 @@ export default function CurrentUserProfilePageWithAPI() {
                       }`}
                   >
                     {t('profile_page.tab_pending')}
-                    {pendingArticles.length > 0 ? (
+                    {pendingPublications.length > 0 ? (
                       <span className={`ml-1.5 inline-flex items-center justify-center text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 ${
                         activeTab === 'pending'
                           ? 'bg-amber-500 text-white'
                           : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
                       }`}>
-                        {pendingArticles.length}
+                        {pendingPublications.length}
                       </span>
                     ) : (
                       <span className="ml-1 text-gray-400 dark:text-gray-500">(0)</span>
@@ -479,14 +479,14 @@ export default function CurrentUserProfilePageWithAPI() {
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                   >
-                    {t('profile_page.tab_rejected')} ({rejectedArticles.length})
+                    {t('profile_page.tab_rejected')} ({rejectedPublications.length})
                   </button>
                 </div>
               </div>
 
-              {/* Articles List */}
+              {/* Publications List */}
               <div className="space-y-6">
-                {currentArticles.length === 0 ? (
+                {currentPublications.length === 0 ? (
                   <div className="py-12 text-center">
                     <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                       <FileText className="text-gray-400 dark:text-gray-500" size={24} />
@@ -497,20 +497,20 @@ export default function CurrentUserProfilePageWithAPI() {
                     <p className="text-gray-500 dark:text-gray-400 mb-6">
                       {emptyState.message}
                     </p>
-                    {(activeTab === 'articles' || activeTab === 'drafts' || activeTab === 'pending') && (
+                    {(activeTab === 'publications' || activeTab === 'drafts' || activeTab === 'pending') && (
                       <button
                         onClick={() => setIsCreateModalOpen(true)}
                         className="px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
                       >
-                        {t('profile_page.create_article')}
+                        {t('profile_page.create_publication')}
                       </button>
                     )}
 
                   </div>
                 ) : (
                   <>
-                    {currentArticles.map((article) => (
-                      <div key={article.id} className="relative">
+                    {currentPublications.map((publication) => (
+                      <div key={publication.id} className="relative">
                         {activeTab === 'pending' && (
                           <div className="mb-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2">
                             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 dark:bg-amber-500 flex-shrink-0">
@@ -524,16 +524,16 @@ export default function CurrentUserProfilePageWithAPI() {
                             </p>
                           </div>
                         )}
-                        {activeTab === 'rejected' && article.rejectionReason && (
+                        {activeTab === 'rejected' && publication.rejectionReason && (
                           <div className="mb-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                             <p className="text-sm text-red-600 dark:text-red-400">
-                              <span className="font-medium">{t('profile_page.rejection_reason')}</span> {article.rejectionReason}
+                              <span className="font-medium">{t('profile_page.rejection_reason')}</span> {publication.rejectionReason}
                             </p>
                           </div>
                         )}
-                        <ArticleCard
-                          article={{
-                            ...article,
+                        <PublicationCard
+                          publication={{
+                            ...publication,
                             author: {
                               id: userData.id,
                               name: `${userData.firstName} ${userData.lastName}`,
@@ -547,7 +547,7 @@ export default function CurrentUserProfilePageWithAPI() {
                           onShare={handleShare}
                           onEdit={handleEdit}
                           onDelete={handleDelete}
-                          onArticleUpdated={handleArticleUpdated}
+                          onPublicationUpdated={handlePublicationUpdated}
                           showActions={true}
                           showHistory={true}
                           currentUserId={userData.id}
@@ -562,11 +562,11 @@ export default function CurrentUserProfilePageWithAPI() {
         </div>
       </div>
 
-          <CreateArticleModal
+          <CreatePublicationModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => {
-          loadUserArticles(userData.id);
+          loadUserPublications(userData.id);
           setIsCreateModalOpen(false);
         }}
       />

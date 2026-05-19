@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Send, Sparkles, Bot, User, AlertCircle, BookOpen } from 'lucide-react';
 
 interface RagSource {
-  articleId: number;
+  publicationId: number;
   title: string;
   chunkIndex: number;
   similarity: number;
@@ -204,7 +204,7 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                       </span>
                       {message.sources.map((source) => (
                         <div
-                          key={`${source.articleId}-${source.chunkIndex}`}
+                          key={`${source.publicationId}-${source.chunkIndex}`}
                           className="flex items-center justify-between gap-2 rounded-lg bg-gray-100 dark:bg-gray-800/60 px-2.5 py-1.5 text-xs"
                         >
                           <span className="text-gray-700 dark:text-gray-300 truncate font-medium">

@@ -2,36 +2,36 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AdminReportsService } from './admin-reports.service';
-import { ArticleReport } from 'src/article/entities/article-report.entity';
+import { PublicationReport } from 'src/publication/entities/publication-report.entity';
 import { UserReport } from 'src/users/entities/user-report.entity';
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 
 describe('AdminReportsService', () => {
   let service: AdminReportsService;
 
   const now = new Date();
 
-  const mockArticle = {
+  const mockPublication = {
     id: 1,
-    title: 'Test Article',
-    status: ArticleStatus.PUBLISHED,
-    content: 'Some article content for testing purposes.',
+    title: 'Test Publication',
+    status: PublicationStatus.PUBLISHED,
+    content: 'Some publication content for testing purposes.',
     author: { id: 2, firstName: 'John', lastName: 'Doe' },
     createdAt: now,
   };
 
   const mockReporter = { id: 3, firstName: 'Reporter', lastName: 'User' };
 
-  const mockArticleReport = {
+  const mockPublicationReport = {
     id: 1,
     reason: 'spam',
     details: 'Spam content',
     status: 'pending',
     createdAt: now,
     updatedAt: now,
-    article: mockArticle,
+    publication: mockPublication,
     reporter: mockReporter,
   };
 
@@ -64,7 +64,7 @@ describe('AdminReportsService', () => {
     getMany: jest.fn().mockResolvedValue(results),
   });
 
-  const mockArticleReportRepo = {
+  const mockPublicationReportRepo = {
     createQueryBuilder: jest.fn(),
     find: jest.fn(),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
@@ -76,7 +76,7 @@ describe('AdminReportsService', () => {
     update: jest.fn().mockResolvedValue({ affected: 1 }),
   };
 
-  const mockArticleRepo = {
+  const mockPublicationRepo = {
     findOne: jest.fn(),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
   };
@@ -90,9 +90,9 @@ describe('AdminReportsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminReportsService,
-        { provide: getRepositoryToken(ArticleReport), useValue: mockArticleReportRepo },
+        { provide: getRepositoryToken(PublicationReport), useValue: mockPublicationReportRepo },
         { provide: getRepositoryToken(UserReport),   useValue: mockUserReportRepo },
-        { provide: getRepositoryToken(Article),      useValue: mockArticleRepo },
+        { provide: getRepositoryToken(Publication),      useValue: mockPublicationRepo },
         { provide: getRepositoryToken(User),         useValue: mockUserRepo },
       ],
     }).compile();
@@ -109,85 +109,85 @@ describe('AdminReportsService', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // getReportedArticles
+  // getReportedPublications
   // ═══════════════════════════════════════════════════════════════
 
-  describe('getReportedArticles', () => {
-    it('should return paginated article report entries', async () => {
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+  describe('getReportedPublications', () => {
+    it('should return paginated publication report entries', async () => {
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockPublicationReport]));
 
-      const result = await service.getReportedArticles({});
+      const result = await service.getReportedPublications({});
 
       expect(result.total).toBe(1);
       expect(result.items).toHaveLength(1);
-      expect(result.items[0].articleId).toBe(1);
-      expect(result.items[0].title).toBe('Test Article');
+      expect(result.items[0].publicationId).toBe(1);
+      expect(result.items[0].title).toBe('Test Publication');
       expect(result.items[0].reportCount).toBe(1);
       expect(result.summary).toBeDefined();
     });
 
     it('should return empty result when no reports', async () => {
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([]));
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(makeQB([]));
 
-      const result = await service.getReportedArticles({});
+      const result = await service.getReportedPublications({});
 
       expect(result.total).toBe(0);
       expect(result.items).toHaveLength(0);
     });
 
     it('should filter by riskLevel', async () => {
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockPublicationReport]));
 
-      const result = await service.getReportedArticles({ riskLevel: 'critical' });
+      const result = await service.getReportedPublications({ riskLevel: 'critical' });
 
       // spam score is low, so riskLevel is 'low' → filtered out
       expect(result.items).toHaveLength(0);
     });
 
     it('should filter by search term', async () => {
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockPublicationReport]));
 
-      const result = await service.getReportedArticles({ search: 'Test' });
+      const result = await service.getReportedPublications({ search: 'Test' });
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0].title).toContain('Test');
     });
 
     it('should filter by search term that matches nothing', async () => {
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockArticleReport]));
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(makeQB([mockPublicationReport]));
 
-      const result = await service.getReportedArticles({ search: 'zzz_nomatch' });
+      const result = await service.getReportedPublications({ search: 'zzz_nomatch' });
 
       expect(result.items).toHaveLength(0);
     });
 
     it('should apply status filter via QB andWhere when status is not all', async () => {
       const qb = makeQB([]);
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(qb);
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(qb);
 
-      await service.getReportedArticles({ status: 'pending' });
+      await service.getReportedPublications({ status: 'pending' });
 
       expect(qb.andWhere).toHaveBeenCalledWith('r.status = :status', { status: 'pending' });
     });
 
     it('should not call andWhere when status is all', async () => {
       const qb = makeQB([]);
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(qb);
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(qb);
 
-      await service.getReportedArticles({ status: 'all' });
+      await service.getReportedPublications({ status: 'all' });
 
       expect(qb.andWhere).not.toHaveBeenCalled();
     });
 
     it('should paginate results correctly', async () => {
       const reports = Array.from({ length: 5 }, (_, i) => ({
-        ...mockArticleReport,
+        ...mockPublicationReport,
         id: i + 1,
-        article: { ...mockArticle, id: i + 1, title: `Article ${i + 1}` },
+        publication: { ...mockPublication, id: i + 1, title: `Publication ${i + 1}` },
       }));
-      mockArticleReportRepo.createQueryBuilder.mockReturnValue(makeQB(reports));
+      mockPublicationReportRepo.createQueryBuilder.mockReturnValue(makeQB(reports));
 
-      const result = await service.getReportedArticles({ page: 1, limit: 2 });
+      const result = await service.getReportedPublications({ page: 1, limit: 2 });
 
       expect(result.items).toHaveLength(2);
       expect(result.totalPages).toBe(3);
@@ -195,18 +195,18 @@ describe('AdminReportsService', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // getArticleReportDetail
+  // getPublicationReportDetail
   // ═══════════════════════════════════════════════════════════════
 
-  describe('getArticleReportDetail', () => {
-    it('should return full article report detail', async () => {
-      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
-      mockArticleReportRepo.find.mockResolvedValue([mockArticleReport]);
+  describe('getPublicationReportDetail', () => {
+    it('should return full publication report detail', async () => {
+      mockPublicationRepo.findOne.mockResolvedValue(mockPublication);
+      mockPublicationReportRepo.find.mockResolvedValue([mockPublicationReport]);
 
-      const result = await service.getArticleReportDetail(1);
+      const result = await service.getPublicationReportDetail(1);
 
-      expect(result.article.id).toBe(1);
-      expect(result.article.title).toBe('Test Article');
+      expect(result.publication.id).toBe(1);
+      expect(result.publication.title).toBe('Test Publication');
       expect(result.intelligence).toBeDefined();
       expect(result.intelligence.riskScore).toBeDefined();
       expect(result.intelligence.recommendation).toBeDefined();
@@ -214,29 +214,29 @@ describe('AdminReportsService', () => {
       expect(result.reports[0].reason).toBe('spam');
     });
 
-    it('should throw NotFoundException when article not found', async () => {
-      mockArticleRepo.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException when publication not found', async () => {
+      mockPublicationRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.getArticleReportDetail(999)).rejects.toThrow(NotFoundException);
+      await expect(service.getPublicationReportDetail(999)).rejects.toThrow(NotFoundException);
     });
 
-    it('should handle article with no reports', async () => {
-      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
-      mockArticleReportRepo.find.mockResolvedValue([]);
+    it('should handle publication with no reports', async () => {
+      mockPublicationRepo.findOne.mockResolvedValue(mockPublication);
+      mockPublicationReportRepo.find.mockResolvedValue([]);
 
-      const result = await service.getArticleReportDetail(1);
+      const result = await service.getPublicationReportDetail(1);
 
       expect(result.reports).toHaveLength(0);
       expect(result.intelligence.riskScore).toBe(0);
     });
 
     it('should recommend unpublish for hate_speech', async () => {
-      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
-      mockArticleReportRepo.find.mockResolvedValue([
-        { ...mockArticleReport, reason: 'hate_speech' },
+      mockPublicationRepo.findOne.mockResolvedValue(mockPublication);
+      mockPublicationReportRepo.find.mockResolvedValue([
+        { ...mockPublicationReport, reason: 'hate_speech' },
       ]);
 
-      const result = await service.getArticleReportDetail(1);
+      const result = await service.getPublicationReportDetail(1);
 
       expect(result.intelligence.recommendation.action).toBe('unpublish');
       expect(result.intelligence.recommendation.severity).toBe('danger');
@@ -244,59 +244,59 @@ describe('AdminReportsService', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // takeActionOnArticle
+  // takeActionOnPublication
   // ═══════════════════════════════════════════════════════════════
 
-  describe('takeActionOnArticle', () => {
+  describe('takeActionOnPublication', () => {
     beforeEach(() => {
-      mockArticleRepo.findOne.mockResolvedValue(mockArticle);
-      mockArticleReportRepo.find.mockResolvedValue([mockArticleReport]);
+      mockPublicationRepo.findOne.mockResolvedValue(mockPublication);
+      mockPublicationReportRepo.find.mockResolvedValue([mockPublicationReport]);
     });
 
     it('should dismiss_all pending reports', async () => {
-      const result = await service.takeActionOnArticle(1, 'dismiss_all', 99);
+      const result = await service.takeActionOnPublication(1, 'dismiss_all', 99);
 
-      expect(mockArticleReportRepo.update).toHaveBeenCalledWith(
-        { article: { id: 1 }, status: 'pending' },
+      expect(mockPublicationReportRepo.update).toHaveBeenCalledWith(
+        { publication: { id: 1 }, status: 'pending' },
         { status: 'dismissed' },
       );
       expect(result.action).toBe('dismiss_all');
     });
 
     it('should review_all pending reports', async () => {
-      const result = await service.takeActionOnArticle(1, 'review_all', 99);
+      const result = await service.takeActionOnPublication(1, 'review_all', 99);
 
-      expect(mockArticleReportRepo.update).toHaveBeenCalledWith(
-        { article: { id: 1 }, status: 'pending' },
+      expect(mockPublicationReportRepo.update).toHaveBeenCalledWith(
+        { publication: { id: 1 }, status: 'pending' },
         { status: 'reviewed' },
       );
       expect(result.action).toBe('review_all');
     });
 
-    it('should unpublish the article and mark reports reviewed', async () => {
-      const result = await service.takeActionOnArticle(1, 'unpublish', 99);
+    it('should unpublish the publication and mark reports reviewed', async () => {
+      const result = await service.takeActionOnPublication(1, 'unpublish', 99);
 
-      expect(mockArticleRepo.update).toHaveBeenCalledWith(1, { status: ArticleStatus.REJECTED });
-      expect(mockArticleReportRepo.update).toHaveBeenCalled();
+      expect(mockPublicationRepo.update).toHaveBeenCalledWith(1, { status: PublicationStatus.REJECTED });
+      expect(mockPublicationReportRepo.update).toHaveBeenCalled();
       expect(result.action).toBe('unpublish');
     });
 
     it('should warn_author and mark reports reviewed', async () => {
-      const result = await service.takeActionOnArticle(1, 'warn_author', 99);
+      const result = await service.takeActionOnPublication(1, 'warn_author', 99);
 
-      expect(mockArticleReportRepo.update).toHaveBeenCalled();
+      expect(mockPublicationReportRepo.update).toHaveBeenCalled();
       expect(result.action).toBe('warn_author');
     });
 
-    it('should throw NotFoundException when article not found', async () => {
-      mockArticleRepo.findOne.mockResolvedValue(null);
+    it('should throw NotFoundException when publication not found', async () => {
+      mockPublicationRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.takeActionOnArticle(999, 'dismiss_all', 99))
+      await expect(service.takeActionOnPublication(999, 'dismiss_all', 99))
         .rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException for invalid action', async () => {
-      await expect(service.takeActionOnArticle(1, 'ban' as any, 99))
+      await expect(service.takeActionOnPublication(1, 'ban' as any, 99))
         .rejects.toThrow(BadRequestException);
     });
   });

@@ -144,7 +144,7 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-type Section = 'users' | 'articles' | 'moderation' | 'tags' | 'reports';
+type Section = 'users' | 'publications' | 'moderation' | 'tags' | 'reports';
 
 export default function StatisticsPage() {
   const router = useRouter();
@@ -219,7 +219,7 @@ export default function StatisticsPage() {
 
   const navItems: { id: Section; label: string; icon: React.ElementType }[] = [
     { id: 'users',      label: 'Utilisateurs',     icon: Users },
-    { id: 'articles',   label: 'Articles',          icon: FileText },
+    { id: 'publications',   label: 'Publications',          icon: FileText },
     { id: 'moderation', label: 'Modération',        icon: ShieldAlert },
     { id: 'tags',       label: 'Tags & Catégories', icon: Tag },
     { id: 'reports',    label: 'Signalements',      icon: Flag },
@@ -254,8 +254,8 @@ export default function StatisticsPage() {
     };
   }, [userActivity, dark]);
 
-  // Users — bar: articles published per month
-  const articlesPerMonthChart = useMemo((): { options: ApexOptions; series: ApexAxisChartSeries } => {
+  // Users — bar: publications published per month
+  const publicationsPerMonthChart = useMemo((): { options: ApexOptions; series: ApexAxisChartSeries } => {
     const history = userActivity?.history ?? [];
     return {
       options: {
@@ -269,15 +269,15 @@ export default function StatisticsPage() {
           labels: { style: { colors: dark ? '#9ca3af' : '#6b7280', fontSize: '11px' } },
         },
         yaxis: { labels: { style: { colors: [dark ? '#9ca3af' : '#6b7280'], fontSize: '11px' } } },
-        tooltip: { ...baseOptions(dark).tooltip, y: { formatter: (v) => `${v} articles` } },
+        tooltip: { ...baseOptions(dark).tooltip, y: { formatter: (v) => `${v} publications` } },
       },
-      series: [{ name: 'Articles publiés', data: history.map((m) => m.articlesPublished) }],
+      series: [{ name: 'Publications publiés', data: history.map((m) => m.publicationsPublished) }],
     };
   }, [userActivity, dark]);
 
-  // Articles — horizontal bar: most liked
+  // Publications — horizontal bar: most liked
   const likedChart = useMemo((): { options: ApexOptions; series: ApexAxisChartSeries } => {
-    const items = [...(engagement?.mostLikedArticles ?? [])].reverse();
+    const items = [...(engagement?.mostLikedPublications ?? [])].reverse();
     return {
       options: {
         ...baseOptions(dark),
@@ -295,9 +295,9 @@ export default function StatisticsPage() {
     };
   }, [engagement, dark]);
 
-  // Articles — horizontal bar: most bookmarked
+  // Publications — horizontal bar: most bookmarked
   const bookmarkedChart = useMemo((): { options: ApexOptions; series: ApexAxisChartSeries } => {
-    const items = [...(engagement?.mostBookmarkedArticles ?? [])].reverse();
+    const items = [...(engagement?.mostBookmarkedPublications ?? [])].reverse();
     return {
       options: {
         ...baseOptions(dark),
@@ -333,7 +333,7 @@ export default function StatisticsPage() {
         legend: { position: 'bottom', labels: { colors: dark ? '#d1d5db' : '#374151' } },
         plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total', color: dark ? '#d1d5db' : '#374151' } } } } },
         stroke: { show: false },
-        tooltip: { ...baseOptions(dark).tooltip, y: { formatter: (v) => `${v} articles` } },
+        tooltip: { ...baseOptions(dark).tooltip, y: { formatter: (v) => `${v} publications` } },
       },
       series: breakdown.map((s) => s.count),
     };
@@ -383,9 +383,9 @@ export default function StatisticsPage() {
           labels: { style: { colors: dark ? '#9ca3af' : '#6b7280', fontSize: '11px' } },
         },
         yaxis: { labels: { style: { colors: [dark ? '#9ca3af' : '#6b7280'], fontSize: '12px' } } },
-        tooltip: { ...baseOptions(dark).tooltip, y: { formatter: (v) => `${v} articles` } },
+        tooltip: { ...baseOptions(dark).tooltip, y: { formatter: (v) => `${v} publications` } },
       },
-      series: [{ name: 'Articles', data: items.map((t) => t.articleCount) }],
+      series: [{ name: 'Publications', data: items.map((t) => t.publicationCount) }],
     };
   }, [tags, dark]);
 
@@ -408,15 +408,15 @@ export default function StatisticsPage() {
         tooltip: { ...baseOptions(dark).tooltip, shared: true, intersect: false },
       },
       series: [
-        { name: 'Articles',  data: items.map((c) => c.articleCount) },
+        { name: 'Publications',  data: items.map((c) => c.publicationCount) },
         { name: 'Vues (÷10)', data: items.map((c) => Math.round(c.totalViews / 10)) },
       ],
     };
   }, [categories, dark]);
 
-  // Reports — donut: article reports by reason
-  const articleReportsDonut = useMemo((): { options: ApexOptions; series: number[] } => {
-    const items = reports?.articles.byReason ?? [];
+  // Reports — donut: publication reports by reason
+  const publicationReportsDonut = useMemo((): { options: ApexOptions; series: number[] } => {
+    const items = reports?.publications.byReason ?? [];
     const COLORS = [C.red, C.amber, C.violet, C.blue, C.indigo, C.cyan, C.green, C.gray];
     return {
       options: {
@@ -452,7 +452,7 @@ export default function StatisticsPage() {
     };
   }, [reports, dark]);
 
-  // Reports — bar: status breakdown (articles vs users)
+  // Reports — bar: status breakdown (publications vs users)
   const reportsStatusChart = useMemo((): { options: ApexOptions; series: ApexAxisChartSeries } => ({
     options: {
       ...baseOptions(dark),
@@ -460,7 +460,7 @@ export default function StatisticsPage() {
       colors: [C.amber, C.green, C.gray],
       plotOptions: { bar: { borderRadius: 5, columnWidth: '50%', borderRadiusApplication: 'end', grouped: true } },
       xaxis: {
-        categories: ['Articles signalés', 'Utilisateurs signalés'],
+        categories: ['Publications signalés', 'Utilisateurs signalés'],
         axisBorder: { show: false }, axisTicks: { show: false },
         labels: { style: { colors: dark ? '#9ca3af' : '#6b7280', fontSize: '12px' } },
       },
@@ -469,9 +469,9 @@ export default function StatisticsPage() {
       tooltip: { ...baseOptions(dark).tooltip, shared: true, intersect: false },
     },
     series: [
-      { name: 'En attente', data: [reports?.articles.pending ?? 0, reports?.users.pending ?? 0] },
-      { name: 'Examinés',   data: [reports?.articles.reviewed ?? 0, reports?.users.reviewed ?? 0] },
-      { name: 'Clôturés',   data: [reports?.articles.dismissed ?? 0, reports?.users.dismissed ?? 0] },
+      { name: 'En attente', data: [reports?.publications.pending ?? 0, reports?.users.pending ?? 0] },
+      { name: 'Examinés',   data: [reports?.publications.reviewed ?? 0, reports?.users.reviewed ?? 0] },
+      { name: 'Clôturés',   data: [reports?.publications.dismissed ?? 0, reports?.users.dismissed ?? 0] },
     ],
   }), [reports, dark]);
 
@@ -483,18 +483,18 @@ export default function StatisticsPage() {
     let jsonData: unknown;
 
     if (activeSection === 'users') {
-      jsonData = { exportedAt: new Date().toISOString(), kpi: { totalUsers: dashboard?.totalUsers, newUsersThisMonth: dashboard?.newUsersThisMonth, activeUsersThisMonth: userActivity?.currentMonth.activeUsers, articlesThisMonth: userActivity?.currentMonth.articlesPublished }, history: userActivity?.history };
-      rows.push(['Mois', 'Nouveaux utilisateurs', 'Utilisateurs actifs', 'Articles publiés']);
-      (userActivity?.history ?? []).forEach(m => rows.push([m.month, String(m.newUsers), String(m.activeUsers), String(m.articlesPublished)]));
+      jsonData = { exportedAt: new Date().toISOString(), kpi: { totalUsers: dashboard?.totalUsers, newUsersThisMonth: dashboard?.newUsersThisMonth, activeUsersThisMonth: userActivity?.currentMonth.activeUsers, publicationsThisMonth: userActivity?.currentMonth.publicationsPublished }, history: userActivity?.history };
+      rows.push(['Mois', 'Nouveaux utilisateurs', 'Utilisateurs actifs', 'Publications publiés']);
+      (userActivity?.history ?? []).forEach(m => rows.push([m.month, String(m.newUsers), String(m.activeUsers), String(m.publicationsPublished)]));
 
-    } else if (activeSection === 'articles') {
-      jsonData = { exportedAt: new Date().toISOString(), kpi: { totalArticles: dashboard?.totalArticles, totalLikes: engagement?.totalLikes, totalBookmarks: engagement?.totalBookmarks, totalComments: dashboard?.totalComments }, mostLiked: engagement?.mostLikedArticles, mostBookmarked: engagement?.mostBookmarkedArticles };
-      rows.push(['Articles les plus likés', '']);
+    } else if (activeSection === 'publications') {
+      jsonData = { exportedAt: new Date().toISOString(), kpi: { totalPublications: dashboard?.totalPublications, totalLikes: engagement?.totalLikes, totalBookmarks: engagement?.totalBookmarks, totalComments: dashboard?.totalComments }, mostLiked: engagement?.mostLikedPublications, mostBookmarked: engagement?.mostBookmarkedPublications };
+      rows.push(['Publications les plus likés', '']);
       rows.push(['Titre', 'Likes']);
-      (engagement?.mostLikedArticles ?? []).forEach(a => rows.push([esc(a.title), String(a.likesCount)]));
-      rows.push([], ['Articles les plus mis en favoris', '']);
+      (engagement?.mostLikedPublications ?? []).forEach(a => rows.push([esc(a.title), String(a.likesCount)]));
+      rows.push([], ['Publications les plus mis en favoris', '']);
       rows.push(['Titre', 'Favoris']);
-      (engagement?.mostBookmarkedArticles ?? []).forEach(a => rows.push([esc(a.title), String(a.bookmarksCount)]));
+      (engagement?.mostBookmarkedPublications ?? []).forEach(a => rows.push([esc(a.title), String(a.bookmarksCount)]));
 
     } else if (activeSection === 'moderation') {
       jsonData = { exportedAt: new Date().toISOString(), statusBreakdown: moderation?.statusBreakdown, rejectionRate: moderation?.rejectionRate, autoModerationRate: moderation?.autoModerationRate, dailyTrend: moderation?.dailyTrend };
@@ -505,18 +505,18 @@ export default function StatisticsPage() {
 
     } else if (activeSection === 'tags') {
       jsonData = { exportedAt: new Date().toISOString(), tags: tags?.mostUsed, trending: tags?.topTrending, unusedTags: tags?.unusedTags, categories: categories?.categories };
-      rows.push(['Tag', 'Articles']);
-      (tags?.mostUsed ?? []).forEach(t => rows.push([esc(t.name), String(t.articleCount)]));
-      rows.push([], ['Catégorie', 'Articles', 'Vues']);
-      (categories?.categories ?? []).forEach(c => rows.push([esc(c.name), String(c.articleCount), String(c.totalViews)]));
+      rows.push(['Tag', 'Publications']);
+      (tags?.mostUsed ?? []).forEach(t => rows.push([esc(t.name), String(t.publicationCount)]));
+      rows.push([], ['Catégorie', 'Publications', 'Vues']);
+      (categories?.categories ?? []).forEach(c => rows.push([esc(c.name), String(c.publicationCount), String(c.totalViews)]));
 
     } else {
-      jsonData = { exportedAt: new Date().toISOString(), articles: reports?.articles, users: reports?.users };
+      jsonData = { exportedAt: new Date().toISOString(), publications: reports?.publications, users: reports?.users };
       rows.push(['Type', 'Total', 'En attente', 'Examinés', 'Clôturés']);
-      rows.push(['Articles',      String(reports?.articles.total ?? 0), String(reports?.articles.pending ?? 0), String(reports?.articles.reviewed ?? 0), String(reports?.articles.dismissed ?? 0)]);
+      rows.push(['Publications',      String(reports?.publications.total ?? 0), String(reports?.publications.pending ?? 0), String(reports?.publications.reviewed ?? 0), String(reports?.publications.dismissed ?? 0)]);
       rows.push(['Utilisateurs',  String(reports?.users.total ?? 0),    String(reports?.users.pending ?? 0),    String(reports?.users.reviewed ?? 0),    String(reports?.users.dismissed ?? 0)]);
-      rows.push([], ['Motif (articles)', 'Nombre']);
-      (reports?.articles.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
+      rows.push([], ['Motif (publications)', 'Nombre']);
+      (reports?.publications.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
       rows.push([], ['Motif (utilisateurs)', 'Nombre']);
       (reports?.users.byReason ?? []).forEach(r => rows.push([REASON_LABELS[r.reason] ?? r.reason, String(r.count)]));
     }
@@ -608,7 +608,7 @@ export default function StatisticsPage() {
                 <StatCard icon={Users}     label="Total utilisateurs"  value={dashboard?.totalUsers ?? 0}                    color="blue" />
                 <StatCard icon={TrendingUp} label="Nouveaux ce mois"   value={dashboard?.newUsersThisMonth ?? 0}              color="emerald" growth={userActivity?.growthRate.newUsers} />
                 <StatCard icon={Users}     label="Actifs ce mois"      value={userActivity?.currentMonth.activeUsers ?? 0}    color="violet" growth={userActivity?.growthRate.activeUsers} />
-                <StatCard icon={FileText}  label="Articles ce mois"    value={userActivity?.currentMonth.articlesPublished ?? 0} color="cyan" growth={userActivity?.growthRate.articlesPublished} />
+                <StatCard icon={FileText}  label="Publications ce mois"    value={userActivity?.currentMonth.publicationsPublished ?? 0} color="cyan" growth={userActivity?.growthRate.publicationsPublished} />
               </>}
             </div>
 
@@ -625,13 +625,13 @@ export default function StatisticsPage() {
               )}
             </Card>
 
-            {/* Bar: articles publiés par mois */}
-            <Card title="Articles publiés par mois">
+            {/* Bar: publications publiés par mois */}
+            <Card title="Publications publiés par mois">
               {loading ? <ChartSkeleton /> : (
                 <div className="p-2">
                   <ReactApexChart
-                    options={articlesPerMonthChart.options}
-                    series={articlesPerMonthChart.series}
+                    options={publicationsPerMonthChart.options}
+                    series={publicationsPerMonthChart.series}
                     type="bar" height={200}
                   />
                 </div>
@@ -647,7 +647,7 @@ export default function StatisticsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 dark:text-white text-lg">{dashboard.topContributor.fullName}</p>
-                    <p className="text-sm text-gray-500">{dashboard.topContributor.articlesCount} articles publiés</p>
+                    <p className="text-sm text-gray-500">{dashboard.topContributor.publicationsCount} publications publiés</p>
                   </div>
                 </div>
               </Card>
@@ -655,15 +655,15 @@ export default function StatisticsPage() {
           </>
         )}
 
-        {/* ══ ARTICLES ════════════════════════════════════════════════════════ */}
-        {activeSection === 'articles' && (
+        {/* ══ PUBLICATIONS ════════════════════════════════════════════════════════ */}
+        {activeSection === 'publications' && (
           <>
-            <SectionTitle title="Articles" icon={FileText} />
+            <SectionTitle title="Publications" icon={FileText} />
 
             {/* KPI */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {loading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />) : <>
-                <StatCard icon={FileText}       label="Total articles"    value={dashboard?.totalArticles ?? 0}    color="blue" />
+                <StatCard icon={FileText}       label="Total publications"    value={dashboard?.totalPublications ?? 0}    color="blue" />
                 <StatCard icon={Heart}          label="Total likes"       value={engagement?.totalLikes ?? 0}      color="rose" />
                 <StatCard icon={Bookmark}       label="Total favoris"     value={engagement?.totalBookmarks ?? 0}  color="violet" />
                 <StatCard icon={MessageSquare}  label="Total commentaires" value={dashboard?.totalComments ?? 0}   color="amber" />
@@ -672,15 +672,15 @@ export default function StatisticsPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {loading ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24" />) : <>
-                <StatCard icon={FileText} label="Cette semaine"       value={dashboard?.articlesThisWeek ?? 0}       color="emerald" />
-                <StatCard icon={Heart}    label="Moy. likes/article"  value={engagement?.avgLikesPerArticle ?? 0}    color="rose" />
-                <StatCard icon={Bookmark} label="Moy. favoris/article" value={engagement?.avgBookmarksPerArticle ?? 0} color="violet" />
+                <StatCard icon={FileText} label="Cette semaine"       value={dashboard?.publicationsThisWeek ?? 0}       color="emerald" />
+                <StatCard icon={Heart}    label="Moy. likes/publication"  value={engagement?.avgLikesPerPublication ?? 0}    color="rose" />
+                <StatCard icon={Bookmark} label="Moy. favoris/publication" value={engagement?.avgBookmarksPerPublication ?? 0} color="violet" />
               </>}
             </div>
 
             {/* Charts side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="🔝 Articles les plus likés">
+              <Card title="🔝 Publications les plus likés">
                 {loading ? <ChartSkeleton /> : (
                   <div className="p-2">
                     <ReactApexChart
@@ -692,7 +692,7 @@ export default function StatisticsPage() {
                 )}
               </Card>
 
-              <Card title="🔖 Articles les plus mis en favoris">
+              <Card title="🔖 Publications les plus mis en favoris">
                 {loading ? <ChartSkeleton /> : (
                   <div className="p-2">
                     <ReactApexChart
@@ -714,7 +714,7 @@ export default function StatisticsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900 dark:text-white text-lg">{dashboard.mostActiveCategory.name}</p>
-                    <p className="text-sm text-gray-500">{dashboard.mostActiveCategory.articleCount} articles</p>
+                    <p className="text-sm text-gray-500">{dashboard.mostActiveCategory.publicationCount} publications</p>
                   </div>
                 </div>
               </Card>
@@ -854,7 +854,7 @@ export default function StatisticsPage() {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-semibold border border-emerald-200 dark:border-emerald-800"
                     >
                       <TrendingUp size={10} />{t.name}
-                      <span className="opacity-60 font-normal">({t.articleCount})</span>
+                      <span className="opacity-60 font-normal">({t.publicationCount})</span>
                     </span>
                   ))}
                 </div>
@@ -871,15 +871,15 @@ export default function StatisticsPage() {
             {/* KPI */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {loading ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28" />) : <>
-                <StatCard icon={FileText}     label="Signalements articles"     value={reports?.articles.total ?? 0}  color="rose" />
+                <StatCard icon={FileText}     label="Signalements publications"     value={reports?.publications.total ?? 0}  color="rose" />
                 <StatCard icon={Users}        label="Signalements utilisateurs" value={reports?.users.total ?? 0}     color="amber" />
-                <StatCard icon={Clock}        label="En attente (articles)"     value={reports?.articles.pending ?? 0} color="amber" />
+                <StatCard icon={Clock}        label="En attente (publications)"     value={reports?.publications.pending ?? 0} color="amber" />
                 <StatCard icon={Clock}        label="En attente (users)"        value={reports?.users.pending ?? 0}   color="violet" />
               </>}
             </div>
 
             {/* Status grouped bar */}
-            <Card title="Statut des signalements — articles vs utilisateurs">
+            <Card title="Statut des signalements — publications vs utilisateurs">
               {loading ? <ChartSkeleton /> : (
                 <div className="p-2">
                   <ReactApexChart
@@ -893,13 +893,13 @@ export default function StatisticsPage() {
 
             {/* Donuts: by reason */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card title="Motifs — Signalements d'articles">
+              <Card title="Motifs — Signalements d'publications">
                 {loading ? <ChartSkeleton /> : (
-                  articleReportsDonut.series.length > 0 && articleReportsDonut.series.some((v) => v > 0) ? (
+                  publicationReportsDonut.series.length > 0 && publicationReportsDonut.series.some((v) => v > 0) ? (
                     <div className="p-2">
                       <ReactApexChart
-                        options={articleReportsDonut.options}
-                        series={articleReportsDonut.series}
+                        options={publicationReportsDonut.options}
+                        series={publicationReportsDonut.series}
                         type="donut" height={280}
                       />
                     </div>
@@ -926,11 +926,11 @@ export default function StatisticsPage() {
               </Card>
             </div>
 
-            {/* Top reported articles */}
-            {!loading && reports && reports.articles.topReported.length > 0 && (
-              <Card title="Articles les plus signalés">
+            {/* Top reported publications */}
+            {!loading && reports && reports.publications.topReported.length > 0 && (
+              <Card title="Publications les plus signalés">
                 <ul className="divide-y divide-gray-50 dark:divide-gray-800">
-                  {reports.articles.topReported.map((item, i) => (
+                  {reports.publications.topReported.map((item, i) => (
                     <li key={item.id} className="px-6 py-3 flex items-center gap-4">
                       <span className="w-5 text-xs text-gray-400 font-bold flex-shrink-0">{i + 1}</span>
                       <p className="flex-1 text-sm text-gray-800 dark:text-white truncate">{item.title}</p>

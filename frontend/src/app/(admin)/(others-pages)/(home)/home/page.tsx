@@ -1,19 +1,19 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import ArticleCard from '@/components/article/ArticleCard';
-import TrendingArticles from '@/components/article/Trendingarticles';
+import PublicationCard from '@/components/publication/PublicationCard';
+import TrendingPublications from '@/components/publication/Trendingpublications';
 import TopContributors from '@/components/users/Topcontributors';
-import ArticleDetailModal from '@/components/modals/ArticleDetailModal';
+import PublicationDetailModal from '@/components/modals/PublicationDetailModal';
 import { FileText, Loader2 } from 'lucide-react';
-import CreateArticleModal from '@/components/modals/CreateArticleModal';
+import CreatePublicationModal from '@/components/modals/CreatePublicationModal';
 import { useSearchParams } from 'next/navigation';
 import { fetchCurrentUser, isAuthenticated } from '../../../../../../services/auth.service';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
-import { articleService } from '../../../../../../services/article.service';
+import { publicationService } from '../../../../../../services/publication.service';
 
-interface Article {
+interface Publication {
   id: string;
   title: string;
   description: string;
@@ -67,86 +67,86 @@ export default function HomePage() {
 }
 
 function HomePageContent() {
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | undefined>();
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
-  const [editingArticleId, setEditingArticleId] = useState<string | undefined>();
+  const [editingPublicationId, setEditingPublicationId] = useState<string | undefined>();
 
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
-  const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+  const [selectedPublication, setSelectedPublication] = useState<any>(null);
+  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
-  const articleIdFromUrl = searchParams.get('article');
-  const articleRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const publicationIdFromUrl = searchParams.get('publication');
+  const publicationRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
-    if (!loading && articles.length > 0 && articleIdFromUrl) {
+    if (!loading && publications.length > 0 && publicationIdFromUrl) {
       setTimeout(() => {
-        const articleElement = articleRefs.current[articleIdFromUrl];
-        if (articleElement) {
-          articleElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          articleElement.classList.add('highlight-article');
+        const publicationElement = publicationRefs.current[publicationIdFromUrl];
+        if (publicationElement) {
+          publicationElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          publicationElement.classList.add('highlight-publication');
           setTimeout(() => {
-            articleElement.classList.remove('highlight-article');
+            publicationElement.classList.remove('highlight-publication');
           }, 2000);
         }
       }, 500);
     }
-  }, [loading, articles, articleIdFromUrl]);
+  }, [loading, publications, publicationIdFromUrl]);
 
   useEffect(() => {
-    const loadUserAndArticles = async () => {
+    const loadUserAndPublications = async () => {
       try {
         const user = await fetchCurrentUser();
         const userId = user?.id;
         if (userId) setCurrentUserId(userId);
-        await fetchArticles();
+        await fetchPublications();
       } catch (error) {
-        console.error('Error loading user or articles:', error);
+        console.error('Error loading user or publications:', error);
       }
     };
-    loadUserAndArticles();
+    loadUserAndPublications();
   }, []);
 
-  const fetchArticles = async () => {
+  const fetchPublications = async () => {
     try {
       setLoading(true);
-      const response = await articleService.getFeeds();
+      const response = await publicationService.getFeeds();
 
-      const transformedArticles: Article[] = response.data.map((article: any) => ({
-        id: article.id.toString(),
-        title: article.title,
-        description: article.description || article.content?.substring(0, 200) || '',
-        content: article.content,
+      const transformedPublications: Publication[] = response.data.map((publication: any) => ({
+        id: publication.id.toString(),
+        title: publication.title,
+        description: publication.description || publication.content?.substring(0, 200) || '',
+        content: publication.content,
         author: {
-          id: article.author?.id,
-          name: article.author?.name?.trim() || 'Unknown',
-          initials: article.author?.initials?.toUpperCase() || 'U',
-          department: article.author?.department || article.author?.role || 'Membre',
-          avatar: article.author?.avatar || article.author?.profileImage,
+          id: publication.author?.id,
+          name: publication.author?.name?.trim() || 'Unknown',
+          initials: publication.author?.initials?.toUpperCase() || 'U',
+          department: publication.author?.department || publication.author?.role || 'Membre',
+          avatar: publication.author?.avatar || publication.author?.profileImage,
         },
         category: {
-          id: article.category?.id,
-          name: article.category?.name || 'Uncategorized',
-          slug: article.category?.slug || 'uncategorized',
+          id: publication.category?.id,
+          name: publication.category?.name || 'Uncategorized',
+          slug: publication.category?.slug || 'uncategorized',
         },
-        tags: article.tags || [],
-        publishedAt: article.createdAt,
-        updatedAt: article.updatedAt,
-        status: article.status,
+        tags: publication.tags || [],
+        publishedAt: publication.createdAt,
+        updatedAt: publication.updatedAt,
+        status: publication.status,
         stats: {
-          likes: article.stats?.likes || 0,
-          comments: article.stats?.comments || 0,
-          views: article.stats?.views || 0,
+          likes: publication.stats?.likes || 0,
+          comments: publication.stats?.comments || 0,
+          views: publication.stats?.views || 0,
         },
-        isLiked: article.isLiked || false,
-        isBookmarked: article.isBookmarked || false,
-        media: article.media || [],
+        isLiked: publication.isLiked || false,
+        isBookmarked: publication.isBookmarked || false,
+        media: publication.media || [],
       }));
 
-      setArticles(transformedArticles);
+      setPublications(transformedPublications);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue');
       console.error('❌ Erreur:', err);
@@ -155,72 +155,72 @@ function HomePageContent() {
     }
   };
 
-  const handleOpenArticleModal = (article: any) => {
-    setSelectedArticle(article);
-    setIsArticleModalOpen(true);
+  const handleOpenPublicationModal = (publication: any) => {
+    setSelectedPublication(publication);
+    setIsPublicationModalOpen(true);
   };
 
-  const handleCloseArticleModal = () => {
-    setIsArticleModalOpen(false);
-    setSelectedArticle(null);
+  const handleClosePublicationModal = () => {
+    setIsPublicationModalOpen(false);
+    setSelectedPublication(null);
   };
 
   const handleModalLikeUpdate = (isLiked: boolean, likesCount: number) => {
-    if (selectedArticle) {
-      setArticles(prev => prev.map(article =>
-        article.id === selectedArticle.id
-          ? { ...article, isLiked, stats: { ...article.stats, likes: likesCount } }
-          : article
+    if (selectedPublication) {
+      setPublications(prev => prev.map(publication =>
+        publication.id === selectedPublication.id
+          ? { ...publication, isLiked, stats: { ...publication.stats, likes: likesCount } }
+          : publication
       ));
     }
   };
 
   const handleModalBookmarkUpdate = (isBookmarked: boolean) => {
-    if (selectedArticle) {
-      setArticles(prev => prev.map(article =>
-        article.id === selectedArticle.id ? { ...article, isBookmarked } : article
+    if (selectedPublication) {
+      setPublications(prev => prev.map(publication =>
+        publication.id === selectedPublication.id ? { ...publication, isBookmarked } : publication
       ));
     }
   };
 
   const handleModalCommentAdded = (commentsCount: number) => {
-    if (selectedArticle) {
-      setArticles(prev => prev.map(article =>
-        article.id === selectedArticle.id
-          ? { ...article, stats: { ...article.stats, comments: commentsCount } }
-          : article
+    if (selectedPublication) {
+      setPublications(prev => prev.map(publication =>
+        publication.id === selectedPublication.id
+          ? { ...publication, stats: { ...publication.stats, comments: commentsCount } }
+          : publication
       ));
     }
   };
 
   const handleModalViewIncremented = (viewsCount: number) => {
-    if (selectedArticle) {
-      setArticles(prev => prev.map(article =>
-        article.id === selectedArticle.id
-          ? { ...article, stats: { ...article.stats, views: viewsCount } }
-          : article
+    if (selectedPublication) {
+      setPublications(prev => prev.map(publication =>
+        publication.id === selectedPublication.id
+          ? { ...publication, stats: { ...publication.stats, views: viewsCount } }
+          : publication
       ));
     }
   };
 
   const handleCloseModal = () => {
     setCreateModalOpen(false);
-    setEditingArticleId(undefined);
+    setEditingPublicationId(undefined);
   };
 
-  const handleArticleSuccess = () => fetchArticles();
+  const handlePublicationSuccess = () => fetchPublications();
 
   const handleLike = async (id: string) => {
     try {
       if (!isAuthenticated()) {
-        toast.info('Veuillez vous connecter pour liker un article');
+        toast.info('Veuillez vous connecter pour liker un publication');
         return;
       }
-      const result = await articleService.toggleLike(parseInt(id));
-      setArticles(prev => prev.map(article =>
-        article.id === id
-          ? { ...article, isLiked: result.article.isLiked, stats: { ...article.stats, likes: result.article.likesCount } }
-          : article
+      const result = await publicationService.toggleLike(parseInt(id));
+      setPublications(prev => prev.map(publication =>
+        publication.id === id
+          ? { ...publication, isLiked: result.publication.isLiked, stats: { ...publication.stats, likes: result.publication.likesCount } }
+          : publication
       ));
     } catch (err) {
       console.error('❌ Erreur lors du like:', err);
@@ -230,12 +230,12 @@ function HomePageContent() {
   const handleBookmark = async (id: string) => {
     try {
       if (!isAuthenticated()) {
-        toast.info('Veuillez vous connecter pour sauvegarder un article');
+        toast.info('Veuillez vous connecter pour sauvegarder un publication');
         return;
       }
-      const result = await articleService.toggleBookmark(parseInt(id));
-      setArticles(prev => prev.map(article =>
-        article.id === id ? { ...article, isBookmarked: result.article.isBookmarked } : article
+      const result = await publicationService.toggleBookmark(parseInt(id));
+      setPublications(prev => prev.map(publication =>
+        publication.id === id ? { ...publication, isBookmarked: result.publication.isBookmarked } : publication
       ));
     } catch (err) {
       console.error('❌ Erreur lors du bookmark:', err);
@@ -243,11 +243,11 @@ function HomePageContent() {
   };
 
   const handleShare = (id: string) => {
-    const article = articles.find(a => a.id === id);
-    if (!article) return;
-    const url = `${window.location.origin}/home?article=${id}`;
+    const publication = publications.find(a => a.id === id);
+    if (!publication) return;
+    const url = `${window.location.origin}/home?publication=${id}`;
     if (navigator.share) {
-      navigator.share({ title: article.title, text: article.description, url });
+      navigator.share({ title: publication.title, text: publication.description, url });
     } else {
       navigator.clipboard.writeText(url);
       toast.success('Lien copié dans le presse-papier !');
@@ -255,15 +255,15 @@ function HomePageContent() {
   };
 
   const handleEdit = (id: string) => {
-    setEditingArticleId(id);
+    setEditingPublicationId(id);
     setCreateModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet article ?')) return;
+    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet publication ?')) return;
     try {
-      await articleService.delete(parseInt(id));
-      setArticles(prev => prev.filter(article => article.id !== id));
+      await publicationService.delete(parseInt(id));
+      setPublications(prev => prev.filter(publication => publication.id !== id));
     } catch (err) {
       console.error('❌ Erreur:', err);
       toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression');
@@ -275,7 +275,7 @@ function HomePageContent() {
       <div className="h-full bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-[#168F6F] mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des articles...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des publications...</p>
         </div>
       </div>
     );
@@ -289,7 +289,7 @@ function HomePageContent() {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
           <button
-            onClick={fetchArticles}
+            onClick={fetchPublications}
             className="mt-4 px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
           >
             Réessayer
@@ -306,31 +306,31 @@ function HomePageContent() {
         <div className="h-full mx-auto max-w-7xl px-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
 
-            {/* ── Colonne principale : scroll indépendant sur les articles ── */}
+            {/* ── Colonne principale : scroll indépendant sur les publications ── */}
             <div className="lg:col-span-2 h-full overflow-y-auto py-6 pr-2 scrollbar-hidden">
               
-              {/* En-tête - PAS sticky, défile avec les articles */}
+              {/* En-tête - PAS sticky, défile avec les publications */}
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Articles de la communauté
+                  Publications de la communauté
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Découvrez les derniers articles partagés par nos collaborateurs
+                  Découvrez les derniers publications partagés par nos collaborateurs
                 </p>
                 {!isAuthenticated() && (
                   <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
-                    ⚠️ Connectez-vous pour liker et sauvegarder des articles
+                    ⚠️ Connectez-vous pour liker et sauvegarder des publications
                   </p>
                 )}
               </div>
 
-              {/* Liste des articles */}
+              {/* Liste des publications */}
               <div className="space-y-6 pb-6">
-                {articles.length === 0 ? (
+                {publications.length === 0 ? (
                   <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Aucun article publié
+                      Aucun publication publié
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400">
                       Soyez le premier à partager votre savoir !
@@ -340,57 +340,57 @@ function HomePageContent() {
                         onClick={() => setCreateModalOpen(true)}
                         className="mt-4 px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
                       >
-                        Créer un article
+                        Créer un publication
                       </button>
                     )}
                   </div>
                 ) : (
                   <>
-                    {articles.map((article) => (
+                    {publications.map((publication) => (
                   <div
-                    key={article.id}
-                    ref={(el) => { articleRefs.current[article.id] = el; }}
+                    key={publication.id}
+                    ref={(el) => { publicationRefs.current[publication.id] = el; }}
                     className="transition-all duration-300"
                   >
-                    <ArticleCard
-                      article={article}
+                    <PublicationCard
+                      publication={publication}
                       onLike={handleLike}
                       onBookmark={handleBookmark}
                       onShare={handleShare}
-                      onArticleUpdated={handleArticleSuccess}
+                      onPublicationUpdated={handlePublicationSuccess}
                       showActions={isAuthenticated()}
                       currentUserId={currentUserId}
-                      // Ne pas passer onEdit et onDelete pour les articles qui ne sont pas de l'utilisateur
-                      onEdit={currentUserId === article.author.id ? handleEdit : undefined}
-                      onDelete={currentUserId === article.author.id ? handleDelete : undefined}
+                      // Ne pas passer onEdit et onDelete pour les publications qui ne sont pas de l'utilisateur
+                      onEdit={currentUserId === publication.author.id ? handleEdit : undefined}
+                      onDelete={currentUserId === publication.author.id ? handleDelete : undefined}
                     />
                   </div>
                     ))}
 
                     <div className="text-center pt-4">
                       <button
-                        onClick={fetchArticles}
+                        onClick={fetchPublications}
                         className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
                       >
-                        Actualiser les articles
+                        Actualiser les publications
                       </button>
                     </div>
                   </>
                 )}
               </div>
 
-              <CreateArticleModal
+              <CreatePublicationModal
                 isOpen={isCreateModalOpen}
                 onClose={handleCloseModal}
-                onSuccess={handleArticleSuccess}
-                articleId={editingArticleId}
+                onSuccess={handlePublicationSuccess}
+                publicationId={editingPublicationId}
               />
             </div>
 
             {/* ── Sidebar : scroll indépendant ── */}
             <div className="lg:col-span-1 h-full overflow-y-auto py-6 pl-2 scrollbar-hidden">
               <div className="space-y-6">
-                <TrendingArticles onArticleClick={handleOpenArticleModal} />
+                <TrendingPublications onPublicationClick={handleOpenPublicationModal} />
                 <TopContributors />
               </div>
             </div>
@@ -416,18 +416,18 @@ function HomePageContent() {
             50%  { box-shadow: 0 0 20px 5px rgba(22,143,111,0.3); background-color: rgba(22,143,111,0.15); }
             100% { box-shadow: 0 0 0 0 rgba(22,143,111,0); background-color: transparent; }
           }
-          .highlight-article {
+          .highlight-publication {
             animation: highlight 2s ease-in-out;
             border-radius: 16px;
           }
         `}</style>
       </div>
 
-      {selectedArticle && (
-        <ArticleDetailModal
-          isOpen={isArticleModalOpen}
-          onClose={handleCloseArticleModal}
-          article={selectedArticle}
+      {selectedPublication && (
+        <PublicationDetailModal
+          isOpen={isPublicationModalOpen}
+          onClose={handleClosePublicationModal}
+          publication={selectedPublication}
           onLike={() => {}}
           onBookmark={() => {}}
           onShare={() => {}}

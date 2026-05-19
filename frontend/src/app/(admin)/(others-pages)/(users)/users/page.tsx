@@ -18,9 +18,9 @@ interface User {
   status: 'actif' | 'inactif' | 'pending';
   createdAt: string;
   updatedAt: string;
-  articles?: any[];
+  publications?: any[];
   _count?: {
-    articles: number;
+    publications: number;
   };
 }
 
@@ -79,7 +79,7 @@ export default function UsersPage() {
 
       console.log('🔄 Chargement des utilisateurs, currentUserId:', currentUserId); // Temporaire pour debug
 
-      const response = await fetch('http://localhost:3000/api/users?include=articles', {
+      const response = await fetch('http://localhost:3000/api/users?include=publications', {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ export default function UsersPage() {
           userStatus = 'pending';            // waiting for admin activation
         }
 
-        const articleCount = user.articles?.length || user._count?.articles || 0;
+        const publicationCount = user.publications?.length || user._count?.publications || 0;
         
         return {
           id: user.id.toString(),
@@ -139,7 +139,7 @@ export default function UsersPage() {
           userId: user.id,
           role: user.role,
           status: userStatus,
-          articles: articleCount,
+          publications: publicationCount,
           joinedAt: new Date(user.createdAt).toLocaleDateString('fr-FR', { 
             month: 'short', 
             year: 'numeric' 

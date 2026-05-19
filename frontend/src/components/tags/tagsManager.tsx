@@ -351,7 +351,7 @@ export default function TagsManager({
                 Nom <ArrowUpDown className="w-3 h-3" />
               </button>
               <button onClick={() => toggleSort("count")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors pr-4">
-                Articles <ArrowUpDown className="w-3 h-3" />
+                Publications <ArrowUpDown className="w-3 h-3" />
               </button>
               <span className="pr-4">Statut</span>
               <span>Actions</span>

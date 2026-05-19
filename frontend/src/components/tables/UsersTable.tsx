@@ -21,7 +21,7 @@ export interface UserTableItem {
   avatar?: string;
   role: 'SUPERADMIN' | 'ADMIN' | 'EMPLOYEE';
   status: 'active' | 'inactive' | 'pending' | 'email_unverified';
-  articles: number;
+  publications: number;
   joinedAt: string;
   lastActive: string;
 }
@@ -341,7 +341,7 @@ export default function UsersTable({
                 {[
                   { key: 'name', label: 'Utilisateur' },
                   { key: 'role', label: 'Rôle' },
-                  { key: 'articles', label: 'Articles' },
+                  { key: 'publications', label: 'Publications' },
                   { key: 'status', label: 'Statut' },
                   { key: 'joinedAt', label: 'Membre depuis' },
                   { key: 'lastActive', label: 'Dernière activité' }
@@ -412,7 +412,7 @@ export default function UsersTable({
                             {user.role === 'SUPERADMIN' ? '🛡️ Super Admin' : user.role === 'ADMIN' ? '👑 Administrateur' : '👤 Employé'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{user.articles}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{user.publications}</td>
                         <td className="px-4 py-3">
                           <div className={`flex items-center gap-2 ${
                             user.status === 'active'           ? 'text-green-600 dark:text-green-400' :

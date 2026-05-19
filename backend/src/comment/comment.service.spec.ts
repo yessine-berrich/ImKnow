@@ -3,11 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommentService } from './comment.service';
 import { Comment } from './entities/comment.entity';
-import { Article } from '../article/entities/article.entity';
+import { Publication } from '../publication/entities/publication.entity';
 import { User } from '../users/entities/user.entity';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationGateway } from '../notification/notification.gateway';
-import { ArticleService } from '../article/article.service';
+import { PublicationService } from '../publication/publication.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
 describe('CommentService', () => {
@@ -23,9 +23,9 @@ describe('CommentService', () => {
     role: 'employee' as any,
   };
 
-  const mockArticle: Partial<Article> = {
+  const mockPublication: Partial<Publication> = {
     id: 1,
-    title: 'Test Article',
+    title: 'Test Publication',
     author: { id: 2 } as User,
   };
 
@@ -33,7 +33,7 @@ describe('CommentService', () => {
     id: 1,
     content: 'Test comment',
     author: mockUser as User,
-    article: mockArticle as Article,
+    publication: mockPublication as Publication,
     parentComment: null,
     replies: [],
     likes: [],
@@ -66,7 +66,7 @@ describe('CommentService', () => {
     notifyUser: jest.fn(),
   };
 
-  const mockArticleService = {
+  const mockPublicationService = {
     findOne: jest.fn(),
   };
 
@@ -78,7 +78,7 @@ describe('CommentService', () => {
         { provide: getRepositoryToken(User), useValue: mockUserRepo },
         { provide: NotificationService, useValue: mockNotificationService },
         { provide: NotificationGateway, useValue: mockNotificationGateway },
-        { provide: ArticleService, useValue: mockArticleService },
+        { provide: PublicationService, useValue: mockPublicationService },
       ],
     }).compile();
 
@@ -97,8 +97,8 @@ describe('CommentService', () => {
 
   describe('create', () => {
     it('should create a comment', async () => {
-      const dto = { content: 'Test comment', articleId: 1 };
-      mockArticleService.findOne.mockResolvedValue(mockArticle);
+      const dto = { content: 'Test comment', publicationId: 1 };
+      mockPublicationService.findOne.mockResolvedValue(mockPublication);
       mockUserRepo.findOneOrFail.mockResolvedValue(mockUser);
       mockCommentRepo.create.mockReturnValue(mockComment);
       mockCommentRepo.save.mockResolvedValue(mockComment);
@@ -112,11 +112,11 @@ describe('CommentService', () => {
     });
   });
 
-  describe('findByArticle', () => {
-    it('should return all comments for an article', async () => {
+  describe('findByPublication', () => {
+    it('should return all comments for an publication', async () => {
       mockCommentRepo.find.mockResolvedValue([mockComment]);
 
-      const result = await service.findByArticle(1);
+      const result = await service.findByPublication(1);
 
       expect(result).toBeDefined();
       expect(mockCommentRepo.find).toHaveBeenCalled();

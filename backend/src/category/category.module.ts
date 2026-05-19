@@ -4,14 +4,14 @@ import { CategoryController } from './category.controller';
 import { Category } from './entities/category.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from 'src/users/users.module';
-import { ArticleModule } from 'src/article/article.module';
-import { Article } from 'src/article/entities/article.entity';
+import { PublicationModule } from 'src/publication/publication.module';
+import { Publication } from 'src/publication/entities/publication.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Category, Article]),
+    TypeOrmModule.forFeature([Category, Publication]),
     UsersModule,
-    ArticleModule
+    PublicationModule
   ],
   controllers: [CategoryController],
   providers: [CategoryService],

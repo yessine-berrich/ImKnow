@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from '@/context/LanguageContext';
-import ArticleCard from '@/components/article/ArticleCard';
+import PublicationCard from '@/components/publication/PublicationCard';
 import { FileText, ChevronLeft, Heart, Eye, Users, UserCheck, UserPlus } from 'lucide-react';
 import UserAboutCard from '@/components/public-profile/UserAboutCard';
 import UserStatsCard from '@/components/public-profile/UserStatsCard';
 import UserProfileHeader from '@/components/public-profile/UserProfileHeader';
 import FollowTabs from '@/components/follow/FollowTabs';
 import { fetchCurrentUser, isAuthenticated } from '../../../../../../../services/auth.service';
-import { articleService } from '../../../../../../../services/article.service';
+import { publicationService } from '../../../../../../../services/publication.service';
 import { userService, User as UserType } from '../../../../../../../services/user.service';
 import { followService } from '../../../../../../../services/follow.service';
 
@@ -41,7 +41,7 @@ interface User {
   updatedAt: string;
 }
 
-interface UserArticle {
+interface UserPublication {
   id: string;
   title: string;
   description: string;
@@ -78,9 +78,9 @@ export default function PublicProfilePage() {
   const userId = params.id as string;
   const { t, language } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState<'articles' | 'relations'>('articles');
+  const [activeTab, setActiveTab] = useState<'publications' | 'relations'>('publications');
   const [user, setUser] = useState<User | null>(null);
-  const [userArticles, setUserArticles] = useState<UserArticle[]>([]);
+  const [userPublications, setUserPublications] = useState<UserPublication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
@@ -134,19 +134,19 @@ export default function PublicProfilePage() {
           console.error('Error loading follow stats:', err);
         }
 
-        const articles = await articleService.getArticlesByUserId(Number(userId));
+        const publications = await publicationService.getPublicationsByUserId(Number(userId));
 
-        // Normalisation du statut et filtrage des articles publiés seulement
-        const formattedArticles: UserArticle[] = articles
-          .map((article: any) => {
+        // Normalisation du statut et filtrage des publications publiés seulement
+        const formattedPublications: UserPublication[] = publications
+          .map((publication: any) => {
             // Normaliser le statut
-            let normalizedStatus = String(article.status).toLowerCase();
+            let normalizedStatus = String(publication.status).toLowerCase();
             if (!['draft', 'published', 'pending', 'rejected'].includes(normalizedStatus)) {
               normalizedStatus = 'draft';
             }
 
-            const authorName = article.author
-              ? `${article.author.firstName || ''} ${article.author.lastName || ''}`.trim()
+            const authorName = publication.author
+              ? `${publication.author.firstName || ''} ${publication.author.lastName || ''}`.trim()
               : t('public_profile.default_author');
 
             const initials = authorName
@@ -158,8 +158,8 @@ export default function PublicProfilePage() {
 
             // ✅ CORRECTION : Garder les tags avec leurs IDs
             let tags: { id: number; name: string }[] = [];
-            if (Array.isArray(article.tags)) {
-              tags = article.tags.map((tag: any) => {
+            if (Array.isArray(publication.tags)) {
+              tags = publication.tags.map((tag: any) => {
                 if (typeof tag === 'object' && tag !== null) {
                   return { id: tag.id || 0, name: tag.name || '' };
                 }
@@ -171,8 +171,8 @@ export default function PublicProfilePage() {
             }
 
             let isLiked = false;
-            if (currentUserId && article.likes && Array.isArray(article.likes)) {
-              isLiked = article.likes.some((like: any) =>
+            if (currentUserId && publication.likes && Array.isArray(publication.likes)) {
+              isLiked = publication.likes.some((like: any) =>
                 like.id === currentUserId ||
                 like.userId === currentUserId ||
                 like.user?.id === currentUserId
@@ -180,53 +180,53 @@ export default function PublicProfilePage() {
             }
 
             let isBookmarked = false;
-            if (currentUserId && article.bookmarks && Array.isArray(article.bookmarks)) {
-              isBookmarked = article.bookmarks.some((bookmark: any) =>
+            if (currentUserId && publication.bookmarks && Array.isArray(publication.bookmarks)) {
+              isBookmarked = publication.bookmarks.some((bookmark: any) =>
                 bookmark.id === currentUserId ||
                 bookmark.userId === currentUserId ||
                 bookmark.user?.id === currentUserId
               );
             }
 
-            const articleDepartment = article.author?.department || t('public_profile.default_department');
+            const publicationDepartment = publication.author?.department || t('public_profile.default_department');
 
             return {
-              id: String(article.id),
-              title: article.title,
-              description: article.description || article.content?.substring(0, 180) + '...' || '',
-              content: article.content || '',
+              id: String(publication.id),
+              title: publication.title,
+              description: publication.description || publication.content?.substring(0, 180) + '...' || '',
+              content: publication.content || '',
               author: {
-                id: article.author?.id,
+                id: publication.author?.id,
                 name: authorName,
                 initials: initials,
-                department: articleDepartment,
-                avatar: article.author?.avatar || article.author?.profileImage || undefined
+                department: publicationDepartment,
+                avatar: publication.author?.avatar || publication.author?.profileImage || undefined
               },
               category: {
-                name: article.category?.name || t('public_profile.uncategorized'),
-                slug: article.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'non-classe'
+                name: publication.category?.name || t('public_profile.uncategorized'),
+                slug: publication.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'non-classe'
               },
               tags: tags,
-              publishedAt: article.publishedAt || article.createdAt,
+              publishedAt: publication.publishedAt || publication.createdAt,
               status: normalizedStatus,
               stats: {
-                likes: article.likes?.length || article.stats?.likes || 0,
-                comments: article.comments?.length || article.stats?.comments || 0,
-                views: article.viewsCount || article.stats?.views || 0,
+                likes: publication.likes?.length || publication.stats?.likes || 0,
+                comments: publication.comments?.length || publication.stats?.comments || 0,
+                views: publication.viewsCount || publication.stats?.views || 0,
               },
               isLiked: isLiked,
               isBookmarked: isBookmarked,
               isFeatured: false,
             };
           })
-          // ✅ FILTRAGE IMPORTANT : Ne garder que les articles PUBLIÉS pour l'affichage public
-          .filter(article => article.status === 'published');
+          // ✅ FILTRAGE IMPORTANT : Ne garder que les publications PUBLIÉS pour l'affichage public
+          .filter(publication => publication.status === 'published');
 
-        setUserArticles(formattedArticles);
+        setUserPublications(formattedPublications);
 
-        console.log('📊 Articles publiés chargés:', {
-          total: formattedArticles.length,
-          articles: formattedArticles.map(a => ({ title: a.title, status: a.status, tags: a.tags }))
+        console.log('📊 Publications publiés chargés:', {
+          total: formattedPublications.length,
+          publications: formattedPublications.map(a => ({ title: a.title, status: a.status, tags: a.tags }))
         });
 
       } catch (err: any) {
@@ -253,35 +253,35 @@ export default function PublicProfilePage() {
     }
 
     try {
-      const article = userArticles.find(a => a.id === id);
-      if (!article) return;
+      const publication = userPublications.find(a => a.id === id);
+      if (!publication) return;
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
-          const newIsLiked = !article.isLiked;
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
+          const newIsLiked = !publication.isLiked;
           return {
-            ...article,
+            ...publication,
             isLiked: newIsLiked,
             stats: {
-              ...article.stats,
-              likes: article.stats.likes + (newIsLiked ? 1 : -1)
+              ...publication.stats,
+              likes: publication.stats.likes + (newIsLiked ? 1 : -1)
             }
           };
         }
-        return article;
+        return publication;
       }));
 
-      const result = await articleService.toggleLike(parseInt(id));
+      const result = await publicationService.toggleLike(parseInt(id));
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
           return {
-            ...article,
-            isLiked: result.article.isLiked,
-            stats: { ...article.stats, likes: result.article.likesCount }
+            ...publication,
+            isLiked: result.publication.isLiked,
+            stats: { ...publication.stats, likes: result.publication.likesCount }
           };
         }
-        return article;
+        return publication;
       }));
 
     } catch (err) {
@@ -297,26 +297,26 @@ export default function PublicProfilePage() {
     }
 
     try {
-      const article = userArticles.find(a => a.id === id);
-      if (!article) return;
+      const publication = userPublications.find(a => a.id === id);
+      if (!publication) return;
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
           return {
-            ...article,
-            isBookmarked: !article.isBookmarked
+            ...publication,
+            isBookmarked: !publication.isBookmarked
           };
         }
-        return article;
+        return publication;
       }));
 
-      const result = await articleService.toggleBookmark(parseInt(id));
+      const result = await publicationService.toggleBookmark(parseInt(id));
 
-      setUserArticles(prev => prev.map(article => {
-        if (article.id === id) {
-          return { ...article, isBookmarked: result.article.isBookmarked };
+      setUserPublications(prev => prev.map(publication => {
+        if (publication.id === id) {
+          return { ...publication, isBookmarked: result.publication.isBookmarked };
         }
-        return article;
+        return publication;
       }));
 
     } catch (err) {
@@ -326,7 +326,7 @@ export default function PublicProfilePage() {
   };
 
   const handleShare = (id: string) => {
-    const url = `${window.location.origin}/articles/${id}`;
+    const url = `${window.location.origin}/publications/${id}`;
     navigator.clipboard.writeText(url);
     toast.success(t('public_profile.link_copied'));
   };
@@ -372,12 +372,12 @@ export default function PublicProfilePage() {
     };
   };
 
-  // Statistiques basées sur les articles publiés
+  // Statistiques basées sur les publications publiés
   const userStats = {
-    totalArticles: userArticles.length,
-    totalLikes: userArticles.reduce((sum, article) => sum + (article.stats?.likes || 0), 0),
-    totalComments: userArticles.reduce((sum, article) => sum + (article.stats?.comments || 0), 0),
-    totalViews: userArticles.reduce((sum, article) => sum + (article.stats?.views || 0), 0),
+    totalPublications: userPublications.length,
+    totalLikes: userPublications.reduce((sum, publication) => sum + (publication.stats?.likes || 0), 0),
+    totalComments: userPublications.reduce((sum, publication) => sum + (publication.stats?.comments || 0), 0),
+    totalViews: userPublications.reduce((sum, publication) => sum + (publication.stats?.views || 0), 0),
   };
 
   if (loading) {
@@ -478,15 +478,15 @@ export default function PublicProfilePage() {
             <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
                   <div className="flex border-b border-gray-200 dark:border-gray-800 mb-6">
                     <button
-                      onClick={() => setActiveTab('articles')}
+                      onClick={() => setActiveTab('publications')}
                       className={`flex items-center gap-2 px-4 py-2 font-medium border-b-2 transition-colors ${
-                        activeTab === 'articles'
+                        activeTab === 'publications'
                           ? 'border-[#168F6F] text-[#168F6F] dark:text-[#00B383]'
                           : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                       }`}
                     >
                       <FileText size={18} />
-                      {t('public_profile.tab_articles')} ({userArticles.length})
+                      {t('public_profile.tab_publications')} ({userPublications.length})
                     </button>
                     <button
                       onClick={() => setActiveTab('relations')}
@@ -502,13 +502,13 @@ export default function PublicProfilePage() {
                   </div>
 
                   <div className="space-y-6">
-                    {activeTab === 'articles' ? (
-                      userArticles.length > 0 ? (
+                    {activeTab === 'publications' ? (
+                      userPublications.length > 0 ? (
                         <>
-                          {userArticles.map((article) => (
-                            <ArticleCard
-                              key={article.id}
-                              article={article}
+                          {userPublications.map((publication) => (
+                            <PublicationCard
+                              key={publication.id}
+                              publication={publication}
                               onLike={handleLike}
                               onBookmark={handleBookmark}
                               onShare={handleShare}
@@ -523,10 +523,10 @@ export default function PublicProfilePage() {
                             <FileText className="text-gray-400 dark:text-gray-500" size={24} />
                           </div>
                           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                            {t('public_profile.no_articles_title')}
+                            {t('public_profile.no_publications_title')}
                           </h3>
                           <p className="text-gray-500 dark:text-gray-400">
-                            {t('public_profile.no_articles_msg', { name: user.firstName })}
+                            {t('public_profile.no_publications_msg', { name: user.firstName })}
                           </p>
                         </div>
                       )

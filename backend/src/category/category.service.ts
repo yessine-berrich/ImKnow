@@ -63,10 +63,10 @@ export class CategoryService {
   async remove(id: number): Promise<{ message: string; id: number }> {
     const category = await this.findOne(id);
 
-    // Vérifier si la catégorie a des articles associés
-    if (category.articles && category.articles.length > 0) {
+    // Vérifier si la catégorie a des publications associés
+    if (category.publications && category.publications.length > 0) {
       throw new BadRequestException(
-        `Cannot delete category "${category.name}" because it has ${category.articles.length} associated article(s)`
+        `Cannot delete category "${category.name}" because it has ${category.publications.length} associated publication(s)`
       );
     }
 
@@ -79,10 +79,10 @@ export class CategoryService {
     };
   }
 
-  async findArticlesByCategory(categoryId: number) {
+  async findPublicationsByCategory(categoryId: number) {
     return this.categoryRepository.findOne({
       where: { id: categoryId },
-      relations: ['articles', 'articles.author', 'articles.tags', 'articles.media'],
+      relations: ['publications', 'publications.author', 'publications.tags', 'publications.media'],
     });
   }
 }

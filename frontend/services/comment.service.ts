@@ -21,7 +21,7 @@ export interface Comment {
 }
 
 export interface CreateCommentDto {
-  articleId: number;
+  publicationId: number;
   content: string;
   parentId?: number;
   /** IDs of users mentioned via @ in the comment text */
@@ -82,18 +82,18 @@ class CommentService {
     return this.handleResponse<Comment>(response);
   }
 
-  /** Get all comments for an article */
-  async findByArticle(articleId: number): Promise<Comment[]> {
-    const response = await fetch(`${API_URL}/comments/article/${articleId}`, {
+  /** Get all comments for an publication */
+  async findByPublication(publicationId: number): Promise<Comment[]> {
+    const response = await fetch(`${API_URL}/comments/publication/${publicationId}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
     return this.handleResponse<Comment[]>(response);
   }
 
-  /** Get comment stats for an article */
-  async getCommentStats(articleId: number): Promise<CommentStats> {
-    const response = await fetch(`${API_URL}/comments/article/${articleId}/stats`, {
+  /** Get comment stats for an publication */
+  async getCommentStats(publicationId: number): Promise<CommentStats> {
+    const response = await fetch(`${API_URL}/comments/publication/${publicationId}/stats`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -137,9 +137,9 @@ class CommentService {
     return this.handleResponse<Comment[]>(response);
   }
 
-  /** Get articles commented by current user */
-  async findCommentedArticlesByUser(): Promise<any[]> {
-    const response = await fetch(`${API_URL}/comments/user/articles`, {
+  /** Get publications commented by current user */
+  async findCommentedPublicationsByUser(): Promise<any[]> {
+    const response = await fetch(`${API_URL}/comments/user/publications`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });

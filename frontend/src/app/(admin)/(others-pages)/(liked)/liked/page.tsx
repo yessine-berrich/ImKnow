@@ -14,8 +14,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-import ArticleCard from '@/components/article/ArticleCard';
-import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
+import PublicationCard from '@/components/publication/PublicationCard';
+import PublicationFilterBar, { FilterOptions } from '@/components/Filter/PublicationFilterBar';
 import { useTranslation } from '@/context/LanguageContext';
 
 
@@ -28,12 +28,12 @@ const API_URL = 'http://localhost:3000'; // Backend NestJS
 // COMPOSANT PRINCIPAL
 //============================================
 
-export default function LikedArticlesPage() {
+export default function LikedPublicationsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   
   // États
-  const [articles, setArticles] = useState<any[]>([]);
+  const [publications, setPublications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -64,7 +64,7 @@ export default function LikedArticlesPage() {
   // FONCTIONS API
   // ============================================
 
-  const fetchLikedArticles = async () => {
+  const fetchLikedPublications = async () => {
     setIsLoading(true);
     setError(null);
     
@@ -76,7 +76,7 @@ export default function LikedArticlesPage() {
         return;
       }
 
-      const url = getApiUrl('/api/articles/user/liked');
+      const url = getApiUrl('/api/publications/user/liked');
 
       const response = await fetch(url, {
         method: 'GET',
@@ -103,8 +103,8 @@ export default function LikedArticlesPage() {
         const tagsSet = new Set<string>();
 
         // Transformation des données
-        const formattedArticles = data.articles.map((article: any) => {
-          const authorName = article.author?.name || t('activity_common.default_author');
+        const formattedPublications = data.publications.map((publication: any) => {
+          const authorName = publication.author?.name || t('activity_common.default_author');
           const initials = authorName
             .split(' ')
             .map((n: string) => n[0])
@@ -113,47 +113,47 @@ export default function LikedArticlesPage() {
             .slice(0, 2);
 
           // Collecter les catégories
-          if (article.category?.name) {
-            categoriesSet.add(article.category.name);
+          if (publication.category?.name) {
+            categoriesSet.add(publication.category.name);
           }
 
           // Collecter les tags
-          article.tags?.forEach((tag: string) => {
+          publication.tags?.forEach((tag: string) => {
             if (tag) tagsSet.add(tag);
           });
 
           return {
-            id: String(article.id),
-            title: article.title,
-            description: article.description || article.content?.substring(0, 180) + '...',
-            content: article.content || '',
+            id: String(publication.id),
+            title: publication.title,
+            description: publication.description || publication.content?.substring(0, 180) + '...',
+            content: publication.content || '',
             author: {
-              id: article.author?.id,
+              id: publication.author?.id,
               name: authorName,
               initials: initials,
-              department: article.author?.department || t('activity_common.default_department'),
-              avatar: article.author?.avatar || null
+              department: publication.author?.department || t('activity_common.default_department'),
+              avatar: publication.author?.avatar || null
             },
             category: {
-              name: article.category?.name || t('activity_common.uncategorized'),
-              slug: article.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'non-classe'
+              name: publication.category?.name || t('activity_common.uncategorized'),
+              slug: publication.category?.name?.toLowerCase().replace(/\s+/g, '-') || 'non-classe'
             },
-            tags: article.tags || [],
-            publishedAt: article.publishedAt || article.createdAt,
-            updatedAt: article.updatedAt,
-            status: article.status || 'published',
+            tags: publication.tags || [],
+            publishedAt: publication.publishedAt || publication.createdAt,
+            updatedAt: publication.updatedAt,
+            status: publication.status || 'published',
             stats: {
-              likes: article.likesCount || 0,
-              comments: article.commentsCount || 0,
-              views: article.viewsCount || article.stats?.views || 0, 
+              likes: publication.likesCount || 0,
+              comments: publication.commentsCount || 0,
+              views: publication.viewsCount || publication.stats?.views || 0, 
             },
             isLiked: true,
-            isBookmarked: article.bookmarksCount > 0,
+            isBookmarked: publication.bookmarksCount > 0,
             isFeatured: false,
           };
         });
 
-        setArticles(formattedArticles);
+        setPublications(formattedPublications);
         setTotalCount(data.count);
         setAvailableCategories(Array.from(categoriesSet).sort());
         setAvailableTags(Array.from(tagsSet).sort());
@@ -166,16 +166,16 @@ export default function LikedArticlesPage() {
     }
   };
 
-  const handleUnlike = async (articleId: string) => {
+  const handleUnlike = async (publicationId: string) => {
     try {
       const token = getToken();
       if (!token) return;
 
       // Optimistic update
-      setArticles(prev => prev.filter(a => a.id !== articleId));
+      setPublications(prev => prev.filter(a => a.id !== publicationId));
       setTotalCount(prev => Math.max(0, prev - 1));
 
-      const url = getApiUrl(`/api/articles/${articleId}/like`);
+      const url = getApiUrl(`/api/publications/${publicationId}/like`);
       await fetch(url, {
         method: 'POST',
         headers: {
@@ -184,29 +184,29 @@ export default function LikedArticlesPage() {
         },
       });
     } catch {
-      await fetchLikedArticles();
+      await fetchLikedPublications();
     }
   };
 
-  const handleBookmark = async (articleId: string) => {
+  const handleBookmark = async (publicationId: string) => {
     try {
       const token = getToken();
       if (!token) return;
 
-      const article = articles.find(a => a.id === articleId);
-      if (!article) return;
+      const publication = publications.find(a => a.id === publicationId);
+      if (!publication) return;
 
-      const newBookmarkState = !article.isBookmarked;
+      const newBookmarkState = !publication.isBookmarked;
       
-      setArticles(prev => 
+      setPublications(prev => 
         prev.map(a => 
-          a.id === articleId 
+          a.id === publicationId 
             ? { ...a, isBookmarked: newBookmarkState } 
             : a
         )
       );
 
-      const url = getApiUrl(`/api/articles/${articleId}/bookmark`);
+      const url = getApiUrl(`/api/publications/${publicationId}/bookmark`);
       await fetch(url, {
         method: 'POST',
         headers: {
@@ -215,20 +215,20 @@ export default function LikedArticlesPage() {
         },
       });
     } catch {
-      await fetchLikedArticles();
+      await fetchLikedPublications();
     }
   };
 
-  const handleShare = (articleId: string) => {
-    const article = articles.find(a => a.id === articleId);
-    if (!article) return;
+  const handleShare = (publicationId: string) => {
+    const publication = publications.find(a => a.id === publicationId);
+    if (!publication) return;
 
-    const shareUrl = `${window.location.origin}/articles/${articleId}`;
+    const shareUrl = `${window.location.origin}/publications/${publicationId}`;
     
     if (navigator.share) {
       navigator.share({
-        title: article.title,
-        text: article.description,
+        title: publication.title,
+        text: publication.description,
         url: shareUrl,
       }).catch(() => {
         navigator.clipboard.writeText(shareUrl);
@@ -238,16 +238,16 @@ export default function LikedArticlesPage() {
     }
   };
 
-  const handleEdit = (articleId: string) => {
-    router.push(`/articles/edit/${articleId}`);
+  const handleEdit = (publicationId: string) => {
+    router.push(`/publications/edit/${publicationId}`);
   };
 
-  const handleDelete = async (articleId: string) => {
+  const handleDelete = async (publicationId: string) => {
     if (!await confirm(t('activity_common.delete_confirm'))) return;
     
     try {
       const token = getToken();
-      const url = getApiUrl(`/api/articles/${articleId}`);
+      const url = getApiUrl(`/api/publications/${publicationId}`);
       
       const response = await fetch(url, {
         method: 'DELETE',
@@ -257,7 +257,7 @@ export default function LikedArticlesPage() {
       });
 
       if (response.ok) {
-        setArticles(prev => prev.filter(a => a.id !== articleId));
+        setPublications(prev => prev.filter(a => a.id !== publicationId));
         setTotalCount(prev => prev - 1);
       }
     } catch {
@@ -272,17 +272,17 @@ export default function LikedArticlesPage() {
 
   // Chargement initial
   useEffect(() => {
-    fetchLikedArticles();
+    fetchLikedPublications();
   }, []);
 
   // ============================================
   // FILTRAGE ET TRI
   // ============================================
 
-  const filteredArticles = articles
-    .filter(article => {
-      const matchesCategory = filters.selectedCategory === 'all' || article.category.name === filters.selectedCategory;
-      const matchesTag = filters.selectedTag === 'all' || article.tags.includes(filters.selectedTag);
+  const filteredPublications = publications
+    .filter(publication => {
+      const matchesCategory = filters.selectedCategory === 'all' || publication.category.name === filters.selectedCategory;
+      const matchesTag = filters.selectedTag === 'all' || publication.tags.includes(filters.selectedTag);
       
       return matchesCategory && matchesTag;
     })
@@ -297,8 +297,8 @@ export default function LikedArticlesPage() {
       return 0;
     });
 
-  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
-  const paginatedArticles = filteredArticles.slice(
+  const totalPages = Math.ceil(filteredPublications.length / itemsPerPage);
+  const paginatedPublications = filteredPublications.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -358,7 +358,7 @@ export default function LikedArticlesPage() {
       </div>
 
       {/* 🔥 NOUVEAU COMPOSANT DE FILTRES 🔥 */}
-      <ArticleFilterBar
+      <PublicationFilterBar
         categories={availableCategories}
         tags={availableTags}
         activeFilters={filters}
@@ -389,7 +389,7 @@ export default function LikedArticlesPage() {
             </Link>
           ) : (
             <button
-              onClick={fetchLikedArticles}
+              onClick={fetchLikedPublications}
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
               {t('activity_common.retry')}
@@ -399,7 +399,7 @@ export default function LikedArticlesPage() {
       )}
 
       {/* État vide */}
-      {!error && filteredArticles.length === 0 && (
+      {!error && filteredPublications.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 rounded-full bg-gray-100 p-4 dark:bg-gray-700">
             <Heart className="h-12 w-12 text-gray-400 dark:text-gray-500" />
@@ -411,25 +411,25 @@ export default function LikedArticlesPage() {
             {t('liked.empty_desc')}
           </p>
           <Link
-            href="/articles"
+            href="/publications"
             className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
           >
-            {t('activity_common.explore_articles')}
+            {t('activity_common.explore_publications')}
           </Link>
         </div>
       )}
 
-      {/* Grille des articles */}
-      {!error && filteredArticles.length > 0 && (
+      {/* Grille des publications */}
+      {!error && filteredPublications.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {paginatedArticles.map((article) => (
-              <ArticleCard
-                key={article.id}
-                article={article}
-                onLike={() => handleUnlike(article.id)}
-                onBookmark={() => handleBookmark(article.id)}
-                onShare={() => handleShare(article.id)}
+            {paginatedPublications.map((publication) => (
+              <PublicationCard
+                key={publication.id}
+                publication={publication}
+                onLike={() => handleUnlike(publication.id)}
+                onBookmark={() => handleBookmark(publication.id)}
+                onShare={() => handleShare(publication.id)}
                 showActions={true}
               />
             ))}

@@ -1,4 +1,4 @@
-import { Article } from "src/article/entities/article.entity";
+import { Publication } from "src/publication/entities/publication.entity";
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('categories')
@@ -12,6 +12,6 @@ export class Category {
   @Column({ nullable: true })
   description: string;
 
-  @OneToMany(() => Article, (article) => article.category)
-  articles: Article[];
+  @OneToMany(() => Publication, (publication) => publication.category)
+  publications: Publication[];
 }

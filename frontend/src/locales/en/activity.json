@@ -1,33 +1,33 @@
 {
   "liked": {
-    "title": "Liked Articles",
-    "loading": "Loading your liked articles...",
-    "count_none": "You haven't liked any articles yet",
-    "count_one": "{{count}} article in your collection",
-    "count_plural": "{{count}} articles in your collection",
-    "empty_title": "No liked articles",
-    "empty_desc": "Explore our knowledge base and like your favourite articles!",
-    "load_error": "Unable to load your liked articles"
+    "title": "Liked Publications",
+    "loading": "Loading your liked publications...",
+    "count_none": "You haven't liked any publications yet",
+    "count_one": "{{count}} publication in your collection",
+    "count_plural": "{{count}} publications in your collection",
+    "empty_title": "No liked publications",
+    "empty_desc": "Explore our knowledge base and like your favourite publications!",
+    "load_error": "Unable to load your liked publications"
   },
   "commented": {
-    "title": "Commented Articles",
-    "loading": "Loading your commented articles...",
-    "count_none": "You haven't commented on any articles yet",
-    "count_one": "{{count}} article you participated in",
-    "count_plural": "{{count}} articles you participated in",
-    "empty_title": "No commented articles",
-    "empty_desc": "You haven't commented on any articles yet. Join the discussions and leave your comments!",
+    "title": "Commented Publications",
+    "loading": "Loading your commented publications...",
+    "count_none": "You haven't commented on any publications yet",
+    "count_one": "{{count}} publication you participated in",
+    "count_plural": "{{count}} publications you participated in",
+    "empty_title": "No commented publications",
+    "empty_desc": "You haven't commented on any publications yet. Join the discussions and leave your comments!",
     "last_comment": "Your last comment",
     "format_error": "Unexpected response format from server"
   },
   "bookmarked": {
-    "title": "Saved Articles",
-    "loading": "Loading your saved articles...",
-    "count_none": "You haven't saved any articles yet",
-    "count_one": "{{count}} article in your library",
-    "count_plural": "{{count}} articles in your library",
-    "empty_title": "No saved articles",
-    "empty_desc": "You haven't saved any articles yet. Explore our knowledge base and save your favourite articles!",
+    "title": "Saved Publications",
+    "loading": "Loading your saved publications...",
+    "count_none": "You haven't saved any publications yet",
+    "count_one": "{{count}} publication in your library",
+    "count_plural": "{{count}} publications in your library",
+    "empty_title": "No saved publications",
+    "empty_desc": "You haven't saved any publications yet. Explore our knowledge base and save your favourite publications!",
     "saved_badge": "Saved"
   },
   "filterbar": {
@@ -50,11 +50,11 @@
     "reconnect": "Please log in again",
     "login": "Log in",
     "retry": "Retry",
-    "explore_articles": "Explore articles",
-    "delete_confirm": "Are you sure you want to delete this article?",
+    "explore_publications": "Explore publications",
+    "delete_confirm": "Are you sure you want to delete this publication?",
     "default_author": "User",
     "default_department": "Member",
     "uncategorized": "Uncategorized",
-    "displaying": "Showing {{from}} - {{to}} of {{total}} article{{plural}}"
+    "displaying": "Showing {{from}} - {{to}} of {{total}} publication{{plural}}"
   }
 }

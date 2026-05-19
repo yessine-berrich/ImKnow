@@ -1,21 +1,21 @@
 export class DashboardStatsDto {
-  totalArticles: number;
+  totalPublications: number;
   totalUsers: number;
   totalCategories: number;
   totalTags: number;
   totalComments: number;
   totalLikes: number;
-  articlesThisWeek: number;
-  articlesThisMonth: number;
+  publicationsThisWeek: number;
+  publicationsThisMonth: number;
   newUsersThisMonth: number;
   mostActiveCategory: {
     id: number;
     name: string;
-    articleCount: number;
+    publicationCount: number;
   } | null;
   topContributor: {
     userId: number;
     fullName: string;
-    articlesCount: number;
+    publicationsCount: number;
   } | null;
 }

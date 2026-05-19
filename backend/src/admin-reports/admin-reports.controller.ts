@@ -15,7 +15,7 @@ import type { JwtPayloadType } from 'utils/types';
 import { userRole } from 'utils/constants';
 import { IsArray, IsIn, IsInt, IsOptional, IsString, MaxLength } from 'class-validator';
 
-class TakeArticleActionDto {
+class TakePublicationActionDto {
   @IsIn(['dismiss_all', 'review_all', 'unpublish', 'republish', 'warn_author'])
   action: 'dismiss_all' | 'review_all' | 'unpublish' | 'republish' | 'warn_author';
 
@@ -35,7 +35,7 @@ class TakeUserActionDto {
   note?: string;
 }
 
-class BulkArticleActionDto {
+class BulkPublicationActionDto {
   @IsArray()
   @IsInt({ each: true })
   ids: number[];
@@ -69,10 +69,10 @@ class BulkUserActionDto {
 export class AdminReportsController {
   constructor(private readonly adminReportsService: AdminReportsService) {}
 
-  // ── Article reports ──────────────────────────────────────────────────────
+  // ── Publication reports ──────────────────────────────────────────────────────
 
-  @Get('articles')
-  getReportedArticles(
+  @Get('publications')
+  getReportedPublications(
     @Query('status',    new DefaultValuePipe('all'))   status:    string,
     @Query('riskLevel', new DefaultValuePipe('all'))   riskLevel: string,
     @Query('priority',  new DefaultValuePipe('all'))   priority:  string,
@@ -80,33 +80,33 @@ export class AdminReportsController {
     @Query('page',      new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit',     new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
-    return this.adminReportsService.getReportedArticles({ status, riskLevel, priority, search, page, limit });
+    return this.adminReportsService.getReportedPublications({ status, riskLevel, priority, search, page, limit });
   }
 
-  @Get('articles/:articleId')
-  getArticleReportDetail(
-    @Param('articleId', ParseIntPipe) articleId: number,
+  @Get('publications/:publicationId')
+  getPublicationReportDetail(
+    @Param('publicationId', ParseIntPipe) publicationId: number,
   ) {
-    return this.adminReportsService.getArticleReportDetail(articleId);
+    return this.adminReportsService.getPublicationReportDetail(publicationId);
   }
 
-  @Post('articles/:articleId/action')
+  @Post('publications/:publicationId/action')
   @HttpCode(200)
-  takeActionOnArticle(
-    @Param('articleId', ParseIntPipe) articleId: number,
-    @Body() dto: TakeArticleActionDto,
+  takeActionOnPublication(
+    @Param('publicationId', ParseIntPipe) publicationId: number,
+    @Body() dto: TakePublicationActionDto,
     @CurrentPayload() payload: JwtPayloadType,
   ) {
-    return this.adminReportsService.takeActionOnArticle(articleId, dto.action, payload.sub, dto.note);
+    return this.adminReportsService.takeActionOnPublication(publicationId, dto.action, payload.sub, dto.note);
   }
 
-  @Post('articles/bulk')
+  @Post('publications/bulk')
   @HttpCode(200)
-  bulkArticleAction(
-    @Body() dto: BulkArticleActionDto,
+  bulkPublicationAction(
+    @Body() dto: BulkPublicationActionDto,
     @CurrentPayload() payload: JwtPayloadType,
   ) {
-    return this.adminReportsService.bulkArticleAction(dto.ids, dto.action, payload.sub, dto.note);
+    return this.adminReportsService.bulkPublicationAction(dto.ids, dto.action, payload.sub, dto.note);
   }
 
   // ── User reports ─────────────────────────────────────────────────────────
@@ -165,11 +165,11 @@ export class AdminReportsController {
 
   @Get('export')
   async exportReports(
-    @Query('type')   type:   'articles' | 'users',
+    @Query('type')   type:   'publications' | 'users',
     @Query('format') format: 'csv' | 'json',
     @Res() res: Response,
   ) {
-    const data = await this.adminReportsService.exportReports(type ?? 'articles', format ?? 'json');
+    const data = await this.adminReportsService.exportReports(type ?? 'publications', format ?? 'json');
 
     if (format === 'csv') {
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');

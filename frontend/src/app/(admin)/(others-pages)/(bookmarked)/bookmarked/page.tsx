@@ -14,8 +14,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-import ArticleCard from '@/components/article/ArticleCard';
-import ArticleFilterBar, { FilterOptions } from '@/components/Filter/ArticleFilterBar';
+import PublicationCard from '@/components/publication/PublicationCard';
+import PublicationFilterBar, { FilterOptions } from '@/components/Filter/PublicationFilterBar';
 import { useTranslation } from '@/context/LanguageContext';
 // ============================================
 // CONFIGURATION
@@ -26,12 +26,12 @@ const API_URL = 'http://localhost:3000';
 // COMPOSANT PRINCIPAL
 // ============================================
 
-export default function BookmarkedArticlesPage() {
+export default function BookmarkedPublicationsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   
   // États
-  const [articles, setArticles] = useState<any[]>([]);
+  const [publications, setPublications] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
@@ -62,7 +62,7 @@ export default function BookmarkedArticlesPage() {
   // FONCTIONS API
   // ============================================
 
-  const fetchBookmarkedArticles = async () => {
+  const fetchBookmarkedPublications = async () => {
     setIsLoading(true);
     setError(null);
     
@@ -74,8 +74,8 @@ export default function BookmarkedArticlesPage() {
         return;
       }
 
-      const url = getApiUrl('/api/articles/user/bookmarked');
-      console.log('🔍 Fetching bookmarked articles from:', url);
+      const url = getApiUrl('/api/publications/user/bookmarked');
+      console.log('🔍 Fetching bookmarked publications from:', url);
 
       const response = await fetch(url, {
         method: 'GET',
@@ -101,20 +101,20 @@ export default function BookmarkedArticlesPage() {
       console.log('📦 Données brutes reçues:', data);
       
       if (data.success) {
-        console.log('✅ data.articles reçu:', data.articles?.length || 0, 'articles');
+        console.log('✅ data.publications reçu:', data.publications?.length || 0, 'publications');
         
-        // Afficher le premier article pour voir sa structure
-        if (data.articles && data.articles.length > 0) {
-          console.log('📄 Structure du premier article:', {
-            id: data.articles[0].id,
-            title: data.articles[0].title,
-            viewsCount: data.articles[0].viewsCount,
-            stats: data.articles[0].stats,
-            likesCount: data.articles[0].likesCount,
-            commentsCount: data.articles[0].commentsCount,
-            bookmarksCount: data.articles[0].bookmarksCount,
-            isLiked: data.articles[0].isLiked,
-            isBookmarked: data.articles[0].isBookmarked,
+        // Afficher le premier publication pour voir sa structure
+        if (data.publications && data.publications.length > 0) {
+          console.log('📄 Structure du premier publication:', {
+            id: data.publications[0].id,
+            title: data.publications[0].title,
+            viewsCount: data.publications[0].viewsCount,
+            stats: data.publications[0].stats,
+            likesCount: data.publications[0].likesCount,
+            commentsCount: data.publications[0].commentsCount,
+            bookmarksCount: data.publications[0].bookmarksCount,
+            isLiked: data.publications[0].isLiked,
+            isBookmarked: data.publications[0].isBookmarked,
           });
         }
 
@@ -122,10 +122,10 @@ export default function BookmarkedArticlesPage() {
         const tagsSet = new Set<string>();
 
         // Transformation des données
-        const formattedArticles = data.articles.map((article: any, index: number) => {
-          const authorName = article.author?.name ||
-            (article.author?.firstName && article.author?.lastName
-              ? `${article.author.firstName} ${article.author.lastName}`
+        const formattedPublications = data.publications.map((publication: any, index: number) => {
+          const authorName = publication.author?.name ||
+            (publication.author?.firstName && publication.author?.lastName
+              ? `${publication.author.firstName} ${publication.author.lastName}`
               : t('activity_common.default_author'));
           
           const initials = authorName
@@ -135,48 +135,48 @@ export default function BookmarkedArticlesPage() {
             .toUpperCase()
             .slice(0, 2);
 
-          if (article.category?.name) {
-            categoriesSet.add(article.category.name);
+          if (publication.category?.name) {
+            categoriesSet.add(publication.category.name);
           }
 
-          article.tags?.forEach((tag: string) => {
+          publication.tags?.forEach((tag: string) => {
             if (tag) tagsSet.add(tag);
           });
 
-          // Log pour chaque article transformé
+          // Log pour chaque publication transformé
           const formatted = {
-            id: String(article.id),
-            title: article.title,
-            description: article.description || article.content?.substring(0, 180) + '...',
-            content: article.content || '',
+            id: String(publication.id),
+            title: publication.title,
+            description: publication.description || publication.content?.substring(0, 180) + '...',
+            content: publication.content || '',
             author: {
-              id: article.author?.id,
+              id: publication.author?.id,
               name: authorName,
               initials: initials,
-              department: article.author?.department || t('activity_common.default_department'),
-              avatar: article.author?.profileImage || article.author?.avatar || null
+              department: publication.author?.department || t('activity_common.default_department'),
+              avatar: publication.author?.profileImage || publication.author?.avatar || null
             },
             category: {
-              name: article.category?.name || t('activity_common.uncategorized')
+              name: publication.category?.name || t('activity_common.uncategorized')
             },
-            tags: article.tags?.map((tag: any) => 
+            tags: publication.tags?.map((tag: any) => 
               typeof tag === 'string' ? tag : tag.name
             ) || [],
-            publishedAt: article.publishedAt || article.createdAt,
-            updatedAt: article.updatedAt,
-            status: article.status || 'published',
+            publishedAt: publication.publishedAt || publication.createdAt,
+            updatedAt: publication.updatedAt,
+            status: publication.status || 'published',
             stats: {
-              likes: article.likesCount || article.likes?.length || 0,
-              comments: article.commentsCount || article.comments?.length || 0,
-              views: article.viewsCount || article.stats?.views || 0,
+              likes: publication.likesCount || publication.likes?.length || 0,
+              comments: publication.commentsCount || publication.comments?.length || 0,
+              views: publication.viewsCount || publication.stats?.views || 0,
             },
-            isLiked: article.isLiked || false,
+            isLiked: publication.isLiked || false,
             isBookmarked: true,
             isFeatured: false,
           };
 
           if (index === 0) {
-            console.log('🔄 Premier article transformé:', {
+            console.log('🔄 Premier publication transformé:', {
               id: formatted.id,
               title: formatted.title,
               stats: formatted.stats,
@@ -188,10 +188,10 @@ export default function BookmarkedArticlesPage() {
           return formatted;
         });
 
-        console.log('✅ Articles transformés:', formattedArticles.length);
-        console.log('📊 Stats du premier article transformé:', formattedArticles[0]?.stats);
+        console.log('✅ Publications transformés:', formattedPublications.length);
+        console.log('📊 Stats du premier publication transformé:', formattedPublications[0]?.stats);
 
-        setArticles(formattedArticles);
+        setPublications(formattedPublications);
         setTotalCount(data.count);
         console.log('📊 Total count:', data.count);
         
@@ -203,23 +203,23 @@ export default function BookmarkedArticlesPage() {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
-      console.error('❌ Erreur fetchBookmarkedArticles:', err);
+      console.error('❌ Erreur fetchBookmarkedPublications:', err);
       setError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleUnbookmark = async (articleId: string) => {
-    console.log('🗑️ Unbookmark article:', articleId);
+  const handleUnbookmark = async (publicationId: string) => {
+    console.log('🗑️ Unbookmark publication:', publicationId);
     try {
       const token = getToken();
       if (!token) return;
 
-      setArticles(prev => prev.filter(a => a.id !== articleId));
+      setPublications(prev => prev.filter(a => a.id !== publicationId));
       setTotalCount(prev => Math.max(0, prev - 1));
 
-      const url = getApiUrl(`/api/articles/${articleId}/bookmark`);
+      const url = getApiUrl(`/api/publications/${publicationId}/bookmark`);
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -232,32 +232,32 @@ export default function BookmarkedArticlesPage() {
       
       if (!response.ok) {
         console.error('❌ Unbookmark failed');
-        await fetchBookmarkedArticles();
+        await fetchBookmarkedPublications();
       }
     } catch (error) {
       console.error('❌ Error in handleUnbookmark:', error);
-      await fetchBookmarkedArticles();
+      await fetchBookmarkedPublications();
     }
   };
 
-  const handleLike = async (articleId: string) => {
-    console.log('❤️ Like article:', articleId);
+  const handleLike = async (publicationId: string) => {
+    console.log('❤️ Like publication:', publicationId);
     try {
       const token = getToken();
       if (!token) return;
 
-      const article = articles.find(a => a.id === articleId);
-      if (!article) {
-        console.log('❌ Article not found');
+      const publication = publications.find(a => a.id === publicationId);
+      if (!publication) {
+        console.log('❌ Publication not found');
         return;
       }
 
-      const newLikeState = !article.isLiked;
+      const newLikeState = !publication.isLiked;
       console.log('🔄 New like state:', newLikeState);
       
-      setArticles(prev => 
+      setPublications(prev => 
         prev.map(a => 
-          a.id === articleId 
+          a.id === publicationId 
             ? { 
                 ...a, 
                 isLiked: newLikeState,
@@ -267,7 +267,7 @@ export default function BookmarkedArticlesPage() {
         )
       );
 
-      const url = getApiUrl(`/api/articles/${articleId}/like`);
+      const url = getApiUrl(`/api/publications/${publicationId}/like`);
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -286,17 +286,17 @@ export default function BookmarkedArticlesPage() {
     }
   };
 
-  const handleShare = (articleId: string) => {
-    const article = articles.find(a => a.id === articleId);
-    if (!article) return;
+  const handleShare = (publicationId: string) => {
+    const publication = publications.find(a => a.id === publicationId);
+    if (!publication) return;
 
-    const shareUrl = `${window.location.origin}/articles/${articleId}`;
-    console.log('🔗 Sharing article:', articleId, 'URL:', shareUrl);
+    const shareUrl = `${window.location.origin}/publications/${publicationId}`;
+    console.log('🔗 Sharing publication:', publicationId, 'URL:', shareUrl);
     
     if (navigator.share) {
       navigator.share({
-        title: article.title,
-        text: article.description,
+        title: publication.title,
+        text: publication.description,
         url: shareUrl,
       }).catch(() => {
         navigator.clipboard.writeText(shareUrl);
@@ -306,18 +306,18 @@ export default function BookmarkedArticlesPage() {
     }
   };
 
-  const handleEdit = (articleId: string) => {
-    console.log('✏️ Edit article:', articleId);
-    router.push(`/articles/edit/${articleId}`);
+  const handleEdit = (publicationId: string) => {
+    console.log('✏️ Edit publication:', publicationId);
+    router.push(`/publications/edit/${publicationId}`);
   };
 
-  const handleDelete = async (articleId: string) => {
+  const handleDelete = async (publicationId: string) => {
     if (!await confirm(t('activity_common.delete_confirm'))) return;
     
-    console.log('🗑️ Delete article:', articleId);
+    console.log('🗑️ Delete publication:', publicationId);
     try {
       const token = getToken();
-      const url = getApiUrl(`/api/articles/${articleId}`);
+      const url = getApiUrl(`/api/publications/${publicationId}`);
       
       const response = await fetch(url, {
         method: 'DELETE',
@@ -329,7 +329,7 @@ export default function BookmarkedArticlesPage() {
       console.log('📡 Delete response status:', response.status);
 
       if (response.ok) {
-        setArticles(prev => prev.filter(a => a.id !== articleId));
+        setPublications(prev => prev.filter(a => a.id !== publicationId));
         setTotalCount(prev => prev - 1);
       }
     } catch (error) {
@@ -345,18 +345,18 @@ export default function BookmarkedArticlesPage() {
 
   // Chargement initial
   useEffect(() => {
-    console.log('🚀 Component mounted, fetching bookmarked articles...');
-    fetchBookmarkedArticles();
+    console.log('🚀 Component mounted, fetching bookmarked publications...');
+    fetchBookmarkedPublications();
   }, []);
 
   // ============================================
   // FILTRAGE ET TRI
   // ============================================
 
-  const filteredArticles = articles
-    .filter(article => {
-      const matchesCategory = filters.selectedCategory === 'all' || article.category.name === filters.selectedCategory;
-      const matchesTag = filters.selectedTag === 'all' || article.tags.includes(filters.selectedTag);
+  const filteredPublications = publications
+    .filter(publication => {
+      const matchesCategory = filters.selectedCategory === 'all' || publication.category.name === filters.selectedCategory;
+      const matchesTag = filters.selectedTag === 'all' || publication.tags.includes(filters.selectedTag);
       
       return matchesCategory && matchesTag;
     })
@@ -371,11 +371,11 @@ export default function BookmarkedArticlesPage() {
       return 0;
     });
 
-  console.log('📊 Après filtrage:', filteredArticles.length, 'articles sur', articles.length);
-  console.log('📈 Stats du premier article filtré:', filteredArticles[0]?.stats);
+  console.log('📊 Après filtrage:', filteredPublications.length, 'publications sur', publications.length);
+  console.log('📈 Stats du premier publication filtré:', filteredPublications[0]?.stats);
 
-  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
-  const paginatedArticles = filteredArticles.slice(
+  const totalPages = Math.ceil(filteredPublications.length / itemsPerPage);
+  const paginatedPublications = filteredPublications.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -435,7 +435,7 @@ export default function BookmarkedArticlesPage() {
       </div>
 
       {/* 🔥 COMPOSANT DE FILTRES 🔥 */}
-      <ArticleFilterBar
+      <PublicationFilterBar
         categories={availableCategories}
         tags={availableTags}
         activeFilters={filters}
@@ -466,7 +466,7 @@ export default function BookmarkedArticlesPage() {
             </Link>
           ) : (
             <button
-              onClick={fetchBookmarkedArticles}
+              onClick={fetchBookmarkedPublications}
               className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
             >
               {t('activity_common.retry')}
@@ -476,7 +476,7 @@ export default function BookmarkedArticlesPage() {
       )}
 
       {/* État vide */}
-      {!error && filteredArticles.length === 0 && (
+      {!error && filteredPublications.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white p-12 text-center shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 rounded-full bg-gray-100 p-4 dark:bg-gray-700">
             <Bookmark className="h-12 w-12 text-gray-400 dark:text-gray-500" />
@@ -488,20 +488,20 @@ export default function BookmarkedArticlesPage() {
             {t('bookmarked.empty_desc')}
           </p>
           <Link
-            href="/articles"
+            href="/publications"
             className="rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-primary/90"
           >
-            {t('activity_common.explore_articles')}
+            {t('activity_common.explore_publications')}
           </Link>
         </div>
       )}
 
-      {/* Grille des articles */}
-      {!error && filteredArticles.length > 0 && (
+      {/* Grille des publications */}
+      {!error && filteredPublications.length > 0 && (
         <>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {paginatedArticles.map((article, index) => (
-              <div key={article.id} className="relative">
+            {paginatedPublications.map((publication, index) => (
+              <div key={publication.id} className="relative">
                 {/* Badge "Sauvegardé" */}
                 <div className="absolute -top-2 -right-2 z-10">
                   <div className="flex items-center gap-1 rounded-full bg-yellow-500 px-2.5 py-1.5 text-xs font-bold text-white shadow-lg">
@@ -510,11 +510,11 @@ export default function BookmarkedArticlesPage() {
                   </div>
                 </div>
                 
-                <ArticleCard
-                  article={article}
-                  onLike={() => handleLike(article.id)}
-                  onBookmark={() => handleUnbookmark(article.id)}
-                  onShare={() => handleShare(article.id)}
+                <PublicationCard
+                  publication={publication}
+                  onLike={() => handleLike(publication.id)}
+                  onBookmark={() => handleUnbookmark(publication.id)}
+                  onShare={() => handleShare(publication.id)}
                   showActions={true}
                 />
               </div>
@@ -562,9 +562,9 @@ export default function BookmarkedArticlesPage() {
           <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
             {t('activity_common.displaying', {
               from: ((currentPage - 1) * itemsPerPage) + 1,
-              to: Math.min(currentPage * itemsPerPage, filteredArticles.length),
-              total: filteredArticles.length,
-              plural: filteredArticles.length > 1 ? 's' : '',
+              to: Math.min(currentPage * itemsPerPage, filteredPublications.length),
+              total: filteredPublications.length,
+              plural: filteredPublications.length > 1 ? 's' : '',
             })}
           </div>
         </>

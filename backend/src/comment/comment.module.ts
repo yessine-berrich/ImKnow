@@ -7,17 +7,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Comment } from './entities/comment.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Notification } from 'src/notification/entities/notification.entity';
-import { Article } from 'src/article/entities/article.entity';
-import { ArticleModule } from 'src/article/article.module';
+import { Publication } from 'src/publication/entities/publication.entity';
+import { PublicationModule } from 'src/publication/publication.module';
 
 @Module({
   imports: [
     // 1. Enregistre l'entité pour générer le Repository
-    TypeOrmModule.forFeature([Comment, User, Notification, Article]),
+    TypeOrmModule.forFeature([Comment, User, Notification, Publication]),
     // 2. Importe les modules dont les services sont utilisés dans CommentService
     UsersModule,
     NotificationModule,
-    ArticleModule,
+    PublicationModule,
   ],
   controllers: [CommentController],
   providers: [CommentService],

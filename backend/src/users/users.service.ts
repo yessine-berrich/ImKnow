@@ -65,13 +65,13 @@ export class UsersService {
   }
 
   async getAllUsers(): Promise<User[]> {
-    return this.userRepository.find({ relations: ['articles'] });
+    return this.userRepository.find({ relations: ['publications'] });
   }
 
   async getUserById(id: number): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['articles'],
+      relations: ['publications'],
     });
 
     if (!user) {

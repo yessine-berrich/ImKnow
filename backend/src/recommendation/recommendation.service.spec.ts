@@ -2,21 +2,21 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RecommendationService } from './recommendation.service';
-import { Article } from '../article/entities/article.entity';
-import { ArticleView } from '../article/entities/article-view.entity';
+import { Publication } from '../publication/entities/publication.entity';
+import { PublicationView } from '../publication/entities/publication-view.entity';
 import { User } from '../users/entities/user.entity';
 import { Follow } from '../follow/entities/follow.entity';
 
 describe('RecommendationService', () => {
   let service: RecommendationService;
 
-  const mockArticleRepo = {
+  const mockPublicationRepo = {
     find: jest.fn(),
     findOne: jest.fn(),
     createQueryBuilder: jest.fn(),
   };
 
-  const mockArticleViewRepo = {
+  const mockPublicationViewRepo = {
     find: jest.fn(),
     findOne: jest.fn(),
   };
@@ -33,8 +33,8 @@ describe('RecommendationService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RecommendationService,
-        { provide: getRepositoryToken(Article), useValue: mockArticleRepo },
-        { provide: getRepositoryToken(ArticleView), useValue: mockArticleViewRepo },
+        { provide: getRepositoryToken(Publication), useValue: mockPublicationRepo },
+        { provide: getRepositoryToken(PublicationView), useValue: mockPublicationViewRepo },
         { provide: getRepositoryToken(User), useValue: mockUserRepo },
         { provide: getRepositoryToken(Follow), useValue: mockFollowRepo },
       ],
@@ -53,12 +53,12 @@ describe('RecommendationService', () => {
 
   describe('getRecommendations', () => {
     it('should return recommendations for a user', async () => {
-      mockArticleViewRepo.find.mockResolvedValue([]);
+      mockPublicationViewRepo.find.mockResolvedValue([]);
       mockFollowRepo.find.mockResolvedValue([]);
-      mockArticleRepo.find.mockResolvedValue([
+      mockPublicationRepo.find.mockResolvedValue([
         {
           id: 1,
-          title: 'Article 1',
+          title: 'Publication 1',
           viewsCount: 100,
           status: 'published',
           author: { id: 2, firstName: 'John', lastName: 'Doe' },

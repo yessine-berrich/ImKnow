@@ -2,7 +2,7 @@
 import { Controller, Get, Query, ParseIntPipe, DefaultValuePipe, UseGuards } from '@nestjs/common';
 import { StatsService } from './stats.service';
 import { TopContributorsResponseDto } from './dto/top-contributor.dto';
-import { TrendingArticlesResponseDto } from './dto/trending-article.dto';
+import { TrendingPublicationsResponseDto } from './dto/trending-publication.dto';
 import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { CategoryStatsResponseDto } from './dto/category-stats.dto';
 import { UserActivityResponseDto } from './dto/user-activity.dto';
@@ -35,14 +35,14 @@ export class StatsController {
   }
 
   /**
-   * GET /api/stats/trending-articles?limit=5
+   * GET /api/stats/trending-publications?limit=5
    * Accessible à tous les utilisateurs authentifiés
    */
-  @Get('trending-articles')
-  getTrendingArticles(
+  @Get('trending-publications')
+  getTrendingPublications(
     @Query('limit', new DefaultValuePipe(5), ParseIntPipe) limit: number,
-  ): Promise<TrendingArticlesResponseDto> {
-    return this.statsService.getTrendingArticles(limit);
+  ): Promise<TrendingPublicationsResponseDto> {
+    return this.statsService.getTrendingPublications(limit);
   }
 
   /**
@@ -167,14 +167,14 @@ export class StatsController {
   }
 
   /**
-   * GET /api/stats/employee/popular-articles?limit=10&period=week
+   * GET /api/stats/employee/popular-publications?limit=10&period=week
    */
-  @Get('employee/popular-articles')
-  getPopularArticlesForEmployees(
+  @Get('employee/popular-publications')
+  getPopularPublicationsForEmployees(
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('period', new DefaultValuePipe('week')) period: 'week' | 'month' | 'year',
   ) {
-    return this.statsService.getPopularArticlesForEmployees(limit, period);
+    return this.statsService.getPopularPublicationsForEmployees(limit, period);
   }
 
   /**

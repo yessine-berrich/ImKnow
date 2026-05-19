@@ -1,23 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Article } from 'src/article/entities/article.entity';
-import { ArticleView } from 'src/article/entities/article-view.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
+import { PublicationView } from 'src/publication/entities/publication-view.entity';
 import { User } from 'src/users/entities/user.entity';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 import { Follow } from 'src/follow/entities/follow.entity';
 
 export type FeedSource = 'followed' | 'trending' | 'personalized' | 'seen';
 export type FeedFilter = 'all' | 'following' | 'trending';
 
 export interface FeedItem {
-  article: Article;
+  publication: Publication;
   source: FeedSource;
   score: number;
 }
 
 export interface FeedResult {
-  items: { article: Article; source: FeedSource }[];
+  items: { publication: Publication; source: FeedSource }[];
   hasMore: boolean;
   totalCandidates: number;
 }
@@ -34,10 +34,10 @@ export class RecommendationService {
   private readonly logger = new Logger(RecommendationService.name);
 
   constructor(
-    @InjectRepository(Article)
-    private readonly articleRepository: Repository<Article>,
-    @InjectRepository(ArticleView)
-    private readonly articleViewRepository: Repository<ArticleView>,
+    @InjectRepository(Publication)
+    private readonly publicationRepository: Repository<Publication>,
+    @InjectRepository(PublicationView)
+    private readonly publicationViewRepository: Repository<PublicationView>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Follow)
@@ -46,13 +46,13 @@ export class RecommendationService {
 
   // ── Public API ───────────────────────────────────────────────────────────────
 
-  async getRecommendations(userId: number, limit = 10): Promise<Article[]> {
+  async getRecommendations(userId: number, limit = 10): Promise<Publication[]> {
     try {
-      if (!userId || userId <= 0) return this.getFallbackArticles(new Set([0]), limit);
+      if (!userId || userId <= 0) return this.getFallbackPublications(new Set([0]), limit);
 
       const safeLimit = Math.min(Math.max(limit, 1), 50);
       const user = await this.loadUserWithInteractions(userId);
-      if (!user) return this.getFallbackArticles(new Set([0]), safeLimit);
+      if (!user) return this.getFallbackPublications(new Set([0]), safeLimit);
 
       const profile = await this.buildInterestProfile(user);
 
@@ -61,32 +61,32 @@ export class RecommendationService {
         this.getBehavioralCandidates(profile, safeLimit * 3),
       ]);
 
-      const scoreMap = new Map<number, { article: Article; score: number }>();
+      const scoreMap = new Map<number, { publication: Publication; score: number }>();
 
-      for (const { article, similarity } of semanticCandidates) {
-        const prev = scoreMap.get(article.id)?.score ?? 0;
-        scoreMap.set(article.id, { article, score: prev + similarity * 0.6 });
+      for (const { publication, similarity } of semanticCandidates) {
+        const prev = scoreMap.get(publication.id)?.score ?? 0;
+        scoreMap.set(publication.id, { publication, score: prev + similarity * 0.6 });
       }
-      for (const { article, score } of behavioralCandidates) {
-        const prev = scoreMap.get(article.id)?.score ?? 0;
-        scoreMap.set(article.id, { article, score: prev + score * 0.4 });
+      for (const { publication, score } of behavioralCandidates) {
+        const prev = scoreMap.get(publication.id)?.score ?? 0;
+        scoreMap.set(publication.id, { publication, score: prev + score * 0.4 });
       }
       // Popularity boost (log scale to avoid rich-get-richer runaway)
       for (const [id, entry] of scoreMap) {
         scoreMap.set(id, {
           ...entry,
-          score: entry.score + Math.log1p(entry.article.viewsCount ?? 0) * 0.01,
+          score: entry.score + Math.log1p(entry.publication.viewsCount ?? 0) * 0.01,
         });
       }
 
       const sorted = Array.from(scoreMap.values())
         .sort((a, b) => b.score - a.score)
         .slice(0, safeLimit)
-        .map((e) => e.article);
+        .map((e) => e.publication);
 
       if (sorted.length < safeLimit) {
         const returnedIds = new Set([...profile.interactedIds, ...sorted.map((a) => a.id)]);
-        const fallback = await this.getFallbackArticles(returnedIds, safeLimit - sorted.length);
+        const fallback = await this.getFallbackPublications(returnedIds, safeLimit - sorted.length);
         return [...sorted, ...fallback];
       }
       return sorted;
@@ -112,9 +112,9 @@ export class RecommendationService {
     try {
       if (!userId || userId <= 0) {
         // Anonymous / cold-start: serve public trending content
-        const trending = await this.getTrendingArticles(new Set([0]), pageSize * 3);
+        const trending = await this.getTrendingPublications(new Set([0]), pageSize * 3);
         const pool: FeedItem[] = this.applyRecencyDecay(
-          trending.map((a) => ({ article: a, source: 'trending' as FeedSource, score: this.engagementScore(a) })),
+          trending.map((a) => ({ publication: a, source: 'trending' as FeedSource, score: this.engagementScore(a) })),
         ).sort((a, b) => b.score - a.score);
         return this.paginatePool(pool, page, pageSize);
       }
@@ -130,10 +130,10 @@ export class RecommendationService {
 
       // ── Fast paths ────────────────────────────────────────────────────────────
       if (filter === 'following') {
-        const articles = await this.getFollowedAuthorsArticles(userId, profile.interactedIds, poolSize);
+        const publications = await this.getFollowedAuthorsPublications(userId, profile.interactedIds, poolSize);
         const unseenPool = this.applyRecencyDecay(
-          articles.map((a) => ({
-            article: a,
+          publications.map((a) => ({
+            publication: a,
             source: 'followed' as FeedSource,
             score: this.engagementScore(a) + 0.5,
           })),
@@ -143,10 +143,10 @@ export class RecommendationService {
       }
 
       if (filter === 'trending') {
-        const articles = await this.getTrendingArticles(profile.interactedIds, poolSize);
+        const publications = await this.getTrendingPublications(profile.interactedIds, poolSize);
         const unseenPool = this.applyRecencyDecay(
-          articles.map((a) => ({
-            article: a,
+          publications.map((a) => ({
+            publication: a,
             source: 'trending' as FeedSource,
             score: this.engagementScore(a) + 0.3,
           })),
@@ -156,43 +156,43 @@ export class RecommendationService {
       }
 
       // ── Full smart feed ('all') ────────────────────────────────────────────────
-      const [followedArticles, trendingArticles, personalizedArticles] = await Promise.all([
-        this.getFollowedAuthorsArticles(userId, profile.interactedIds, poolSize),
-        this.getTrendingArticles(profile.interactedIds, poolSize),
+      const [followedPublications, trendingPublications, personalizedPublications] = await Promise.all([
+        this.getFollowedAuthorsPublications(userId, profile.interactedIds, poolSize),
+        this.getTrendingPublications(profile.interactedIds, poolSize),
         this.getPersonalizedForFeed(user, profile, poolSize),
       ]);
 
-      const articleMap = new Map<number, FeedItem>();
+      const publicationMap = new Map<number, FeedItem>();
 
       // Priority: followed > trending > personalized
-      for (const article of followedArticles) {
-        articleMap.set(article.id, {
-          article,
+      for (const publication of followedPublications) {
+        publicationMap.set(publication.id, {
+          publication,
           source: 'followed',
-          score: this.engagementScore(article) + 0.5,
+          score: this.engagementScore(publication) + 0.5,
         });
       }
-      for (const article of trendingArticles) {
-        if (!articleMap.has(article.id)) {
-          articleMap.set(article.id, {
-            article,
+      for (const publication of trendingPublications) {
+        if (!publicationMap.has(publication.id)) {
+          publicationMap.set(publication.id, {
+            publication,
             source: 'trending',
-            score: this.engagementScore(article) + 0.3,
+            score: this.engagementScore(publication) + 0.3,
           });
         }
       }
-      for (const article of personalizedArticles) {
-        if (!articleMap.has(article.id)) {
-          articleMap.set(article.id, {
-            article,
+      for (const publication of personalizedPublications) {
+        if (!publicationMap.has(publication.id)) {
+          publicationMap.set(publication.id, {
+            publication,
             source: 'personalized',
-            score: this.engagementScore(article),
+            score: this.engagementScore(publication),
           });
         }
       }
 
       const unseenPool = this.ensureDiversity(
-        this.applyRecencyDecay(Array.from(articleMap.values())).sort((a, b) => b.score - a.score),
+        this.applyRecencyDecay(Array.from(publicationMap.values())).sort((a, b) => b.score - a.score),
         poolSize,
       );
 
@@ -206,56 +206,56 @@ export class RecommendationService {
 
   // ── Private helpers ──────────────────────────────────────────────────────────
 
-  /** Load user with liked/bookmarked/commented articles for interest profiling */
+  /** Load user with liked/bookmarked/commented publications for interest profiling */
   private async loadUserWithInteractions(userId: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id: userId },
       relations: [
-        'likedArticles',
-        'likedArticles.category',
-        'likedArticles.tags',
-        'bookmarkedArticles',
-        'bookmarkedArticles.category',
-        'bookmarkedArticles.tags',
+        'likedPublications',
+        'likedPublications.category',
+        'likedPublications.tags',
+        'bookmarkedPublications',
+        'bookmarkedPublications.category',
+        'bookmarkedPublications.tags',
         'comments',
-        'comments.article',
+        'comments.publication',
       ],
     });
   }
 
   /**
    * Build a scored interest profile from likes (+3), bookmarks (+2), and views (+1).
-   * Viewed article IDs are excluded from future recommendations.
+   * Viewed publication IDs are excluded from future recommendations.
    */
   private async buildInterestProfile(user: User): Promise<UserInterestProfile> {
     const categoryScores = new Map<number, number>();
     const tagScores = new Map<number, number>();
     const interactedIds = new Set<number>();
 
-    const addSignal = (article: Article, weight: number) => {
-      interactedIds.add(article.id);
-      if (article.category?.id)
-        categoryScores.set(article.category.id, (categoryScores.get(article.category.id) ?? 0) + weight);
-      for (const tag of article.tags ?? [])
+    const addSignal = (publication: Publication, weight: number) => {
+      interactedIds.add(publication.id);
+      if (publication.category?.id)
+        categoryScores.set(publication.category.id, (categoryScores.get(publication.category.id) ?? 0) + weight);
+      for (const tag of publication.tags ?? [])
         tagScores.set(tag.id, (tagScores.get(tag.id) ?? 0) + weight);
     };
 
-    for (const article of user.likedArticles ?? []) addSignal(article, 3);
-    for (const article of user.bookmarkedArticles ?? []) addSignal(article, 2);
+    for (const publication of user.likedPublications ?? []) addSignal(publication, 3);
+    for (const publication of user.bookmarkedPublications ?? []) addSignal(publication, 2);
 
-    // Comments: mark the commented article as interacted
+    // Comments: mark the commented publication as interacted
     for (const comment of user.comments ?? []) {
-      if (comment.article?.id) interactedIds.add(comment.article.id);
+      if (comment.publication?.id) interactedIds.add(comment.publication.id);
     }
 
     // Views are a weaker signal: score +1, but still mark as interacted
-    const viewedIds = await this.getViewedArticleIds(user.id);
+    const viewedIds = await this.getViewedPublicationIds(user.id);
     if (viewedIds.length > 0) {
-      const viewedArticles = await this.articleRepository.find({
+      const viewedPublications = await this.publicationRepository.find({
         where: { id: In(viewedIds.slice(0, 30)) },
         relations: ['category', 'tags'],
       });
-      for (const article of viewedArticles) addSignal(article, 1);
+      for (const publication of viewedPublications) addSignal(publication, 1);
     }
 
     return { categoryScores, tagScores, interactedIds };
@@ -265,7 +265,7 @@ export class RecommendationService {
     const start = (page - 1) * pageSize;
     const slice = ranked.slice(start, start + pageSize);
     return {
-      items: slice.map((i) => ({ article: i.article, source: i.source })),
+      items: slice.map((i) => ({ publication: i.publication, source: i.source })),
       hasMore: ranked.length > start + pageSize,
       totalCandidates: ranked.length,
     };
@@ -275,16 +275,16 @@ export class RecommendationService {
     const now = Date.now();
     const oneDay = 86_400_000;
     return items.map((item) => {
-      const daysOld = (now - new Date(item.article.createdAt).getTime()) / oneDay;
+      const daysOld = (now - new Date(item.publication.createdAt).getTime()) / oneDay;
       return { ...item, score: item.score * Math.pow(0.85, daysOld) };
     });
   }
 
   /** Composite engagement score: views (capped) + likes (capped) + comments (capped) */
-  private engagementScore(article: Article): number {
-    const views = article.viewsCount || 0;
-    const likes = (article as any).likes?.length || 0;
-    const comments = (article as any).comments?.length || 0;
+  private engagementScore(publication: Publication): number {
+    const views = publication.viewsCount || 0;
+    const likes = (publication as any).likes?.length || 0;
+    const comments = (publication as any).comments?.length || 0;
     return (
       Math.min(views / 100, 0.3) +
       Math.min(likes / 20, 0.4) +
@@ -309,10 +309,10 @@ export class RecommendationService {
 
     // Fill remaining slots without restriction
     if (result.length < limit) {
-      const seen = new Set(result.map((i) => i.article.id));
+      const seen = new Set(result.map((i) => i.publication.id));
       for (const item of items) {
         if (result.length >= limit) break;
-        if (!seen.has(item.article.id)) result.push(item);
+        if (!seen.has(item.publication.id)) result.push(item);
       }
     }
 
@@ -321,11 +321,11 @@ export class RecommendationService {
 
   // ── Candidate fetchers ───────────────────────────────────────────────────────
 
-  private async getFollowedAuthorsArticles(
+  private async getFollowedAuthorsPublications(
     userId: number,
     excludeIds: Set<number>,
     limit: number,
-  ): Promise<Article[]> {
+  ): Promise<Publication[]> {
     try {
       const follows = await this.followRepository.find({
         where: { follower: { id: userId } },
@@ -336,23 +336,23 @@ export class RecommendationService {
       const authorIds = follows.map((f) => f.following.id);
       const excludeArray = excludeIds.size > 0 ? [...excludeIds] : [0];
 
-      return this.articleRepository
-        .createQueryBuilder('article')
-        .leftJoinAndSelect('article.author', 'author')
-        .leftJoinAndSelect('article.category', 'category')
-        .leftJoinAndSelect('article.tags', 'tags')
-        .leftJoinAndSelect('article.likes', 'likes')
-        .leftJoinAndSelect('article.bookmarks', 'bookmarks')
-        .leftJoinAndSelect('article.comments', 'comments')
-        .leftJoinAndSelect('article.media', 'media')
-        .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-        .andWhere('article.author IN (:...authorIds)', { authorIds })
-        .andWhere('article.id != ALL(:excludeIds)', { excludeIds: excludeArray })
-        .orderBy('article.createdAt', 'DESC')
+      return this.publicationRepository
+        .createQueryBuilder('publication')
+        .leftJoinAndSelect('publication.author', 'author')
+        .leftJoinAndSelect('publication.category', 'category')
+        .leftJoinAndSelect('publication.tags', 'tags')
+        .leftJoinAndSelect('publication.likes', 'likes')
+        .leftJoinAndSelect('publication.bookmarks', 'bookmarks')
+        .leftJoinAndSelect('publication.comments', 'comments')
+        .leftJoinAndSelect('publication.media', 'media')
+        .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+        .andWhere('publication.author IN (:...authorIds)', { authorIds })
+        .andWhere('publication.id != ALL(:excludeIds)', { excludeIds: excludeArray })
+        .orderBy('publication.createdAt', 'DESC')
         .take(limit)
         .getMany();
     } catch (error) {
-      this.logger.error('getFollowedAuthorsArticles error:', error);
+      this.logger.error('getFollowedAuthorsPublications error:', error);
       return [];
     }
   }
@@ -361,29 +361,29 @@ export class RecommendationService {
    * Trending = published in the last 7 days, sorted by composite score:
    * views + likes×5 + comments×3 (likes/comments are stronger engagement signals)
    */
-  private async getTrendingArticles(excludeIds: Set<number>, limit: number): Promise<Article[]> {
+  private async getTrendingPublications(excludeIds: Set<number>, limit: number): Promise<Publication[]> {
     try {
       const excludeArray = excludeIds.size > 0 ? [...excludeIds] : [0];
       const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
 
-      const articles = await this.articleRepository
-        .createQueryBuilder('article')
-        .leftJoinAndSelect('article.author', 'author')
-        .leftJoinAndSelect('article.category', 'category')
-        .leftJoinAndSelect('article.tags', 'tags')
-        .leftJoinAndSelect('article.likes', 'likes')
-        .leftJoinAndSelect('article.bookmarks', 'bookmarks')
-        .leftJoinAndSelect('article.comments', 'comments')
-        .leftJoinAndSelect('article.media', 'media')
-        .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-        .andWhere('article.id != ALL(:excludeIds)', { excludeIds: excludeArray })
-        .andWhere('article.createdAt >= :date', { date: sevenDaysAgo })
+      const publications = await this.publicationRepository
+        .createQueryBuilder('publication')
+        .leftJoinAndSelect('publication.author', 'author')
+        .leftJoinAndSelect('publication.category', 'category')
+        .leftJoinAndSelect('publication.tags', 'tags')
+        .leftJoinAndSelect('publication.likes', 'likes')
+        .leftJoinAndSelect('publication.bookmarks', 'bookmarks')
+        .leftJoinAndSelect('publication.comments', 'comments')
+        .leftJoinAndSelect('publication.media', 'media')
+        .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+        .andWhere('publication.id != ALL(:excludeIds)', { excludeIds: excludeArray })
+        .andWhere('publication.createdAt >= :date', { date: sevenDaysAgo })
         .take(limit * 2) // fetch extra, then re-sort by composite
         .getMany();
 
-      return articles
+      return publications
         .sort((a, b) => {
-          const score = (art: Article) =>
+          const score = (art: Publication) =>
             (art.viewsCount ?? 0) +
             ((art as any).likes?.length ?? 0) * 5 +
             ((art as any).comments?.length ?? 0) * 3;
@@ -391,7 +391,7 @@ export class RecommendationService {
         })
         .slice(0, limit);
     } catch (error) {
-      this.logger.error('getTrendingArticles error:', error);
+      this.logger.error('getTrendingPublications error:', error);
       return [];
     }
   }
@@ -404,27 +404,27 @@ export class RecommendationService {
     user: User,
     profile: UserInterestProfile,
     limit: number,
-  ): Promise<Article[]> {
+  ): Promise<Publication[]> {
     try {
       const [semantic, behavioral] = await Promise.all([
         this.getSemanticCandidates(user, profile.interactedIds, limit),
         this.getBehavioralCandidates(profile, limit),
       ]);
 
-      const scoreMap = new Map<number, { article: Article; score: number }>();
-      for (const { article, similarity } of semantic) {
-        const prev = scoreMap.get(article.id)?.score ?? 0;
-        scoreMap.set(article.id, { article, score: prev + similarity * 0.6 });
+      const scoreMap = new Map<number, { publication: Publication; score: number }>();
+      for (const { publication, similarity } of semantic) {
+        const prev = scoreMap.get(publication.id)?.score ?? 0;
+        scoreMap.set(publication.id, { publication, score: prev + similarity * 0.6 });
       }
-      for (const { article, score } of behavioral) {
-        const prev = scoreMap.get(article.id)?.score ?? 0;
-        scoreMap.set(article.id, { article, score: prev + score * 0.4 });
+      for (const { publication, score } of behavioral) {
+        const prev = scoreMap.get(publication.id)?.score ?? 0;
+        scoreMap.set(publication.id, { publication, score: prev + score * 0.4 });
       }
 
       return Array.from(scoreMap.values())
         .sort((a, b) => b.score - a.score)
         .slice(0, limit)
-        .map((e) => e.article);
+        .map((e) => e.publication);
     } catch (error) {
       this.logger.error('getPersonalizedForFeed error:', error);
       return [];
@@ -435,17 +435,17 @@ export class RecommendationService {
     user: User,
     excludeIds: Set<number>,
     limit: number,
-  ): Promise<{ article: Article; similarity: number }[]> {
+  ): Promise<{ publication: Publication; similarity: number }[]> {
     try {
-      const sourceArticles = [
-        ...(user.likedArticles ?? []),
-        ...(user.bookmarkedArticles ?? []),
+      const sourcePublications = [
+        ...(user.likedPublications ?? []),
+        ...(user.bookmarkedPublications ?? []),
       ].filter((a) => a.id);
-      if (sourceArticles.length === 0) return [];
+      if (sourcePublications.length === 0) return [];
 
-      const sourceIds = sourceArticles.map((a) => a.id);
-      const vectors = await this.articleRepository.query(
-        `SELECT id, embedding_vector_pg FROM articles WHERE id = ANY($1) AND embedding_vector_pg IS NOT NULL`,
+      const sourceIds = sourcePublications.map((a) => a.id);
+      const vectors = await this.publicationRepository.query(
+        `SELECT id, embedding_vector_pg FROM publications WHERE id = ANY($1) AND embedding_vector_pg IS NOT NULL`,
         [sourceIds],
       );
       if (!vectors?.length) return [];
@@ -475,29 +475,29 @@ export class RecommendationService {
       const avgString = '[' + avg.map((v) => v.toFixed(8)).join(',') + ']';
       const excludeArray = excludeIds.size > 0 ? [...excludeIds] : [0];
 
-      const results = await this.articleRepository.query(
+      const results = await this.publicationRepository.query(
         `SELECT a.id, ROUND(CAST((1 - (embedding_vector_pg <=> $1::vector)) AS numeric), 4) AS similarity
-         FROM articles a
+         FROM publications a
          WHERE a.embedding_vector_pg IS NOT NULL
            AND a.status = $2
            AND a.id != ALL($3)
            AND (1 - (embedding_vector_pg <=> $1::vector)) >= 0.3
          ORDER BY similarity DESC
          LIMIT $4`,
-        [avgString, ArticleStatus.PUBLISHED, excludeArray, limit],
+        [avgString, PublicationStatus.PUBLISHED, excludeArray, limit],
       );
       if (!results?.length) return [];
 
       const ids = results.map((r: any) => r.id);
-      const articles = await this.articleRepository.find({
+      const publications = await this.publicationRepository.find({
         where: { id: In(ids) },
         relations: ['author', 'category', 'tags', 'likes', 'bookmarks', 'comments', 'media'],
       });
-      const articleMap = new Map(articles.map((a) => [a.id, a]));
+      const publicationMap = new Map(publications.map((a) => [a.id, a]));
 
       return results
-        .filter((r: any) => articleMap.has(r.id))
-        .map((r: any) => ({ article: articleMap.get(r.id)!, similarity: Number(r.similarity) }));
+        .filter((r: any) => publicationMap.has(r.id))
+        .map((r: any) => ({ publication: publicationMap.get(r.id)!, similarity: Number(r.similarity) }));
     } catch (error) {
       this.logger.error('getSemanticCandidates error:', error);
       return [];
@@ -507,7 +507,7 @@ export class RecommendationService {
   private async getBehavioralCandidates(
     profile: UserInterestProfile,
     limit: number,
-  ): Promise<{ article: Article; score: number }[]> {
+  ): Promise<{ publication: Publication; score: number }[]> {
     try {
       const { categoryScores, tagScores, interactedIds } = profile;
       if (categoryScores.size === 0 && tagScores.size === 0) return [];
@@ -525,32 +525,32 @@ export class RecommendationService {
 
       const excludeArray = interactedIds.size > 0 ? [...interactedIds] : [0];
 
-      const articles = await this.articleRepository
-        .createQueryBuilder('article')
-        .leftJoinAndSelect('article.author', 'author')
-        .leftJoinAndSelect('article.category', 'category')
-        .leftJoinAndSelect('article.tags', 'tags')
-        .leftJoinAndSelect('article.likes', 'likes')
-        .leftJoinAndSelect('article.bookmarks', 'bookmarks')
-        .leftJoinAndSelect('article.comments', 'comments')
-        .leftJoinAndSelect('article.media', 'media')
-        .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-        .andWhere('article.id != ALL(:excludeIds)', { excludeIds: excludeArray })
+      const publications = await this.publicationRepository
+        .createQueryBuilder('publication')
+        .leftJoinAndSelect('publication.author', 'author')
+        .leftJoinAndSelect('publication.category', 'category')
+        .leftJoinAndSelect('publication.tags', 'tags')
+        .leftJoinAndSelect('publication.likes', 'likes')
+        .leftJoinAndSelect('publication.bookmarks', 'bookmarks')
+        .leftJoinAndSelect('publication.comments', 'comments')
+        .leftJoinAndSelect('publication.media', 'media')
+        .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+        .andWhere('publication.id != ALL(:excludeIds)', { excludeIds: excludeArray })
         .andWhere('(category.id = ANY(:categories) OR tags.id = ANY(:tags))', {
           categories: topCategories.length > 0 ? topCategories : [0],
           tags: topTags.length > 0 ? topTags : [0],
         })
-        .orderBy('article.viewsCount', 'DESC')
+        .orderBy('publication.viewsCount', 'DESC')
         .take(limit)
         .getMany();
 
-      return articles.map((article) => {
+      return publications.map((publication) => {
         let score = 0;
-        if (article.category?.id && categoryScores.has(article.category.id))
-          score += categoryScores.get(article.category.id)! * 0.5;
-        for (const tag of article.tags ?? [])
+        if (publication.category?.id && categoryScores.has(publication.category.id))
+          score += categoryScores.get(publication.category.id)! * 0.5;
+        for (const tag of publication.tags ?? [])
           if (tagScores.has(tag.id)) score += tagScores.get(tag.id)! * 0.3;
-        return { article, score: Math.min(score / 10, 1) };
+        return { publication, score: Math.min(score / 10, 1) };
       });
     } catch (error) {
       this.logger.error('getBehavioralCandidates error:', error);
@@ -559,48 +559,48 @@ export class RecommendationService {
   }
 
   /**
-   * Ensures the pool never runs empty by appending all remaining published articles.
-   * Articles not yet interacted with are inserted first (unseen fallback),
-   * already-seen articles are appended last — so the feed always has content.
+   * Ensures the pool never runs empty by appending all remaining published publications.
+   * Publications not yet interacted with are inserted first (unseen fallback),
+   * already-seen publications are appended last — so the feed always has content.
    */
   private async fillPool(
     pool: FeedItem[],
     seenIds: Set<number>,
     targetSize: number,
   ): Promise<FeedItem[]> {
-    const poolIds = new Set(pool.map((i) => i.article.id));
+    const poolIds = new Set(pool.map((i) => i.publication.id));
     const remaining = await this.getAllPublishedExcluding(poolIds, targetSize);
 
     const unseenFallback: FeedItem[] = [];
     const seenFallback: FeedItem[] = [];
 
-    remaining.forEach((article) => {
-      if (seenIds.has(article.id)) {
-        seenFallback.push({ article, source: 'seen', score: -2 });
+    remaining.forEach((publication) => {
+      if (seenIds.has(publication.id)) {
+        seenFallback.push({ publication, source: 'seen', score: -2 });
       } else {
-        unseenFallback.push({ article, source: 'personalized', score: -1 });
+        unseenFallback.push({ publication, source: 'personalized', score: -1 });
       }
     });
 
     return [...pool, ...unseenFallback, ...seenFallback];
   }
 
-  /** Fetch all published articles not already in the pool, sorted by recency. */
-  private async getAllPublishedExcluding(excludeIds: Set<number>, limit: number): Promise<Article[]> {
+  /** Fetch all published publications not already in the pool, sorted by recency. */
+  private async getAllPublishedExcluding(excludeIds: Set<number>, limit: number): Promise<Publication[]> {
     try {
       const excludeArray = excludeIds.size > 0 ? [...excludeIds] : [0];
-      return this.articleRepository
-        .createQueryBuilder('article')
-        .leftJoinAndSelect('article.author', 'author')
-        .leftJoinAndSelect('article.category', 'category')
-        .leftJoinAndSelect('article.tags', 'tags')
-        .leftJoinAndSelect('article.likes', 'likes')
-        .leftJoinAndSelect('article.bookmarks', 'bookmarks')
-        .leftJoinAndSelect('article.comments', 'comments')
-        .leftJoinAndSelect('article.media', 'media')
-        .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-        .andWhere('article.id != ALL(:excludeIds)', { excludeIds: excludeArray })
-        .orderBy('article.createdAt', 'DESC')
+      return this.publicationRepository
+        .createQueryBuilder('publication')
+        .leftJoinAndSelect('publication.author', 'author')
+        .leftJoinAndSelect('publication.category', 'category')
+        .leftJoinAndSelect('publication.tags', 'tags')
+        .leftJoinAndSelect('publication.likes', 'likes')
+        .leftJoinAndSelect('publication.bookmarks', 'bookmarks')
+        .leftJoinAndSelect('publication.comments', 'comments')
+        .leftJoinAndSelect('publication.media', 'media')
+        .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+        .andWhere('publication.id != ALL(:excludeIds)', { excludeIds: excludeArray })
+        .orderBy('publication.createdAt', 'DESC')
         .take(limit)
         .getMany();
     } catch (error) {
@@ -609,43 +609,43 @@ export class RecommendationService {
     }
   }
 
-  private async getFallbackArticles(excludeIds: Set<number>, limit: number): Promise<Article[]> {
+  private async getFallbackPublications(excludeIds: Set<number>, limit: number): Promise<Publication[]> {
     try {
       const excludeArray = excludeIds.size > 0 ? [...excludeIds] : [0];
-      return this.articleRepository
-        .createQueryBuilder('article')
-        .leftJoinAndSelect('article.author', 'author')
-        .leftJoinAndSelect('article.category', 'category')
-        .leftJoinAndSelect('article.tags', 'tags')
-        .leftJoinAndSelect('article.likes', 'likes')
-        .leftJoinAndSelect('article.bookmarks', 'bookmarks')
-        .leftJoinAndSelect('article.comments', 'comments')
-        .leftJoinAndSelect('article.media', 'media')
-        .where('article.status = :status', { status: ArticleStatus.PUBLISHED })
-        .andWhere('article.id != ALL(:excludeIds)', { excludeIds: excludeArray })
-        .andWhere("article.createdAt > NOW() - INTERVAL '30 days'")
-        .orderBy('article.viewsCount', 'DESC')
+      return this.publicationRepository
+        .createQueryBuilder('publication')
+        .leftJoinAndSelect('publication.author', 'author')
+        .leftJoinAndSelect('publication.category', 'category')
+        .leftJoinAndSelect('publication.tags', 'tags')
+        .leftJoinAndSelect('publication.likes', 'likes')
+        .leftJoinAndSelect('publication.bookmarks', 'bookmarks')
+        .leftJoinAndSelect('publication.comments', 'comments')
+        .leftJoinAndSelect('publication.media', 'media')
+        .where('publication.status = :status', { status: PublicationStatus.PUBLISHED })
+        .andWhere('publication.id != ALL(:excludeIds)', { excludeIds: excludeArray })
+        .andWhere("publication.createdAt > NOW() - INTERVAL '30 days'")
+        .orderBy('publication.viewsCount', 'DESC')
         .take(limit)
         .getMany();
     } catch (error) {
-      this.logger.error('getFallbackArticles error:', error);
+      this.logger.error('getFallbackPublications error:', error);
       return [];
     }
   }
 
-  private async getViewedArticleIds(userId: number): Promise<number[]> {
+  private async getViewedPublicationIds(userId: number): Promise<number[]> {
     try {
-      const views = await this.articleViewRepository
+      const views = await this.publicationViewRepository
         .createQueryBuilder('view')
-        .innerJoin('view.article', 'article')
+        .innerJoin('view.publication', 'publication')
         .where('view.user = :userId', { userId })
-        .select(['article.id'])
+        .select(['publication.id'])
         .orderBy('view.createdAt', 'DESC')
         .take(100)
         .getRawMany();
-      return views.map((v) => v.article_id).filter((id): id is number => id != null);
+      return views.map((v) => v.publication_id).filter((id): id is number => id != null);
     } catch (error) {
-      this.logger.error('getViewedArticleIds error:', error);
+      this.logger.error('getViewedPublicationIds error:', error);
       return [];
     }
   }

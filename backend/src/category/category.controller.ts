@@ -46,9 +46,9 @@ export class CategoryController {
     return this.categoryService.remove(+id);
   }
 
-  @Get(':id/articles')
+  @Get(':id/publications')
   @UseGuards(AuthGuard)
-  findArticlesByCategory(@Param('id') id: string) {
-    return this.categoryService.findArticlesByCategory(+id);
+  findPublicationsByCategory(@Param('id') id: string) {
+    return this.categoryService.findPublicationsByCategory(+id);
   }
 }

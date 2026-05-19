@@ -372,7 +372,7 @@ export class FollowService {
    * Multi-signal friend suggestions (Facebook-style):
    * 1. Users who follow you but you don't follow back  (+30)
    * 2. Friends-of-friends / mutual connections          (+10 per mutual)
-   * 3. Common article interactions (liked same articles)(+4 per common)
+   * 3. Common publication interactions (liked same publications)(+4 per common)
    * 4. Same department                                  (+8)
    * 5. Online now bonus                                 (+5)
    * 6. Recently active (last 7 days)                   (+3)
@@ -476,14 +476,14 @@ export class FollowService {
       if (!userCache.has(uid)) userCache.set(uid, row as unknown as User);
     }
 
-    // ── Signal 3: common article likes ───────────────────────────────────
+    // ── Signal 3: common publication likes ───────────────────────────────────
     try {
       const commonLikes: { candidate_id: string; common_count: string }[] =
         await this.dataSource.query(
           `
           SELECT al2."usersId" AS candidate_id, COUNT(*) AS common_count
-          FROM article_likes al1
-          JOIN article_likes al2 ON al1."articlesId" = al2."articlesId"
+          FROM publication_likes al1
+          JOIN publication_likes al2 ON al1."publicationsId" = al2."publicationsId"
           WHERE al1."usersId" = $1
             AND al2."usersId" != $1
             AND al2."usersId" NOT IN (

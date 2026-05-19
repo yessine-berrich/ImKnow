@@ -9,7 +9,7 @@ describe('CommentController', () => {
 
   const mockCommentService = {
     create: jest.fn(),
-    findAllByArticle: jest.fn(),
+    findAllByPublication: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
     toggleLike: jest.fn(),

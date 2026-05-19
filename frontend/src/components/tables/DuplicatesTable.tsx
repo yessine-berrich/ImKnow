@@ -10,12 +10,12 @@ import {
 } from 'lucide-react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
-import { DuplicateArticle } from '@/app/(admin)/(others-pages)/(rejected)/rejected/duplicated/page';
+import { DuplicatePublication } from '@/app/(admin)/(others-pages)/(rejected)/rejected/duplicated/page';
 import Avatar from '@/components/ui/avatar/Avatar';
 import MarkdownPreview from '@/components/markdoun-editor/MarkdownPreview';
 
 interface DuplicatesTableProps {
-  articles: DuplicateArticle[];
+  publications: DuplicatePublication[];
   onRefresh: () => void;
   title?: string;
   description?: string;
@@ -29,14 +29,14 @@ const truncateText = (text: string, maxLength: number = 20): string => {
   return text.substring(0, maxLength) + '...';
 };
 
-// ─── Modal d'article simplifié ────────────────────────────────────────────────
-interface SimpleArticleModalProps {
+// ─── Modal d'publication simplifié ────────────────────────────────────────────────
+interface SimplePublicationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  article: DuplicateArticle | null;
+  publication: DuplicatePublication | null;
 }
 
-function SimpleArticleModal({ isOpen, onClose, article }: SimpleArticleModalProps) {
+function SimplePublicationModal({ isOpen, onClose, publication }: SimplePublicationModalProps) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -59,7 +59,7 @@ function SimpleArticleModal({ isOpen, onClose, article }: SimpleArticleModalProp
     return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
   };
 
-  if (!isOpen || !article) return null;
+  if (!isOpen || !publication) return null;
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
@@ -69,19 +69,19 @@ function SimpleArticleModal({ isOpen, onClose, article }: SimpleArticleModalProp
         <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Avatar
-              src={article.author?.profileImage}
-              alt={article.author?.name || 'Auteur'}
+              src={publication.author?.profileImage}
+              alt={publication.author?.name || 'Auteur'}
               size="medium"
               className="!w-12 !h-12"
             />
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                {article.author?.name || 'Auteur inconnu'}
+                {publication.author?.name || 'Auteur inconnu'}
               </h3>
               <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <span>{article.author?.role || 'Membre'}</span>
+                <span>{publication.author?.role || 'Membre'}</span>
                 <span>•</span>
-                <span>{getTimeAgo(article.createdAt)}</span>
+                <span>{getTimeAgo(publication.createdAt)}</span>
               </div>
             </div>
           </div>
@@ -97,21 +97,21 @@ function SimpleArticleModal({ isOpen, onClose, article }: SimpleArticleModalProp
           <div className="p-6 space-y-6">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-3 py-1 bg-[#00926B]/10 dark:bg-[#00926B]/20 text-[#00926B] dark:text-[#00B383] text-sm font-medium rounded-full">
-                {article.category?.name || 'Non classé'}
+                {publication.category?.name || 'Non classé'}
               </span>
             </div>
 
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              {article.title}
+              {publication.title}
             </h1>
 
             <div className="prose dark:prose-invert max-w-none">
-              <MarkdownPreview content={article.content} />
+              <MarkdownPreview content={publication.content} />
             </div>
 
-            {article.tags.length > 0 && (
+            {publication.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-6 border-t border-gray-200 dark:border-gray-800">
-                {article.tags.map((tag, i) => (
+                {publication.tags.map((tag, i) => (
                   <span key={i} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm">
                     {tag}
                   </span>
@@ -127,13 +127,13 @@ function SimpleArticleModal({ isOpen, onClose, article }: SimpleArticleModalProp
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function DuplicatesTable({
-  articles: initialArticles,
+  publications: initialPublications,
   onRefresh,
-  title = 'Articles Rejetés — Doublons',
-  description = 'Articles rejetés en raison de similarité avec des articles existants',
+  title = 'Publications Rejetés — Doublons',
+  description = 'Publications rejetés en raison de similarité avec des publications existants',
 }: DuplicatesTableProps) {
   const router = useRouter();
-  const [articles, setArticles] = useState(initialArticles);
+  const [publications, setPublications] = useState(initialPublications);
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -144,10 +144,10 @@ export default function DuplicatesTable({
   const [expandedSimilarId, setExpandedSimilarId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const [selectedArticle, setSelectedArticle] = useState<DuplicateArticle | null>(null);
-  const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+  const [selectedPublication, setSelectedPublication] = useState<DuplicatePublication | null>(null);
+  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
 
-  useEffect(() => { setArticles(initialArticles); }, [initialArticles]);
+  useEffect(() => { setPublications(initialPublications); }, [initialPublications]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -164,10 +164,10 @@ export default function DuplicatesTable({
 
   const handleApprove = async (id: number, title: string) => {
     setOpenMenuId(null);
-    if (!await confirm(`"${title}" sera publié et l'auteur en sera notifié.`, { title: "Approuver l'article ?" })) return;
+    if (!await confirm(`"${title}" sera publié et l'auteur en sera notifié.`, { title: "Approuver l'publication ?" })) return;
     setLoading((l) => ({ ...l, [id]: true }));
     try {
-      const res = await fetch(`http://localhost:3000/api/articles/${id}/approve`, {
+      const res = await fetch(`http://localhost:3000/api/publications/${id}/approve`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
       });
@@ -175,8 +175,8 @@ export default function DuplicatesTable({
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || `Erreur ${res.status}`);
       }
-      setArticles((prev) => prev.filter((a) => a.id !== id));
-      toast.success('Article approuvé et publié avec succès');
+      setPublications((prev) => prev.filter((a) => a.id !== id));
+      toast.success('Publication approuvé et publié avec succès');
     } catch (err: any) {
       toast.error(`Échec de l'approbation : ${err.message}`);
     } finally {
@@ -189,7 +189,7 @@ export default function DuplicatesTable({
     if (!await confirm(`"${title}" sera supprimé définitivement. Cette action est irréversible.`, { title: 'Supprimer définitivement ?' })) return;
     setLoading((l) => ({ ...l, [id]: true }));
     try {
-      const res = await fetch(`http://localhost:3000/api/articles/${id}`, {
+      const res = await fetch(`http://localhost:3000/api/publications/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(),
       });
@@ -197,8 +197,8 @@ export default function DuplicatesTable({
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || `Erreur ${res.status}`);
       }
-      setArticles((prev) => prev.filter((a) => a.id !== id));
-      toast.success('Article supprimé définitivement');
+      setPublications((prev) => prev.filter((a) => a.id !== id));
+      toast.success('Publication supprimé définitivement');
     } catch (err: any) {
       toast.error(`Échec de la suppression : ${err.message}`);
     } finally {
@@ -206,16 +206,16 @@ export default function DuplicatesTable({
     }
   };
 
-  const handleViewArticle = (article: DuplicateArticle) => {
-    setSelectedArticle(article);
-    setIsArticleModalOpen(true);
+  const handleViewPublication = (publication: DuplicatePublication) => {
+    setSelectedPublication(publication);
+    setIsPublicationModalOpen(true);
     setOpenMenuId(null);
   };
 
-  const filteredArticles = useMemo(() => {
-    if (!search.trim()) return articles;
+  const filteredPublications = useMemo(() => {
+    if (!search.trim()) return publications;
     const s = search.toLowerCase();
-    return articles.filter(
+    return publications.filter(
       (a) =>
         a.title.toLowerCase().includes(s) ||
         a.author?.name.toLowerCase().includes(s) ||
@@ -223,11 +223,11 @@ export default function DuplicatesTable({
         a.category?.name.toLowerCase().includes(s) ||
         a.tags.some((t) => t.toLowerCase().includes(s))
     );
-  }, [articles, search]);
+  }, [publications, search]);
 
-  const sortedArticles = useMemo(() => {
-    if (!sortConfig) return filteredArticles;
-    return [...filteredArticles].sort((a, b) => {
+  const sortedPublications = useMemo(() => {
+    if (!sortConfig) return filteredPublications;
+    return [...filteredPublications].sort((a, b) => {
       let aVal: any, bVal: any;
       switch (sortConfig.key) {
         case 'title':          aVal = a.title;               bVal = b.title; break;
@@ -243,22 +243,22 @@ export default function DuplicatesTable({
         ? String(aVal).localeCompare(String(bVal))
         : String(bVal).localeCompare(String(aVal));
     });
-  }, [filteredArticles, sortConfig]);
+  }, [filteredPublications, sortConfig]);
 
-  const totalPages = Math.ceil(sortedArticles.length / itemsPerPage);
+  const totalPages = Math.ceil(sortedPublications.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const pageArticles = sortedArticles.slice(startIndex, startIndex + itemsPerPage);
-  const displayRows = Array(itemsPerPage).fill(null).map((_, i) => pageArticles[i] ?? null);
+  const pagePublications = sortedPublications.slice(startIndex, startIndex + itemsPerPage);
+  const displayRows = Array(itemsPerPage).fill(null).map((_, i) => pagePublications[i] ?? null);
 
   const stats = useMemo(() => {
-    const scores = articles.map((a) => a.duplicateScore);
+    const scores = publications.map((a) => a.duplicateScore);
     return {
-      total: articles.length,
+      total: publications.length,
       avgScore: scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : 0,
-      highRisk: articles.filter((a) => a.duplicateScore >= 0.85).length,
-      categories: new Set(articles.map((a) => a.category?.name).filter(Boolean)).size,
+      highRisk: publications.filter((a) => a.duplicateScore >= 0.85).length,
+      categories: new Set(publications.map((a) => a.category?.name).filter(Boolean)).size,
     };
-  }, [articles]);
+  }, [publications]);
 
   const handleSort = (key: SortKey) => {
     if (!sortConfig || sortConfig.key !== key) setSortConfig({ key, direction: 'asc' });
@@ -303,7 +303,7 @@ export default function DuplicatesTable({
   );
 
   const columns: { key: SortKey; label: string }[] = [
-    { key: 'title',          label: 'Article' },
+    { key: 'title',          label: 'Publication' },
     { key: 'author',         label: 'Auteur' },
     { key: 'category',       label: 'Catégorie' },
     { key: 'duplicateScore', label: 'Score doublon' },
@@ -362,7 +362,7 @@ export default function DuplicatesTable({
                   </th>
                 ))}
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Articles similaires</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Publications similaires</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
@@ -372,68 +372,68 @@ export default function DuplicatesTable({
                   <td colSpan={8} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center justify-center">
                       <Copy className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-3" />
-                      <p className="text-gray-500 dark:text-gray-400 font-medium">Aucun article doublon trouvé</p>
+                      <p className="text-gray-500 dark:text-gray-400 font-medium">Aucun publication doublon trouvé</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                displayRows.map((article, index) => {
-                  if (!article) return renderEmptyRow(index);
-                  const isLoading = loading[article.id];
-                  const truncatedTitle = truncateText(article.title, 20);
-                  const hasLongTitle = article.title && article.title.length > 20;
+                displayRows.map((publication, index) => {
+                  if (!publication) return renderEmptyRow(index);
+                  const isLoading = loading[publication.id];
+                  const truncatedTitle = truncateText(publication.title, 20);
+                  const hasLongTitle = publication.title && publication.title.length > 20;
 
                   return (
-                    <React.Fragment key={article.id}>
+                    <React.Fragment key={publication.id}>
                       <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                         <td className="px-4 py-3 max-w-xs">
                           <div>
-                            <p className="font-medium text-gray-900 dark:text-white truncate cursor-help" title={hasLongTitle ? article.title : undefined}>
+                            <p className="font-medium text-gray-900 dark:text-white truncate cursor-help" title={hasLongTitle ? publication.title : undefined}>
                               {truncatedTitle}
                             </p>
-                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5 truncate max-w-[220px]" title={article.rejectionReason}>
-                              {article.rejectionReason}
+                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5 truncate max-w-[220px]" title={publication.rejectionReason}>
+                              {publication.rejectionReason}
                             </p>
                           </div>
                         </td>
 
                         <td className="px-4 py-3">
-                          {article.author ? (
+                          {publication.author ? (
                             <div className="flex items-center gap-2">
-                              <Avatar src={article.author.profileImage} alt={article.author.name} size="small" />
+                              <Avatar src={publication.author.profileImage} alt={publication.author.name} size="small" />
                               <div className="min-w-0">
-                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{article.author.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{article.author.email}</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{publication.author.name}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{publication.author.email}</p>
                               </div>
                             </div>
                           ) : <span className="text-sm text-gray-400">—</span>}
                         </td>
 
                         <td className="px-4 py-3">
-                          {article.category ? (
+                          {publication.category ? (
                             <span className="px-2.5 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 text-xs font-medium rounded-full">
-                              {article.category.name}
+                              {publication.category.name}
                             </span>
                           ) : <span className="text-sm text-gray-400">—</span>}
                         </td>
 
-                        <td className="px-4 py-3">{scoreBar(article.duplicateScore)}</td>
-                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatDate(article.createdAt)}</td>
+                        <td className="px-4 py-3">{scoreBar(publication.duplicateScore)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatDate(publication.createdAt)}</td>
 
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
-                            {article.tags.length === 0 ? (
+                            {publication.tags.length === 0 ? (
                               <span className="text-sm text-gray-400">—</span>
                             ) : (
                               <>
-                                {article.tags.slice(0, 2).map((tag) => (
+                                {publication.tags.slice(0, 2).map((tag) => (
                                   <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full">
                                     {tag}
                                   </span>
                                 ))}
-                                {article.tags.length > 2 && (
+                                {publication.tags.length > 2 && (
                                   <span className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 text-xs rounded-full">
-                                    +{article.tags.length - 2}
+                                    +{publication.tags.length - 2}
                                   </span>
                                 )}
                               </>
@@ -443,15 +443,15 @@ export default function DuplicatesTable({
 
                         <td className="px-4 py-3">
                           <button
-                            onClick={() => setExpandedSimilarId(expandedSimilarId === article.id ? null : article.id)}
+                            onClick={() => setExpandedSimilarId(expandedSimilarId === publication.id ? null : publication.id)}
                             className="flex items-center gap-1.5 text-xs text-[#168F6F] hover:underline"
                           >
                             <Link2 size={13} />
-                            {article.similarArticlesCache.length} similaire{article.similarArticlesCache.length > 1 ? 's' : ''}
+                            {publication.similarPublicationsCache.length} similaire{publication.similarPublicationsCache.length > 1 ? 's' : ''}
                           </button>
-                          {expandedSimilarId === article.id && article.similarArticlesCache.length > 0 && (
+                          {expandedSimilarId === publication.id && publication.similarPublicationsCache.length > 0 && (
                             <div className="mt-2 space-y-1.5 max-w-[220px]">
-                              {article.similarArticlesCache.map((sim) => {
+                              {publication.similarPublicationsCache.map((sim) => {
                                 const truncatedSimTitle = truncateText(sim.title, 20);
                                 const hasLongSimTitle = sim.title && sim.title.length > 20;
                                 return (
@@ -473,11 +473,11 @@ export default function DuplicatesTable({
                         </td>
 
                         <td className="px-4 py-3">
-                          <div className="relative" ref={openMenuId === article.id ? menuRef : undefined}>
+                          <div className="relative" ref={openMenuId === publication.id ? menuRef : undefined}>
                             <button
                               onClick={() => {
                                 setMenuPosition(index >= 5 ? 'top' : 'bottom');
-                                setOpenMenuId(openMenuId === article.id ? null : article.id);
+                                setOpenMenuId(openMenuId === publication.id ? null : publication.id);
                               }}
                               disabled={isLoading}
                               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors disabled:opacity-50"
@@ -485,36 +485,36 @@ export default function DuplicatesTable({
                               {isLoading ? <Loader2 size={18} className="animate-spin" /> : <MoreVertical size={18} />}
                             </button>
 
-                            {openMenuId === article.id && !isLoading && (
+                            {openMenuId === publication.id && !isLoading && (
                               <div className={`absolute z-[100] w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 ${menuPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'}`} style={{ left: '50%', transform: 'translateX(-90%)' }}>
                                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-                                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate cursor-help" title={hasLongTitle ? article.title : undefined}>
+                                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate cursor-help" title={hasLongTitle ? publication.title : undefined}>
                                     {truncatedTitle}
                                   </p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                    Score doublon : <span className="font-bold text-orange-500">{Math.round(article.duplicateScore * 100)}%</span>
+                                    Score doublon : <span className="font-bold text-orange-500">{Math.round(publication.duplicateScore * 100)}%</span>
                                   </p>
                                 </div>
 
-                                <button onClick={() => handleApprove(article.id, article.title)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-3 transition-colors font-medium">
+                                <button onClick={() => handleApprove(publication.id, publication.title)} className="w-full text-left px-4 py-2.5 text-sm text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-3 transition-colors font-medium">
                                   <ThumbsUp size={16} className="text-green-500" /> Approuver & Publier
                                 </button>
 
-                                <button onClick={() => handleViewArticle(article)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
-                                  <Eye size={16} className="text-gray-400" /> Voir l'article
+                                <button onClick={() => handleViewPublication(publication)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
+                                  <Eye size={16} className="text-gray-400" /> Voir l'publication
                                 </button>
 
-                                <button onClick={() => handleCopyRejectionReason(article.rejectionReason)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
+                                <button onClick={() => handleCopyRejectionReason(publication.rejectionReason)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
                                   <Copy size={16} className="text-gray-400" /> Copier la raison de rejet
                                 </button>
 
-                                <button onClick={() => { router.push(`/profile/${article.author?.id}`); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
+                                <button onClick={() => { router.push(`/profile/${publication.author?.id}`); setOpenMenuId(null); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
                                   <User size={16} className="text-gray-400" /> Voir l'auteur
                                 </button>
 
                                 <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
 
-                                <button onClick={() => handleDelete(article.id, article.title)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors font-medium">
+                                <button onClick={() => handleDelete(publication.id, publication.title)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors font-medium">
                                   <Trash2 size={16} className="text-red-500" /> Supprimer définitivement
                                 </button>
                               </div>
@@ -533,7 +533,7 @@ export default function DuplicatesTable({
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              {startIndex + 1} – {Math.min(startIndex + itemsPerPage, sortedArticles.length)} sur {sortedArticles.length}
+              {startIndex + 1} – {Math.min(startIndex + itemsPerPage, sortedPublications.length)} sur {sortedPublications.length}
             </span>
             <div className="flex items-center gap-2">
               <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
@@ -548,13 +548,13 @@ export default function DuplicatesTable({
         )}
       </div>
 
-      <SimpleArticleModal
-        isOpen={isArticleModalOpen}
+      <SimplePublicationModal
+        isOpen={isPublicationModalOpen}
         onClose={() => {
-          setIsArticleModalOpen(false);
-          setSelectedArticle(null);
+          setIsPublicationModalOpen(false);
+          setSelectedPublication(null);
         }}
-        article={selectedArticle}
+        publication={selectedPublication}
       />
 
       <style jsx global>{`

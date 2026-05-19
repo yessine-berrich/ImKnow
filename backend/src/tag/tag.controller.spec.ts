@@ -8,7 +8,7 @@ describe('TagController', () => {
   let controller: TagController;
   let service: jest.Mocked<TagService>;
 
-  const mockTag = { id: 1, name: 'nestjs', articles: [] };
+  const mockTag = { id: 1, name: 'nestjs', publications: [] };
 
   const mockTagService = {
     findAll: jest.fn(),

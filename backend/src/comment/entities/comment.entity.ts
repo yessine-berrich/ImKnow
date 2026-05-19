@@ -1,4 +1,4 @@
-import { Article } from 'src/article/entities/article.entity';
+import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -25,10 +25,10 @@ export class Comment {
   @Column({ default: false })
   isEdited: boolean;
 
-  @ManyToOne(() => Article, (article) => article.comments, {
+  @ManyToOne(() => Publication, (publication) => publication.comments, {
     onDelete: 'CASCADE',
   })
-  article: Article;
+  publication: Publication;
 
   @ManyToOne(() => User, (user) => user.comments, { eager: true, onDelete: 'CASCADE' }) // On charge souvent l'auteur par défaut
   author: User;

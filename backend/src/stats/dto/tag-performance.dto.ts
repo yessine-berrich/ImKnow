@@ -1,7 +1,7 @@
 export class TagPerformanceDto {
   id: number;
   name: string;
-  articleCount: number;
+  publicationCount: number;
   totalViews: number;
   totalLikes: number;
   avgEngagement: number;

@@ -3,11 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { HttpService } from '@nestjs/axios';
 import { of, throwError } from 'rxjs';
 import { SearchService } from './search.service';
-import { Article } from '../article/entities/article.entity';
+import { Publication } from '../publication/entities/publication.entity';
 import { Category } from '../category/entities/category.entity';
 import { Tag } from '../tag/entities/tag.entity';
 import { User } from '../users/entities/user.entity';
-import { ArticleStatus } from 'utils/constants';
+import { PublicationStatus } from 'utils/constants';
 
 describe('SearchService', () => {
   let service: SearchService;
@@ -16,7 +16,7 @@ describe('SearchService', () => {
 
   const MOCK_EMBEDDING = new Array(768).fill(0.1);
 
-  const mockArticleRow = {
+  const mockPublicationRow = {
     id: 1,
     title: 'NestJS Deep Dive',
     content: 'Short content',
@@ -30,13 +30,13 @@ describe('SearchService', () => {
     likesCount: 5,
   };
 
-  const mockArticleEntity = {
+  const mockPublicationEntity = {
     id: 1,
     title: 'NestJS Deep Dive',
     content: 'Short content',
     viewsCount: 42,
     createdAt: new Date(),
-    status: ArticleStatus.PUBLISHED,
+    status: PublicationStatus.PUBLISHED,
     author: { id: 1, firstName: 'Jane', lastName: 'Doe', profileImage: null },
     category: { id: 1, name: 'Tech' },
     tags: [{ id: 1, name: 'nestjs' }],
@@ -47,14 +47,14 @@ describe('SearchService', () => {
   const mockCategoryEntity = {
     id: 1,
     name: 'Technology',
-    description: 'Tech articles',
-    articles: [{ id: 1 }, { id: 2 }, { id: 3 }],
+    description: 'Tech publications',
+    publications: [{ id: 1 }, { id: 2 }, { id: 3 }],
   };
 
   const mockTagEntity = {
     id: 1,
     name: 'nestjs',
-    articles: [{ id: 1 }, { id: 2 }],
+    publications: [{ id: 1 }, { id: 2 }],
   };
 
   const mockUserEntity = {
@@ -71,7 +71,7 @@ describe('SearchService', () => {
 
   // ── Repository mocks ──────────────────────────────────────────────────────
 
-  const mockArticleRepo = {
+  const mockPublicationRepo = {
     find: jest.fn(),
     query: jest.fn(),
   };
@@ -97,7 +97,7 @@ describe('SearchService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SearchService,
-        { provide: getRepositoryToken(Article),  useValue: mockArticleRepo },
+        { provide: getRepositoryToken(Publication),  useValue: mockPublicationRepo },
         { provide: getRepositoryToken(Category), useValue: mockCategoryRepo },
         { provide: getRepositoryToken(Tag),      useValue: mockTagRepo },
         { provide: getRepositoryToken(User),     useValue: mockUserRepo },
@@ -202,47 +202,47 @@ describe('SearchService', () => {
 
     it('should query the database and return results', async () => {
       const mockResults = [
-        { id: 1, title: 'Article 1', content_preview: 'Preview…', similarity: 0.85 },
+        { id: 1, title: 'Publication 1', content_preview: 'Preview…', similarity: 0.85 },
       ];
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue(mockResults);
+      mockPublicationRepo.query.mockResolvedValue(mockResults);
 
       const result = await service.semanticSearch('nestjs testing');
 
       expect(result).toEqual(mockResults);
-      expect(mockArticleRepo.query).toHaveBeenCalled();
+      expect(mockPublicationRepo.query).toHaveBeenCalled();
     });
 
     it('should pass the correct status filter to the query', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([]);
+      mockPublicationRepo.query.mockResolvedValue([]);
 
-      await service.semanticSearch('query', 5, 0.72, ArticleStatus.DRAFT);
+      await service.semanticSearch('query', 5, 0.72, PublicationStatus.DRAFT);
 
-      expect(mockArticleRepo.query).toHaveBeenCalledWith(
+      expect(mockPublicationRepo.query).toHaveBeenCalledWith(
         expect.any(String),
-        expect.arrayContaining([ArticleStatus.DRAFT]),
+        expect.arrayContaining([PublicationStatus.DRAFT]),
       );
     });
 
     it('should return empty array when db query returns nothing', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([]);
+      mockPublicationRepo.query.mockResolvedValue([]);
 
       expect(await service.semanticSearch('obscure topic')).toEqual([]);
     });
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // searchArticlesOnly — semantic path
+  // searchPublicationsOnly — semantic path
   // ═══════════════════════════════════════════════════════════════
 
-  describe('searchArticlesOnly (semantic path)', () => {
-    it('should return mapped articles when semantic search succeeds', async () => {
+  describe('searchPublicationsOnly (semantic path)', () => {
+    it('should return mapped publications when semantic search succeeds', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([mockArticleRow]);
+      mockPublicationRepo.query.mockResolvedValue([mockPublicationRow]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(1);
@@ -255,9 +255,9 @@ describe('SearchService', () => {
     it('should truncate content preview to 200 chars', async () => {
       const longContent = 'A'.repeat(300);
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([{ ...mockArticleRow, content: longContent }]);
+      mockPublicationRepo.query.mockResolvedValue([{ ...mockPublicationRow, content: longContent }]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
       expect(result[0].contentPreview).toHaveLength(203); // 200 + '...'
       expect(result[0].contentPreview.endsWith('...')).toBe(true);
@@ -265,9 +265,9 @@ describe('SearchService', () => {
 
     it('should not append ellipsis for short content', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([{ ...mockArticleRow, content: 'Short' }]);
+      mockPublicationRepo.query.mockResolvedValue([{ ...mockPublicationRow, content: 'Short' }]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
       expect(result[0].contentPreview).toBe('Short');
     });
@@ -275,57 +275,57 @@ describe('SearchService', () => {
     it('should include media array from semantic row', async () => {
       const mockMedia = [{ id: 1, url: '/img.png', filename: 'img.png', mimetype: 'image/png', type: 'IMAGE', size: 1024 }];
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([{ ...mockArticleRow, media: mockMedia }]);
+      mockPublicationRepo.query.mockResolvedValue([{ ...mockPublicationRow, media: mockMedia }]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
       expect(result[0].media).toEqual(mockMedia);
     });
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // searchArticlesOnly — text fallback path
+  // searchPublicationsOnly — text fallback path
   // ═══════════════════════════════════════════════════════════════
 
-  describe('searchArticlesOnly (text fallback)', () => {
+  describe('searchPublicationsOnly (text fallback)', () => {
     it('should fall back to text search when embedding fails', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([mockArticleEntity]);
+      mockPublicationRepo.find.mockResolvedValue([mockPublicationEntity]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
       expect(result).toHaveLength(1);
-      expect(mockArticleRepo.find).toHaveBeenCalled();
+      expect(mockPublicationRepo.find).toHaveBeenCalled();
     });
 
     it('should fall back to text search when semantic returns empty', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([]); // no semantic results
+      mockPublicationRepo.query.mockResolvedValue([]); // no semantic results
 
-      mockArticleRepo.find.mockResolvedValue([mockArticleEntity]);
+      mockPublicationRepo.find.mockResolvedValue([mockPublicationEntity]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
-      expect(mockArticleRepo.find).toHaveBeenCalled();
+      expect(mockPublicationRepo.find).toHaveBeenCalled();
       expect(result).toHaveLength(1);
     });
 
     it('should fall back to text search when semantic query throws', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockRejectedValue(new Error('pgvector not available'));
-      mockArticleRepo.find.mockResolvedValue([mockArticleEntity]);
+      mockPublicationRepo.query.mockRejectedValue(new Error('pgvector not available'));
+      mockPublicationRepo.find.mockResolvedValue([mockPublicationEntity]);
 
-      const result = await service.searchArticlesOnly('nestjs', 5, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 5, 0.65);
 
-      expect(mockArticleRepo.find).toHaveBeenCalled();
+      expect(mockPublicationRepo.find).toHaveBeenCalled();
       expect(result).toHaveLength(1);
     });
 
     it('should map text search results correctly', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([mockArticleEntity]);
+      mockPublicationRepo.find.mockResolvedValue([mockPublicationEntity]);
 
-      const result = await service.searchArticlesOnly('nestjs', 10, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 10, 0.65);
 
       expect(result[0].id).toBe(1);
       expect(result[0].title).toBe('NestJS Deep Dive');
@@ -334,20 +334,20 @@ describe('SearchService', () => {
       expect(result[0].tags).toEqual([{ id: 1, name: 'nestjs' }]);
     });
 
-    it('should handle article with no category in text search', async () => {
+    it('should handle publication with no category in text search', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([{ ...mockArticleEntity, category: null }]);
+      mockPublicationRepo.find.mockResolvedValue([{ ...mockPublicationEntity, category: null }]);
 
-      const result = await service.searchArticlesOnly('nestjs', 10, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 10, 0.65);
 
       expect(result[0].category).toBeNull();
     });
 
-    it('should handle article with no tags in text search', async () => {
+    it('should handle publication with no tags in text search', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([{ ...mockArticleEntity, tags: null }]);
+      mockPublicationRepo.find.mockResolvedValue([{ ...mockPublicationEntity, tags: null }]);
 
-      const result = await service.searchArticlesOnly('nestjs', 10, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 10, 0.65);
 
       expect(result[0].tags).toEqual([]);
     });
@@ -355,9 +355,9 @@ describe('SearchService', () => {
     it('should truncate long content in text search to 200 chars', async () => {
       const longContent = 'B'.repeat(300);
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([{ ...mockArticleEntity, content: longContent }]);
+      mockPublicationRepo.find.mockResolvedValue([{ ...mockPublicationEntity, content: longContent }]);
 
-      const result = await service.searchArticlesOnly('nestjs', 10, 0.65);
+      const result = await service.searchPublicationsOnly('nestjs', 10, 0.65);
 
       expect(result[0].contentPreview.endsWith('...')).toBe(true);
       expect(result[0].contentPreview).toHaveLength(203);
@@ -369,18 +369,18 @@ describe('SearchService', () => {
   // ═══════════════════════════════════════════════════════════════
 
   describe('searchCategoriesOnly', () => {
-    it('should return categories sorted by article count descending', async () => {
+    it('should return categories sorted by publication count descending', async () => {
       const cats = [
-        { id: 1, name: 'Tech', description: 'Tech', articles: [{}] },
-        { id: 2, name: 'Science', description: 'Science', articles: [{}, {}, {}] },
+        { id: 1, name: 'Tech', description: 'Tech', publications: [{}] },
+        { id: 2, name: 'Science', description: 'Science', publications: [{}, {}, {}] },
       ];
       mockCategoryRepo.createQueryBuilder.mockReturnValue(makeCategoryQB(cats));
 
       const result = await service.searchCategoriesOnly('tech', 10);
 
       expect(result[0].name).toBe('Science');
-      expect(result[0].articlesCount).toBe(3);
-      expect(result[1].articlesCount).toBe(1);
+      expect(result[0].publicationsCount).toBe(3);
+      expect(result[1].publicationsCount).toBe(1);
     });
 
     it('should return empty array when no categories match', async () => {
@@ -396,7 +396,7 @@ describe('SearchService', () => {
         id: i + 1,
         name: `Cat ${i}`,
         description: null,
-        articles: Array(i),
+        publications: Array(i),
       }));
       mockCategoryRepo.createQueryBuilder.mockReturnValue(makeCategoryQB(cats));
 
@@ -405,14 +405,14 @@ describe('SearchService', () => {
       expect(result).toHaveLength(3);
     });
 
-    it('should handle category with no articles', async () => {
+    it('should handle category with no publications', async () => {
       mockCategoryRepo.createQueryBuilder.mockReturnValue(
-        makeCategoryQB([{ id: 1, name: 'Empty', description: null, articles: null }]),
+        makeCategoryQB([{ id: 1, name: 'Empty', description: null, publications: null }]),
       );
 
       const result = await service.searchCategoriesOnly('empty', 10);
 
-      expect(result[0].articlesCount).toBe(0);
+      expect(result[0].publicationsCount).toBe(0);
     });
 
     it('should search by case-insensitive pattern', async () => {
@@ -433,17 +433,17 @@ describe('SearchService', () => {
   // ═══════════════════════════════════════════════════════════════
 
   describe('searchTagsOnly', () => {
-    it('should return tags sorted by article count descending', async () => {
+    it('should return tags sorted by publication count descending', async () => {
       const tags = [
-        { id: 1, name: 'nestjs', articles: [{}] },
-        { id: 2, name: 'nodejs', articles: [{}, {}, {}] },
+        { id: 1, name: 'nestjs', publications: [{}] },
+        { id: 2, name: 'nodejs', publications: [{}, {}, {}] },
       ];
       mockTagRepo.createQueryBuilder.mockReturnValue(makeTagQB(tags));
 
       const result = await service.searchTagsOnly('node', 10);
 
       expect(result[0].name).toBe('nodejs');
-      expect(result[0].articlesCount).toBe(3);
+      expect(result[0].publicationsCount).toBe(3);
     });
 
     it('should return empty array when no tags match', async () => {
@@ -458,7 +458,7 @@ describe('SearchService', () => {
       const tags = Array.from({ length: 10 }, (_, i) => ({
         id: i + 1,
         name: `tag${i}`,
-        articles: Array(i),
+        publications: Array(i),
       }));
       mockTagRepo.createQueryBuilder.mockReturnValue(makeTagQB(tags));
 
@@ -467,14 +467,14 @@ describe('SearchService', () => {
       expect(result).toHaveLength(4);
     });
 
-    it('should handle tag with null articles', async () => {
+    it('should handle tag with null publications', async () => {
       mockTagRepo.createQueryBuilder.mockReturnValue(
-        makeTagQB([{ id: 1, name: 'empty-tag', articles: null }]),
+        makeTagQB([{ id: 1, name: 'empty-tag', publications: null }]),
       );
 
       const result = await service.searchTagsOnly('empty', 10);
 
-      expect(result[0].articlesCount).toBe(0);
+      expect(result[0].publicationsCount).toBe(0);
     });
   });
 
@@ -534,7 +534,7 @@ describe('SearchService', () => {
   describe('globalSearch', () => {
     it('should aggregate results from all entity types', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(MOCK_EMBEDDING);
-      mockArticleRepo.query.mockResolvedValue([mockArticleRow]);
+      mockPublicationRepo.query.mockResolvedValue([mockPublicationRow]);
       mockCategoryRepo.createQueryBuilder.mockReturnValue(makeCategoryQB([mockCategoryEntity]));
       mockTagRepo.createQueryBuilder.mockReturnValue(makeTagQB([mockTagEntity]));
       mockUserRepo.find.mockResolvedValue([mockUserEntity]);
@@ -542,7 +542,7 @@ describe('SearchService', () => {
       const result = await service.globalSearch('nestjs', 5, 0.65);
 
       expect(result.query).toBe('nestjs');
-      expect(result.articles).toHaveLength(1);
+      expect(result.publications).toHaveLength(1);
       expect(result.categories).toHaveLength(1);
       expect(result.tags).toHaveLength(1);
       expect(result.users).toHaveLength(1);
@@ -551,7 +551,7 @@ describe('SearchService', () => {
 
     it('should trim the query before searching', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([]);
+      mockPublicationRepo.find.mockResolvedValue([]);
       mockCategoryRepo.createQueryBuilder.mockReturnValue(makeCategoryQB([]));
       mockTagRepo.createQueryBuilder.mockReturnValue(makeTagQB([]));
       mockUserRepo.find.mockResolvedValue([]);
@@ -563,7 +563,7 @@ describe('SearchService', () => {
 
     it('should return totalResults = 0 when nothing matches', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([]);
+      mockPublicationRepo.find.mockResolvedValue([]);
       mockCategoryRepo.createQueryBuilder.mockReturnValue(makeCategoryQB([]));
       mockTagRepo.createQueryBuilder.mockReturnValue(makeTagQB([]));
       mockUserRepo.find.mockResolvedValue([]);
@@ -571,7 +571,7 @@ describe('SearchService', () => {
       const result = await service.globalSearch('zzz', 5, 0.65);
 
       expect(result.totalResults).toBe(0);
-      expect(result.articles).toEqual([]);
+      expect(result.publications).toEqual([]);
       expect(result.categories).toEqual([]);
       expect(result.tags).toEqual([]);
       expect(result.users).toEqual([]);
@@ -579,15 +579,15 @@ describe('SearchService', () => {
 
     it('should use text fallback when embedding unavailable', async () => {
       jest.spyOn(service, 'generateEmbedding').mockResolvedValue(null);
-      mockArticleRepo.find.mockResolvedValue([mockArticleEntity]);
+      mockPublicationRepo.find.mockResolvedValue([mockPublicationEntity]);
       mockCategoryRepo.createQueryBuilder.mockReturnValue(makeCategoryQB([]));
       mockTagRepo.createQueryBuilder.mockReturnValue(makeTagQB([]));
       mockUserRepo.find.mockResolvedValue([]);
 
       const result = await service.globalSearch('nestjs', 5, 0.65);
 
-      expect(result.articles).toHaveLength(1);
-      expect(mockArticleRepo.find).toHaveBeenCalled();
+      expect(result.publications).toHaveLength(1);
+      expect(mockPublicationRepo.find).toHaveBeenCalled();
     });
 
     it('should run all 4 searches concurrently (Promise.all)', async () => {
@@ -596,7 +596,7 @@ describe('SearchService', () => {
         calls.push('embedding');
         return null;
       });
-      mockArticleRepo.find.mockImplementation(async () => { calls.push('articles'); return []; });
+      mockPublicationRepo.find.mockImplementation(async () => { calls.push('publications'); return []; });
       mockCategoryRepo.createQueryBuilder.mockImplementation(() => {
         calls.push('categories');
         return makeCategoryQB([]);
@@ -610,7 +610,7 @@ describe('SearchService', () => {
       await service.globalSearch('test', 5, 0.65);
 
       // All 4 sub-searches were initiated
-      expect(calls).toContain('articles');
+      expect(calls).toContain('publications');
       expect(calls).toContain('categories');
       expect(calls).toContain('tags');
       expect(calls).toContain('users');

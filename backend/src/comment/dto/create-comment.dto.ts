@@ -2,7 +2,7 @@ import { IsString, IsNumber, IsArray, IsOptional, MinLength, MaxLength } from 'c
 
 export class CreateCommentDto {
   @IsNumber()
-  articleId: number;
+  publicationId: number;
 
   @IsString()
   @MinLength(1)

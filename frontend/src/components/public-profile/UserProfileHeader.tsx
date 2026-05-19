@@ -31,7 +31,7 @@ interface UserProfileHeaderProps {
     lastSeenAt?: Date | string | null;
   };
   stats: {
-    totalArticles: number;
+    totalPublications: number;
     totalLikes: number;
     totalComments: number;
     totalViews: number;
@@ -277,7 +277,7 @@ export default function UserProfileHeader({
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
               <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] dark:text-[#00B383] text-sm font-medium rounded-full">
-                  {stats.totalArticles} article{stats.totalArticles !== 1 ? 's' : ''}
+                  {stats.totalPublications} publication{stats.totalPublications !== 1 ? 's' : ''}
                 </span>
                 {!isCurrentUser && (
                   <>

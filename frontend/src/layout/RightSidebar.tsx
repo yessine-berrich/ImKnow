@@ -18,7 +18,7 @@ export default function RightSidebar() {
   ];
 
   const stats = {
-    totalArticles: 124,
+    totalPublications: 124,
     totalViews: 12850,
     totalUsers: 87,
     totalLikes: 2341,
@@ -122,8 +122,8 @@ export default function RightSidebar() {
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalArticles}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Articles</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalPublications}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Publications</p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -143,10 +143,10 @@ export default function RightSidebar() {
             </div>
           </div>
 
-          {/* Trending Articles Widget */}
+          {/* Trending Publications Widget */}
           <div className="mb-6 animate-slideInRight" style={{ animationDelay: '0.1s' }}>
-            <TrendingArticles
-              title="Articles tendances"
+            <TrendingPublications
+              title="Publications tendances"
               maxItems={3}
             />
           </div>
@@ -212,5 +212,5 @@ export default function RightSidebar() {
 
 // Importez les icônes manquantes
 import { BookOpen, Eye, Hash, ChevronRight } from 'lucide-react';
-import TrendingArticles from '@/components/article/Trendingarticles';import TopContributors from '@/components/users/Topcontributors';
+import TrendingPublications from '@/components/publication/Trendingpublications';import TopContributors from '@/components/users/Topcontributors';
 

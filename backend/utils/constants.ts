@@ -10,7 +10,7 @@ export enum UserStatus {
   PENDING  = 'pending',
 }
 
-export enum ArticleStatus {
+export enum PublicationStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   PENDING = 'pending',
@@ -22,13 +22,13 @@ export enum NotificationType {
   REPLY = 'reply',
   NEW_COMMENT = 'new_comment',
   SYSTEM_ERROR = 'system_error',
-  ARTICLE_PUBLISHED = 'article_published',
-  ARTICLE_PENDING_MODERATION = 'article_pending_moderation',
-  ARTICLE_REJECTED = 'article_rejected',
+  PUBLICATION_PUBLISHED = 'publication_published',
+  PUBLICATION_PENDING_MODERATION = 'publication_pending_moderation',
+  PUBLICATION_REJECTED = 'publication_rejected',
   SYSTEM_INFO = 'system_info',
   COMMENT_LIKED = 'comment_liked',
-  ARTICLE_LIKED = 'article_liked',
-  ARTICLE_BOOKMARKED = 'article_bookmarked',
+  PUBLICATION_LIKED = 'publication_liked',
+  PUBLICATION_BOOKMARKED = 'publication_bookmarked',
   USER_ROLE_CHANGED = 'user_role_changed',
   NEW_FOLLOWER = 'new_follower',
   ACCOUNT_ACTIVATED = 'account_activated',

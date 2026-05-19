@@ -17,8 +17,8 @@ interface TagsSelectorProps {
   toggleTag: (tagId: number) => void;
   isSubmitting: boolean;
   onCreateTag?: (tagName: string) => Promise<Tag | void>;
-  articleTitle?: string;
-  articleContent?: string;
+  publicationTitle?: string;
+  publicationContent?: string;
   onTagsUpdated?: () => void;
 }
 
@@ -42,8 +42,8 @@ export default function TagsSelector({
   toggleTag,
   isSubmitting,
   onCreateTag,
-  articleTitle = '',
-  articleContent = '',
+  publicationTitle = '',
+  publicationContent = '',
   onTagsUpdated,
 }: TagsSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -171,7 +171,7 @@ export default function TagsSelector({
   };
 
   const handleSuggestTags = async () => {
-    if (!articleTitle?.trim() && !articleContent?.trim()) {
+    if (!publicationTitle?.trim() && !publicationContent?.trim()) {
       setSuggestionError('Ajoutez un titre ou du contenu avant de suggérer des tags.');
       setShowSuggestions(true);
       return;
@@ -186,7 +186,7 @@ export default function TagsSelector({
       const res = await fetch(`${API_URL}/tags/suggest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ title: articleTitle || '', content: articleContent || '' }),
+        body: JSON.stringify({ title: publicationTitle || '', content: publicationContent || '' }),
       });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const data = await res.json();
@@ -256,7 +256,7 @@ export default function TagsSelector({
           )}
         </div>
 
-        {(articleTitle || articleContent) && (
+        {(publicationTitle || publicationContent) && (
           <button
             type="button"
             onClick={handleSuggestTags}
@@ -316,7 +316,7 @@ export default function TagsSelector({
               {isSuggesting ? (
                 <div className="flex items-center gap-2 text-xs text-violet-600 dark:text-violet-400 py-1">
                   <Loader2 size={13} className="animate-spin" />
-                  L'IA analyse le contenu de votre article…
+                  L'IA analyse le contenu de votre publication…
                 </div>
               ) : suggestionError ? (
                 <p className="text-xs text-red-500 dark:text-red-400 flex items-center gap-1.5">
