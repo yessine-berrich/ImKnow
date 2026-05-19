@@ -13,7 +13,7 @@ interface User {
   lastName: string;
   email: string;
   profileImage?: string;
-  role: 'ADMIN' | 'EMPLOYEE';
+  role: 'SUPERADMIN' | 'ADMIN' | 'EMPLOYEE';
   isEmailActive: boolean;
   status: 'actif' | 'inactif' | 'pending';
   createdAt: string;
@@ -48,8 +48,8 @@ export default function UsersPage() {
       setCurrentUserId(payload.sub);
       setCurrentUserRole(payload.role);
 
-      // VÉRIFICATION DU RÔLE - Redirection vers /403 si pas ADMIN
-      if (payload.role !== 'ADMIN') {
+      // VÉRIFICATION DU RÔLE - Redirection vers /403 si pas ADMIN ou SUPERADMIN
+      if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') {
         router.push('/error-403');
         return;
       }

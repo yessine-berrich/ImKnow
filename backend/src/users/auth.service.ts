@@ -316,14 +316,14 @@ export class AuthService {
       throw new BadRequestException('You cannot change your own role');
     }
 
-    if (newRole !== userRole.ADMIN && user.role === userRole.ADMIN) {
-      const adminCount = await this.userRepository.count({
-        where: { role: userRole.ADMIN },
+    if (newRole !== userRole.SUPERADMIN && user.role === userRole.SUPERADMIN) {
+      const superAdminCount = await this.userRepository.count({
+        where: { role: userRole.SUPERADMIN },
       });
 
-      if (adminCount <= 1) {
+      if (superAdminCount <= 1) {
         throw new BadRequestException(
-          'Cannot remove ADMIN role: at least one administrator must remain',
+          'Cannot remove SUPERADMIN role: at least one super-administrator must remain',
         );
       }
     }

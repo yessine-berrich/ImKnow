@@ -55,7 +55,7 @@ export default function DuplicateArticlesPage() {
       const payload = JSON.parse(atob(token.split('.')[1]));
       setCurrentUserId(payload.sub);
 
-      if (payload.role !== 'ADMIN') {
+      if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') {
         router.push('/error-403');
         return;
       }

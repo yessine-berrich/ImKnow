@@ -48,6 +48,7 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
 
   // ✅ ROLES EN MAJUSCULES
   const roles = [
+    { value: 'SUPERADMIN', label: 'Super Administrateur', color: 'bg-purple-500', icon: '🛡️' },
     { value: 'ADMIN', label: 'Administrateur', color: 'bg-red-500', icon: '👑' },
     { value: 'EMPLOYEE', label: 'Employé', color: 'bg-blue-500', icon: '👤' }
   ];

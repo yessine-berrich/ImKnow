@@ -199,7 +199,7 @@ const AppSidebar: React.FC = () => {
         if (token) {
           const payload = JSON.parse(atob(token.split('.')[1]));
           console.log('👤 Rôle utilisateur:', payload.role);
-          setIsAdmin(payload.role === 'ADMIN');
+          setIsAdmin(payload.role === 'ADMIN' || payload.role === 'SUPERADMIN');
         } else {
           setIsAdmin(false);
         }

@@ -42,7 +42,7 @@ export default function CategoriesPage() {
         console.log('👤 Rôle utilisateur sur CategoriesPage:', payload.role);
 
         // 🔴 Redirection vers 403 si EMPLOYEE
-        if (payload.role !== 'ADMIN') {
+        if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') {
           console.log('⛔ Accès refusé - redirection vers 403');
           router.push('/error-403');
           return;
