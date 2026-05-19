@@ -19,12 +19,10 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
 
   useEffect(() => {
     if (tag) {
-      setTagName(tag.name);
+      setTagName(tag.name.replace(/^#+/, ''));
       setError(null);
     }
   }, [tag]);
-
-  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +31,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
     setIsLoading(true);
     setError(null);
     try {
-      await onUpdateTag(tag.id, capitalize(tagName.trim()));
+      await onUpdateTag(tag.id, tagName.trim());
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la modification');
     } finally {
@@ -113,7 +111,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
                     type="text"
                     id="tagName"
                     value={tagName}
-                    onChange={(e) => setTagName(e.target.value)}
+                    onChange={(e) => setTagName(e.target.value.replace(/^#+/, ''))}
                     className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                     placeholder="Ex: react, javascript, nextjs"
                     autoFocus

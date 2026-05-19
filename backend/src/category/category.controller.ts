@@ -26,21 +26,21 @@ export class CategoryController {
   }
 
   @Post()
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   @UseGuards(AuthRolesGuard)
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
 
   @Patch(':id')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   @UseGuards(AuthRolesGuard)
   update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
     return this.categoryService.update(+id, updateCategoryDto);
   }
 
   @Delete(':id')
-  @Roles(userRole.ADMIN, userRole.EMPLOYEE)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN, userRole.EMPLOYEE)
   @UseGuards(AuthRolesGuard)
   remove(@Param('id') id: string) {
     return this.categoryService.remove(+id);

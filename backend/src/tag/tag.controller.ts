@@ -55,14 +55,14 @@ export class TagController {
   }
 
   @Patch(':id')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   @UseGuards(AuthRolesGuard)
   update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
     return this.tagService.update(+id, updateTagDto);
   }
 
   @Delete(':id')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   @UseGuards(AuthRolesGuard)
   remove(@Param('id') id: string) {
     return this.tagService.remove(+id);

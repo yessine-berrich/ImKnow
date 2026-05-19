@@ -27,8 +27,6 @@ export default function CreateTagModal({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tagName.trim() || isSubmitting) return;
@@ -36,7 +34,7 @@ export default function CreateTagModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      await onCreateTag(capitalize(tagName.trim()));
+      await onCreateTag(tagName.trim());
       setTagName('');
       onClose();
     } catch (err: any) {
@@ -101,8 +99,8 @@ export default function CreateTagModal({
                 <input
                   type="text"
                   value={tagName}
-                  onChange={(e) => setTagName(e.target.value)}
-                  placeholder="Ex: React, TypeScript, IA..."
+                  onChange={(e) => setTagName(e.target.value.replace(/^#+/, ''))}
+                  placeholder="Ex: React, TypeScript, IA  (le # est ajouté automatiquement)"
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   autoFocus
                   disabled={isSubmitting}
