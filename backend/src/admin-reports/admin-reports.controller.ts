@@ -65,7 +65,7 @@ class BulkUserActionDto {
 
 @Controller('api/admin/reports')
 @UseGuards(AuthGuard, AuthRolesGuard)
-@Roles(userRole.ADMIN)
+@Roles(userRole.SUPERADMIN, userRole.ADMIN)
 export class AdminReportsController {
   constructor(private readonly adminReportsService: AdminReportsService) {}
 

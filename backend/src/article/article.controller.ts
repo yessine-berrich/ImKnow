@@ -659,7 +659,7 @@ export class ArticleController {
 
   @Patch(':id/approve')
   @UseGuards(AuthGuard)
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   async approveRejectedArticle(
     @Param('id', ParseIntPipe) id: number,
     @CurrentPayload() payload: JwtPayloadType,
@@ -687,7 +687,7 @@ export class ArticleController {
 
   @Get('rejected/moderation')
   @UseGuards(AuthGuard)
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   async getArticlesRejectedByModeration() {
     const articles = await this.articleService.getArticlesRejectedByModeration();
     return {
@@ -734,7 +734,7 @@ export class ArticleController {
 
   @Get('rejected/duplicates')
   @UseGuards(AuthGuard)
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN, userRole.ADMIN)
   async getArticlesRejectedByDuplicate() {
     const articles = await this.articleService.getArticlesRejectedByDuplicate();
     return {
