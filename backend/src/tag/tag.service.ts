@@ -17,6 +17,11 @@ export class TagService {
     this.ollama = new Ollama({ host: 'http://localhost:11434' });
   }
 
+  private capitalize(str: string): string {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
   async findAll(): Promise<{ id: number; name: string; count: number }[]> {
     const tags = await this.tagRepository
       .createQueryBuilder('tag')
@@ -41,19 +46,22 @@ export class TagService {
   }
 
   async create(createTagDto: CreateTagDto): Promise<Tag> {
-    const existing = await this.tagRepository.findOne({
-      where: { name: createTagDto.name },
-    });
-    if (existing) throw new ConflictException(`Le tag "${createTagDto.name}" existe déjà`);
-    const tag = this.tagRepository.create(createTagDto);
+    const name = this.capitalize(createTagDto.name.trim());
+    const existing = await this.tagRepository.findOne({ where: { name } });
+    if (existing) throw new ConflictException(`Le tag "${name}" existe déjà`);
+    const tag = this.tagRepository.create({ ...createTagDto, name });
     return this.tagRepository.save(tag);
   }
 
   async update(id: number, updateTagDto: UpdateTagDto): Promise<Tag> {
     const tag = await this.findOne(id);
-    if (updateTagDto.name && updateTagDto.name !== tag.name) {
-      const conflict = await this.tagRepository.findOne({ where: { name: updateTagDto.name } });
-      if (conflict) throw new ConflictException(`Le tag "${updateTagDto.name}" existe déjà`);
+    if (updateTagDto.name) {
+      const name = this.capitalize(updateTagDto.name.trim());
+      if (name !== tag.name) {
+        const conflict = await this.tagRepository.findOne({ where: { name } });
+        if (conflict) throw new ConflictException(`Le tag "${name}" existe déjà`);
+      }
+      updateTagDto = { ...updateTagDto, name };
     }
     Object.assign(tag, updateTagDto);
     return this.tagRepository.save(tag);

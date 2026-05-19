@@ -15,20 +15,27 @@ interface EditTagModalProps {
 export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: EditTagModalProps) {
   const [tagName, setTagName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (tag) {
       setTagName(tag.name);
+      setError(null);
     }
   }, [tag]);
+
+  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tagName.trim()) return;
 
     setIsLoading(true);
+    setError(null);
     try {
-      await onUpdateTag(tag.id, tagName.trim());
+      await onUpdateTag(tag.id, capitalize(tagName.trim()));
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la modification');
     } finally {
       setIsLoading(false);
     }
@@ -93,6 +100,11 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
               </div>
 
               <form onSubmit={handleSubmit} className="p-6">
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                  </div>
+                )}
                 <div className="mb-6">
                   <label htmlFor="tagName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nom du tag

@@ -104,21 +104,16 @@ export default function CategoriesPage() {
     name: string;
     description: string;
   }) => {
-    try {
-      if (editingCategory) {
-        // Mise à jour
-        await categoryService.update(Number(editingCategory.id), categoryData);
-      } else {
-        // Création
-        await categoryService.create(categoryData);
-      }
-      
-      await loadCategories();
-      handleCloseModal();
-    } catch (err) {
-      console.error('Erreur lors de la sauvegarde:', err);
-      toast.error('Erreur lors de la sauvegarde de la catégorie');
+    if (editingCategory) {
+      await categoryService.update(Number(editingCategory.id), categoryData);
+      toast.success('Catégorie modifiée avec succès');
+    } else {
+      await categoryService.create(categoryData);
+      toast.success('Catégorie créée avec succès');
     }
+
+    await loadCategories();
+    handleCloseModal();
   };
 
   const handleDeleteCategory = async (id: string | number) => {
@@ -133,9 +128,10 @@ export default function CategoriesPage() {
       try {
         await categoryService.delete(Number(id));
         await loadCategories();
+        toast.success('Catégorie supprimée avec succès');
       } catch (err) {
-        console.error('Erreur lors de la suppression:', err);
-        toast.error('Erreur lors de la suppression de la catégorie');
+        const errMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression de la catégorie';
+        toast.error(errMessage);
       }
     }
   };

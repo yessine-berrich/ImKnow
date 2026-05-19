@@ -6,7 +6,7 @@ import { X, Plus, Hash } from 'lucide-react';
 interface CreateTagModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTag: (tagName: string) => void;
+  onCreateTag: (tagName: string) => Promise<void>;
 }
 
 export default function CreateTagModal({
@@ -16,6 +16,7 @@ export default function CreateTagModal({
 }: CreateTagModalProps) {
   const [tagName, setTagName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Close on Escape key
   useEffect(() => {
@@ -26,19 +27,20 @@ export default function CreateTagModal({
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tagName.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
+    setError(null);
     try {
-      // Simuler une requête API
-      await new Promise(resolve => setTimeout(resolve, 500));
-      onCreateTag(tagName.trim());
+      await onCreateTag(capitalize(tagName.trim()));
       setTagName('');
       onClose();
-    } catch (error) {
-      console.error('Erreur lors de la création du tag:', error);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de la création du tag');
     } finally {
       setIsSubmitting(false);
     }
@@ -83,6 +85,11 @@ export default function CreateTagModal({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nom du tag <span className="text-red-500">*</span>

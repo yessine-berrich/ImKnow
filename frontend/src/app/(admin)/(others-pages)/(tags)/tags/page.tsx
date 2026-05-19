@@ -117,36 +117,33 @@ export default function TagsPage() {
   }, [router]);
 
   // Créer un tag (POST)
-  const handleCreateTag = async (tagName: string) => {
+  const handleCreateTag = async (tagName: string): Promise<void> => {
     const token = getToken();
-    
-    try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name: tagName }),
-      });
 
-      // 🔴 GESTION DES ERREURS 403
-      if (response.status === 403) {
-        console.log('⛔ Action non autorisée');
-        router.push('/error-403');
-        return;
-      }
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name: tagName }),
+    });
 
-      if (!response.ok) {
-        throw new Error('Erreur de création');
-      }
-
-      toast.success('Tag créé avec succès');
-      fetchTags();
-      setIsCreateModalOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    if (response.status === 403) {
+      router.push('/error-403');
+      return;
     }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const message = Array.isArray(errorData.message)
+        ? errorData.message[0]
+        : (errorData.message || 'Erreur lors de la création du tag');
+      throw new Error(message);
+    }
+
+    toast.success('Tag créé avec succès');
+    fetchTags();
   };
 
   // ✅ NOUVELLE FONCTION : Modifier un tag (PATCH)
@@ -156,37 +153,35 @@ export default function TagsPage() {
   };
 
   // ✅ NOUVELLE FONCTION : Mettre à jour un tag
-  const handleUpdateTag = async (tagId: string, newName: string) => {
+  const handleUpdateTag = async (tagId: string, newName: string): Promise<void> => {
     const token = getToken();
-    
-    try {
-      const response = await fetch(`${API_URL}/${tagId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name: newName }),
-      });
 
-      // 🔴 GESTION DES ERREURS 403
-      if (response.status === 403) {
-        console.log('⛔ Action non autorisée');
-        router.push('/error-403');
-        return;
-      }
+    const response = await fetch(`${API_URL}/${tagId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name: newName }),
+    });
 
-      if (!response.ok) {
-        throw new Error('Erreur de modification');
-      }
-
-      toast.success('Tag modifié avec succès');
-      fetchTags(); // Recharger les tags
-      setIsEditModalOpen(false);
-      setSelectedTag(null);
-    } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la modification");
+    if (response.status === 403) {
+      router.push('/error-403');
+      return;
     }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const message = Array.isArray(errorData.message)
+        ? errorData.message[0]
+        : (errorData.message || 'Erreur lors de la modification');
+      throw new Error(message);
+    }
+
+    toast.success('Tag modifié avec succès');
+    fetchTags();
+    setIsEditModalOpen(false);
+    setSelectedTag(null);
   };
 
   // Supprimer un tag (DELETE)
