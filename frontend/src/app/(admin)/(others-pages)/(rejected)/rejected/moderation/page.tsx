@@ -53,7 +53,7 @@ export default function ModerationRejectedPage() {
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      if (payload.role !== 'ADMIN') { router.push('/error-403'); return; }
+      if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') { router.push('/error-403'); return; }
       setIsCheckingRole(false);
     } catch {
       localStorage.removeItem('auth_token');

@@ -19,7 +19,7 @@ export interface UserTableItem {
   name: string;
   email: string;
   avatar?: string;
-  role: 'ADMIN' | 'EMPLOYEE';
+  role: 'SUPERADMIN' | 'ADMIN' | 'EMPLOYEE';
   status: 'active' | 'inactive' | 'pending' | 'email_unverified';
   articles: number;
   joinedAt: string;
@@ -122,31 +122,35 @@ export default function UsersTable({
     }
   };
 
- const handleToggleStatus = async (id: string, currentStatus: string) => {
-  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-  const action = newStatus === 'active' ? 'activer' : 'désactiver';
-  const endpoint = `/api/users/admin/${id}/${newStatus === 'active' ? 'activate' : 'deactivate'}`;
-  
-  setLoading(prev => ({ ...prev, [id]: true }));
-  try {
-    await apiCall(endpoint);
-    
-    // MISE À JOUR INSTANTANÉE
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus as any } : u));
-    
-    toast.success(`Compte ${action === 'activer' ? 'activé' : 'désactivé'}`);
-    setOpenMenuId(null);
-    
-    // 🔄 Optionnel : rafraîchir en arrière-plan pour synchroniser avec le serveur
-    // onRefresh(); // <-- À décommenter si vous voulez être sûr
-  } catch (err: any) {
-    toast.error(`❌ ${err.message || 'Erreur changement statut'}`);
-  } finally {
-    setLoading(prev => ({ ...prev, [id]: false }));
-  }
-};
+  const handleActivate = async (id: string) => {
+    setLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      await apiCall(`/api/users/admin/${id}/activate`);
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'active' as any } : u));
+      toast.success('Compte activé');
+      setOpenMenuId(null);
+    } catch (err: any) {
+      toast.error(`❌ ${err.message || 'Erreur activation'}`);
+    } finally {
+      setLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
 
-  const handleChangeRole = async (id: string, newRole: 'ADMIN' | 'EMPLOYEE', currentRole: string) => {
+  const handleDeactivate = async (id: string) => {
+    setLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      await apiCall(`/api/users/admin/${id}/deactivate`);
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, status: 'inactive' as any } : u));
+      toast.success('Compte désactivé');
+      setOpenMenuId(null);
+    } catch (err: any) {
+      toast.error(`❌ ${err.message || 'Erreur désactivation'}`);
+    } finally {
+      setLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const handleChangeRole = async (id: string, newRole: 'SUPERADMIN' | 'ADMIN' | 'EMPLOYEE', currentRole: string) => {
     if (newRole === currentRole) {
       setOpenRoleMenuId(null);
       return;
@@ -237,12 +241,21 @@ export default function UsersTable({
     }
   };
 
+  const isSuperAdmin = currentUserRole === 'SUPERADMIN';
+
   const roleOptions = [
-    { 
-      value: 'ADMIN', 
-      label: 'Administrateur', 
-      icon: '👑', 
-      description: 'Accès complet au système',
+    {
+      value: 'SUPERADMIN',
+      label: 'Super Administrateur',
+      icon: '🛡️',
+      description: 'Gestion complète des utilisateurs',
+      color: 'text-purple-600 dark:text-purple-400'
+    },
+    {
+      value: 'ADMIN',
+      label: 'Administrateur',
+      icon: '👑',
+      description: 'Consultation des utilisateurs',
       color: 'text-red-600 dark:text-red-400'
     },
     {
@@ -390,11 +403,13 @@ export default function UsersTable({
                         </td>
                         <td className="px-4 py-3">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            user.role === 'ADMIN' 
-                              ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400' 
+                            user.role === 'SUPERADMIN'
+                              ? 'bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
+                              : user.role === 'ADMIN'
+                              ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                               : 'bg-[#168F6F]/10 text-[#168F6F]'
                           }`}>
-                            {user.role === 'ADMIN' ? '👑 Administrateur' : '👤 Employé'}
+                            {user.role === 'SUPERADMIN' ? '🛡️ Super Admin' : user.role === 'ADMIN' ? '👑 Administrateur' : '👤 Employé'}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{user.articles}</td>
@@ -449,72 +464,81 @@ export default function UsersTable({
                                   <Eye size={16} className="text-gray-400" />
                                   <span>Voir le profil</span>
                                 </button>
-                                
+
                                 <button onClick={() => handleSendEmail(user.email)} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 transition-colors">
                                   <Send size={16} className="text-gray-400" />
                                   <span>Envoyer un email</span>
                                 </button>
-                                
-                                {/* SOUS-MENU RÔLES À GAUCHE */}
-                                <div className="relative" ref={openRoleMenuId === user.id ? roleMenuRef : undefined}>
-                                  <button
-                                    onClick={() => setOpenRoleMenuId(openRoleMenuId === user.id ? null : user.id)}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 justify-between transition-colors"
-                                  >
-                                    <span className="flex items-center gap-3">
-                                      <Shield size={16} className="text-gray-400" />
-                                      <span>Changer le rôle</span>
-                                    </span>
-                                    <ChevronLeft size={14} className="text-gray-400" />
-                                  </button>
-                                  
-                                  {openRoleMenuId === user.id && (
-                                    <div className="absolute right-full top-0 mr-1 w-60 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[101] animate-slideInLeft">
-                                      {roleOptions.map((role) => (
-                                        <button
-                                          key={role.value}
-                                          onClick={() => handleChangeRole(user.id, role.value as any, user.role)}
-                                          className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                                            user.role === role.value ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20' : ''
-                                          }`}
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <span className="text-2xl">{role.icon}</span>
-                                            <div className="flex-1">
-                                              <p className={`font-semibold ${user.role === role.value ? 'text-[#168F6F]' : 'text-gray-900 dark:text-white'}`}>
-                                                {role.label}
-                                              </p>
-                                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{role.description}</p>
-                                            </div>
-                                            {user.role === role.value && (
-                                              <CheckCircle size={18} className="text-[#168F6F] flex-shrink-0" />
-                                            )}
-                                          </div>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                <button onClick={() => handleToggleStatus(user.id, user.status)} className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${
-                                  user.status === 'active' 
-                                    ? 'text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' 
-                                    : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
-                                }`}>
-                                  {user.status === 'active' ? (
-                                    <><Power size={16} /> <span>Désactiver le compte</span></>
-                                  ) : (
-                                    <><UserCheck size={16} /> <span>Activer le compte</span></>
-                                  )}
-                                </button>
-                                
-                                {user.id !== currentUserId?.toString() && (
+
+                                {/* Actions réservées au SUPERADMIN */}
+                                {isSuperAdmin && (
                                   <>
-                                    <div className="border-t border-gray-100 dark:border-gray-800 my-1"></div>
-                                    <button onClick={() => handleDeleteUser(user.id, user.name)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors">
-                                      <Trash2 size={16} />
-                                      <span>Supprimer définitivement</span>
-                                    </button>
+                                    {/* SOUS-MENU RÔLES À GAUCHE */}
+                                    <div className="relative" ref={openRoleMenuId === user.id ? roleMenuRef : undefined}>
+                                      <button
+                                        onClick={() => setOpenRoleMenuId(openRoleMenuId === user.id ? null : user.id)}
+                                        className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-3 justify-between transition-colors"
+                                      >
+                                        <span className="flex items-center gap-3">
+                                          <Shield size={16} className="text-gray-400" />
+                                          <span>Changer le rôle</span>
+                                        </span>
+                                        <ChevronLeft size={14} className="text-gray-400" />
+                                      </button>
+
+                                      {openRoleMenuId === user.id && (
+                                        <div className="absolute right-full top-0 mr-1 w-60 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[101] animate-slideInLeft">
+                                          {roleOptions.map((role) => (
+                                            <button
+                                              key={role.value}
+                                              onClick={() => handleChangeRole(user.id, role.value as any, user.role)}
+                                              className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                                                user.role === role.value ? 'bg-[#168F6F]/10 dark:bg-[#168F6F]/20' : ''
+                                              }`}
+                                            >
+                                              <div className="flex items-center gap-3">
+                                                <span className="text-2xl">{role.icon}</span>
+                                                <div className="flex-1">
+                                                  <p className={`font-semibold ${user.role === role.value ? 'text-[#168F6F]' : 'text-gray-900 dark:text-white'}`}>
+                                                    {role.label}
+                                                  </p>
+                                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{role.description}</p>
+                                                </div>
+                                                {user.role === role.value && (
+                                                  <CheckCircle size={18} className="text-[#168F6F] flex-shrink-0" />
+                                                )}
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Activer — visible si inactif ou en attente */}
+                                    {(user.status === 'inactive' || user.status === 'pending') && (
+                                      <button onClick={() => handleActivate(user.id)} className="w-full text-left px-4 py-2.5 text-sm text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 flex items-center gap-3 transition-colors">
+                                        <UserCheck size={16} />
+                                        <span>Activer le compte</span>
+                                      </button>
+                                    )}
+
+                                    {/* Désactiver — visible si actif ou en attente */}
+                                    {(user.status === 'active' || user.status === 'pending') && (
+                                      <button onClick={() => handleDeactivate(user.id)} className="w-full text-left px-4 py-2.5 text-sm text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 flex items-center gap-3 transition-colors">
+                                        <Power size={16} />
+                                        <span>Désactiver le compte</span>
+                                      </button>
+                                    )}
+
+                                    {user.id !== currentUserId?.toString() && (
+                                      <>
+                                        <div className="border-t border-gray-100 dark:border-gray-800 my-1"></div>
+                                        <button onClick={() => handleDeleteUser(user.id, user.name)} className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors">
+                                          <Trash2 size={16} />
+                                          <span>Supprimer définitivement</span>
+                                        </button>
+                                      </>
+                                    )}
                                   </>
                                 )}
                               </div>

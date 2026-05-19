@@ -195,21 +195,21 @@ export class UsersController {
   // ── Admin ─────────────────────────────────────────────────────────────────
 
   @Post('admin/:id/activate')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN)
   @UseGuards(AuthRolesGuard, ActiveUserGuard)
   async activate(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.activateUser(id);
   }
 
   @Post('admin/:id/deactivate')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN)
   @UseGuards(AuthRolesGuard, ActiveUserGuard)
   async deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.deactivateUser(id);
   }
 
   @Post('admin/users/:id/role')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN)
   @UseGuards(AuthRolesGuard, ActiveUserGuard)
   async updateRole(
     @Param('id', ParseIntPipe) userId: number,
@@ -230,7 +230,7 @@ export class UsersController {
 
   @Get()
   @UseGuards(AuthRolesGuard, ActiveUserGuard)
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.ADMIN, userRole.SUPERADMIN)
   async getAllUsers() {
     return this.usersService.getAllUsers();
   }
@@ -317,7 +317,7 @@ export class UsersController {
     @CurrentPayload() payload: JwtPayloadType,
   ) {
     // ── Ownership guard ───────────────────────────────────────────────────
-    if (payload.sub !== id && payload.role !== userRole.ADMIN) {
+    if (payload.sub !== id && payload.role !== userRole.ADMIN && payload.role !== userRole.SUPERADMIN) {
       // Discard uploaded temp file before throwing
       if (file) unlink(file.path, () => {});
       throw new ForbiddenException('Vous ne pouvez modifier que votre propre profil.');
@@ -351,7 +351,7 @@ export class UsersController {
   // ── Account deletion ──────────────────────────────────────────────────────
 
   @Delete('admin/:id')
-  @Roles(userRole.ADMIN)
+  @Roles(userRole.SUPERADMIN)
   @UseGuards(AuthRolesGuard)
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
@@ -387,7 +387,7 @@ export class UsersController {
     @Body() changePasswordDto: ChangePasswordDto,
     @CurrentPayload() payload: JwtPayloadType,
   ) {
-    const isAdmin = payload.role === userRole.ADMIN;
+    const isAdmin = payload.role === userRole.ADMIN || payload.role === userRole.SUPERADMIN;
     if (payload.sub !== id && !isAdmin) {
       throw new ForbiddenException("You cannot change another user's password");
     }
