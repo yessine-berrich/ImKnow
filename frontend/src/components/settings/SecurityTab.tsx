@@ -212,95 +212,127 @@ export default function SecurityTab({
       <SessionsTab />
 
       {/* Section 2: Email Change */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Mail className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {t('security.change_email')}
-          </h3>
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-          {t('security.change_email_description')}
-        </p>
+      {!isGoogleAccount ? (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Mail className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {t('security.change_email')}
+            </h3>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            {t('security.change_email_description')}
+          </p>
 
-        {emailConfirmationSent && (
-          <div className="mb-6 p-4 rounded-lg flex items-start gap-3" style={{ backgroundColor: '#168F6F10', borderColor: '#168F6F', borderWidth: 1 }}>
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#168F6F' }} />
-            <div>
-              <h3 className="font-medium" style={{ color: '#168F6F' }}>
-                {t('security.email_confirmation_sent')}
-              </h3>
-              <p className="text-sm mt-1" style={{ color: '#168F6FCC' }}>
-                {t('security.check_your_email')}
-              </p>
+          {emailConfirmationSent && (
+            <div className="mb-6 p-4 rounded-lg flex items-start gap-3" style={{ backgroundColor: '#168F6F10', borderColor: '#168F6F', borderWidth: 1 }}>
+              <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#168F6F' }} />
+              <div>
+                <h3 className="font-medium" style={{ color: '#168F6F' }}>
+                  {t('security.email_confirmation_sent')}
+                </h3>
+                <p className="text-sm mt-1" style={{ color: '#168F6FCC' }}>
+                  {t('security.check_your_email')}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {emailError && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-red-900 dark:text-red-100">
-                {t('common.error')}
-              </h3>
-              <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-                {emailError}
-              </p>
+          {emailError && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-red-900 dark:text-red-100">
+                  {t('common.error')}
+                </h3>
+                <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                  {emailError}
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('security.current_email')}
-            </label>
-            <input
-              type="email"
-              value={user?.email || ''}
-              disabled
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t('security.new_email')} <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('security.current_email')}
+              </label>
               <input
                 type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                disabled={isEmailSubmitting}
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
-                style={{ focusRingColor: '#168F6F' }}
-                placeholder={t('security.enter_new_email')}
+                value={user?.email || ''}
+                disabled
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 cursor-not-allowed"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('security.new_email')} <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  disabled={isEmailSubmitting}
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:border-transparent outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white disabled:opacity-50"
+                  style={{ focusRingColor: '#168F6F' }}
+                  placeholder={t('security.enter_new_email')}
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleEmailChange}
+              disabled={isEmailSubmitting || !newEmail}
+              className="px-6 py-2.5 text-white rounded-lg hover:opacity-90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{ backgroundColor: '#168F6F' }}
+            >
+              {isEmailSubmitting ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {isEmailSubmitting ? t('security.sending') : t('security.send_confirmation')}
+            </button>
+
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              {t('security.email_change_info')}
+            </p>
           </div>
-
-          <button
-            onClick={handleEmailChange}
-            disabled={isEmailSubmitting || !newEmail}
-            className="px-6 py-2.5 text-white rounded-lg hover:opacity-90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            style={{ backgroundColor: '#168F6F' }}
-          >
-            {isEmailSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            {isEmailSubmitting ? t('security.sending') : t('security.send_confirmation')}
-          </button>
-
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
-            {t('security.email_change_info')}
-          </p>
         </div>
-      </div>
+      ) : (
+        /* Google Account Info Message for Email Section */
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Mail className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {t('security.change_email')}
+            </h3>
+          </div>
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {t('security.google_account_info')}
+                </p>
+                <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
+                  {t('security.email_managed_by_google')}
+                </p>
+                <p className="text-xs text-blue-500 dark:text-blue-400 mt-2">
+                  {t('security.change_email_google_instruction', { email: user?.email || '' })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Section 3: Password Change */}
       {!isGoogleAccount ? (

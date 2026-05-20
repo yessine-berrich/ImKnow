@@ -190,6 +190,17 @@ export class NotificationService {
     });
   }
 
+  async deleteNotification(notificationId: number, userId: number): Promise<{ success: boolean }> {
+    const notif = await this.notificationRepository.findOne({
+      where: { id: notificationId, recipient: { id: userId } },
+    });
+
+    if (!notif) throw new Error('Notification non trouvée');
+
+    await this.notificationRepository.remove(notif);
+    return { success: true };
+  }
+
   /**
    * Vérifie si l'utilisateur souhaite recevoir cette notification par email
    * @param recipientId ID du destinataire

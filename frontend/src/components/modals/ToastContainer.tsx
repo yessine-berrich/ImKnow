@@ -1,7 +1,7 @@
 'use client';
 
 import { Toaster, toast as hotToast, Toast } from 'react-hot-toast';
-import { CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, AlertTriangle, Bell, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -55,6 +55,62 @@ function ToastItem({ t, message, type }: { t: Toast; message: string; type: Toas
   );
 }
 
+export interface NotificationToastData {
+  message: string;
+  senderName: string;
+  avatarUrl?: string | null;
+  typeLabel: string;
+}
+
+function NotificationToastItem({ t, data }: { t: Toast; data: NotificationToastData }) {
+  return (
+    <div
+      className="flex items-start gap-3 px-4 py-3 rounded-xl shadow-xl"
+      style={{
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        color: '#111827',
+        minWidth: '280px',
+        maxWidth: '380px',
+        opacity: t.visible ? 1 : 0,
+        transform: t.visible ? 'translateY(0)' : 'translateY(10px)',
+        transition: 'opacity 250ms, transform 250ms',
+      }}
+    >
+      {/* Avatar or fallback bell */}
+      <div className="flex-shrink-0 mt-0.5">
+        {data.avatarUrl ? (
+          <img
+            src={data.avatarUrl}
+            alt={data.senderName}
+            className="w-10 h-10 rounded-full object-cover"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+            <Bell size={18} className="text-orange-500" />
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-orange-500 mb-0.5">{data.typeLabel}</p>
+        <p className="text-sm text-gray-800 leading-snug line-clamp-2">{data.message}</p>
+        <p className="text-xs text-gray-400 mt-1">{data.senderName}</p>
+      </div>
+
+      {/* Close */}
+      <button
+        onClick={() => hotToast.dismiss(t.id)}
+        className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
+      >
+        <X size={15} />
+      </button>
+    </div>
+  );
+}
+
 function makeToast(type: ToastType) {
   return (message: string) =>
     hotToast.custom((t) => <ToastItem t={t} message={message} type={type} />, {
@@ -67,6 +123,10 @@ export const toast = {
   error:   makeToast('error'),
   info:    makeToast('info'),
   warning: makeToast('warning'),
+  notification: (data: NotificationToastData) =>
+    hotToast.custom((t) => <NotificationToastItem t={t} data={data} />, {
+      duration: 10000,
+    }),
 };
 
 export default function ToastContainer() {

@@ -163,6 +163,22 @@ export default function NotificationDropdown() {
     newSocket.on("new_notification", (newNotif: Notification) => {
       setNotifications((prev) => [newNotif, ...prev]);
       setUnreadCount((prev) => prev + 1);
+
+      const senderName = newNotif.sender?.firstName && newNotif.sender?.lastName
+        ? `${newNotif.sender.firstName} ${newNotif.sender.lastName}`
+        : newNotif.sender?.name || '';
+
+      const avatarId = newNotif.sender?.id;
+      const hasAvatar = newNotif.sender?.profileImage || newNotif.sender?.avatar;
+
+      toast.notification({
+        message: newNotif.message || getDefaultMessage(newNotif.type, senderName),
+        senderName,
+        avatarUrl: avatarId && hasAvatar
+          ? `http://localhost:3000/api/users/profile-image/${avatarId}`
+          : null,
+        typeLabel: getNotificationTypeLabel(newNotif.type),
+      });
     });
 
     setSocket(newSocket);

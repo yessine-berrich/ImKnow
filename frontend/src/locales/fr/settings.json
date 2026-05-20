@@ -116,6 +116,8 @@
     "check_email_to_delete": "Nous avons envoyé un email de confirmation à {{email}}. Veuillez cliquer sur le lien pour supprimer votre compte.",
     "google_account_delete_info": "En tant qu'utilisateur de compte Google, vous recevrez un email de confirmation pour vérifier la suppression du compte.",
     "confirmation_email_will_be_sent": "Un email de confirmation sera envoyé à {{email}} pour vérifier cette action.",
+    "email_managed_by_google": "Votre adresse email est gérée par Google. Vous ne pouvez pas la modifier ici.",
+    "change_email_google_instruction": "Pour changer votre email, veuillez visiter les paramètres de votre compte Google ({{email}}).",
     "change_email": "Changer l'adresse email",
     "change_email_description": "Mettez à jour votre adresse email. Un lien de confirmation sera envoyé à votre adresse actuelle.",
     "current_email": "Adresse email actuelle",

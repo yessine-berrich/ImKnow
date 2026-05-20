@@ -1,4 +1,4 @@
-import { Controller, DefaultValuePipe, Get, ParseIntPipe, Patch, Query, UseGuards, Param } from '@nestjs/common';
+import { Controller, DefaultValuePipe, Delete, Get, HttpCode, HttpStatus, NotFoundException, ParseIntPipe, Patch, Query, UseGuards, Param } from '@nestjs/common';
 import { CurrentPayload } from 'src/users/decorators/current-payload.decorator';
 import { AuthGuard } from 'src/users/guards/auth.guard';
 import type { JwtPayloadType } from 'utils/types';
@@ -48,5 +48,22 @@ export class NotificationController {
   async getUnreadCount(@CurrentPayload() payload: JwtPayloadType) {
     const count = await this.notificationService.getUnreadCount(payload.sub);
     return { count };
+  }
+
+  /**
+   * Delete a single notification
+   */
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async deleteNotification(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentPayload() payload: JwtPayloadType,
+  ) {
+    try {
+      return await this.notificationService.deleteNotification(id, payload.sub);
+    } catch {
+      throw new NotFoundException('Notification non trouvée');
+    }
   }
 }

@@ -15,14 +15,6 @@ export default function SettingsPage() {
   const { user: userData, loading } = useUser();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'appearance' | 'notifications'>('profile');
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    comments: true,
-    likes: true,
-    follows: true,
-    newsletter: false,
-  });
 
   const [security, setSecurity] = useState({
     currentPassword: '',
@@ -30,10 +22,6 @@ export default function SettingsPage() {
     confirmPassword: '',
     twoFactorEnabled: false,
   });
-
-  const handleNotificationToggle = (field: keyof typeof notifications) => {
-    setNotifications(prev => ({ ...prev, [field]: !prev[field] }));
-  };
 
   const tabs = [
     { id: 'profile', label: t('profile.title'), icon: User },
@@ -198,8 +186,8 @@ export default function SettingsPage() {
           
           {activeTab === 'notifications' && (
             <NotificationsTab
-              notifications={notifications}
-              onToggle={handleNotificationToggle}
+              initialEmail={userData.emailNotificationsEnabled ?? true}
+              initialPush={userData.pushNotificationsEnabled ?? true}
             />
           )}
 

@@ -1,23 +1,56 @@
 'use client';
 
+import { useState } from 'react';
 import { Mail, Smartphone } from 'lucide-react';
 import ToggleOption from './ToggleOption';
 import { useTranslation } from '@/context/LanguageContext';
+import { getToken } from '../../../services/auth.service';
 
 interface NotificationsTabProps {
-  notifications: {
-    email: boolean;
-    push: boolean;
-    comments: boolean;
-    likes: boolean;
-    follows: boolean;
-    newsletter: boolean;
-  };
-  onToggle: (field: keyof NotificationsTabProps['notifications']) => void;
+  initialEmail: boolean;
+  initialPush: boolean;
 }
 
-export default function NotificationsTab({ notifications, onToggle }: NotificationsTabProps) {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+export default function NotificationsTab({ initialEmail, initialPush }: NotificationsTabProps) {
   const { t } = useTranslation();
+  const [emailEnabled, setEmailEnabled] = useState(initialEmail);
+  const [pushEnabled, setPushEnabled] = useState(initialPush);
+  const [saving, setSaving] = useState(false);
+
+  const savePreferences = async (updated: { emailNotificationsEnabled: boolean; pushNotificationsEnabled: boolean }) => {
+    const token = getToken();
+    if (!token) return;
+
+    setSaving(true);
+    try {
+      await fetch(`${API_URL}/api/users/me/notifications-preferences`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.error('Error saving notification preferences:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEmailToggle = () => {
+    const next = !emailEnabled;
+    setEmailEnabled(next);
+    savePreferences({ emailNotificationsEnabled: next, pushNotificationsEnabled: pushEnabled });
+  };
+
+  const handlePushToggle = () => {
+    const next = !pushEnabled;
+    setPushEnabled(next);
+    savePreferences({ emailNotificationsEnabled: emailEnabled, pushNotificationsEnabled: next });
+  };
 
   return (
     <>
@@ -36,8 +69,9 @@ export default function NotificationsTab({ notifications, onToggle }: Notificati
           <ToggleOption
             label={t('notifications.email_notifications')}
             description={t('notifications.email_notifications_desc')}
-            checked={notifications.email}
-            onChange={() => onToggle('email')}
+            checked={emailEnabled}
+            onChange={handleEmailToggle}
+            disabled={saving}
           />
           <div className="border-t border-gray-200 dark:border-gray-800"></div>
         </div>
@@ -57,8 +91,9 @@ export default function NotificationsTab({ notifications, onToggle }: Notificati
         <ToggleOption
           label={t('notifications.push_notifications')}
           description={t('notifications.push_notifications_desc')}
-          checked={notifications.push}
-          onChange={() => onToggle('push')}
+          checked={pushEnabled}
+          onChange={handlePushToggle}
+          disabled={saving}
         />
       </div>
     </>

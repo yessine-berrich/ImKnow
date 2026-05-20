@@ -5,9 +5,10 @@ interface ToggleOptionProps {
   description: string;
   checked: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }
 
-export default function ToggleOption({ label, description, checked, onChange }: ToggleOptionProps) {
+export default function ToggleOption({ label, description, checked, onChange, disabled }: ToggleOptionProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex-1">
@@ -16,7 +17,8 @@ export default function ToggleOption({ label, description, checked, onChange }: 
       </div>
       <button
         onClick={onChange}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+        disabled={disabled}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
           checked ? '' : 'bg-gray-300 dark:bg-gray-700'
         }`}
         style={checked ? { backgroundColor: '#168F6F', '--tw-ring-color': '#168F6F' } as React.CSSProperties : { '--tw-ring-color': '#168F6F' } as React.CSSProperties}

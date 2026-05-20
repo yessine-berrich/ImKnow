@@ -116,6 +116,8 @@
     "check_email_to_delete": "We've sent a confirmation email to {{email}}. Please click the link to delete your account.",
     "google_account_delete_info": "As a Google account user, you'll receive a confirmation email to verify account deletion.",
     "confirmation_email_will_be_sent": "A confirmation email will be sent to {{email}} to verify this action.",
+    "email_managed_by_google": "Your email address is managed by Google. You cannot change it here.",
+    "change_email_google_instruction": "To change your email, please visit your Google Account settings ({{email}}).",
     "change_email": "Change Email Address",
     "change_email_description": "Update your email address. A confirmation link will be sent to your current address.",
     "current_email": "Current Email Address",
