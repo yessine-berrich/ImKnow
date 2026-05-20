@@ -11,6 +11,7 @@ import { login, decodeToken } from '../../../services/auth.service';
 import { useUser } from '@/context/UserContext';
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
+import { useTranslation } from '@/context/LanguageContext';
 
 // Variants d'animation
 const containerVariants = {
@@ -33,6 +34,7 @@ export default function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { refreshUser } = useUser();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,10 +115,10 @@ export default function SignInForm() {
       {/* Title */}
       <motion.div variants={itemVariants} className="mb-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-          Welcome back
+          {t('signin_form.title')}
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Sign in to your account to continue
+          {t('signin_form.subtitle')}
         </p>
       </motion.div>
 
@@ -131,7 +133,7 @@ export default function SignInForm() {
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>
           <span>
-            Your account has been successfully deleted. We are sorry to see you go.
+            {t('signin_form.deleted_banner')}
           </span>
         </motion.div>
       )}
@@ -153,7 +155,7 @@ export default function SignInForm() {
             <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
           </svg>
           <span>
-            Account created! A confirmation email has been sent to you. Please verify your email address before signing in.
+            {t('signin_form.signup_banner')}
           </span>
         </motion.div>
       )}
@@ -179,7 +181,7 @@ export default function SignInForm() {
             />
           </svg>
           <span>
-            Votre email a été vérifié avec succès ! Vous pouvez maintenant vous connecter.
+            {t('signin_form.verified_banner')}
           </span>
         </motion.div>
       )}
@@ -231,7 +233,7 @@ export default function SignInForm() {
         </div>
         <div className="relative flex justify-center text-xs">
           <span className="px-3 bg-white dark:bg-gray-900 text-gray-400 dark:text-gray-500">
-            Or continue with email
+            {t('signin_form.divider')}
           </span>
         </div>
       </motion.div>
@@ -242,7 +244,7 @@ export default function SignInForm() {
           {/* Email */}
           <motion.div variants={itemVariants}>
             <Label>
-              Email <span className="text-error-500">*</span>
+              {t('signin_form.label_email')} <span className="text-error-500">*</span>
             </Label>
             <Input
               placeholder="info@example.com"
@@ -257,12 +259,12 @@ export default function SignInForm() {
           {/* Password */}
           <motion.div variants={itemVariants}>
             <Label>
-              Password <span className="text-error-500">*</span>
+              {t('signin_form.label_password')} <span className="text-error-500">*</span>
             </Label>
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder={t('signin_form.placeholder_password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -286,14 +288,14 @@ export default function SignInForm() {
             <div className="flex items-center gap-3">
               <Checkbox checked={isChecked} onChange={setIsChecked} />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Keep me logged in
+                {t('signin_form.keep_logged_in')}
               </span>
             </div>
             <Link
               href="/forgot-password"
               className="text-sm text-[#168F6F] hover:text-[#0F6B54] dark:text-[#1AA886] transition-all duration-300 hover:underline"
             >
-              Forgot password?
+              {t('signin_form.forgot_password')}
             </Link>
           </motion.div>
 
@@ -311,12 +313,12 @@ export default function SignInForm() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Connecting...
+                  {t('signin_form.btn_connecting')}
                 </div>
               ) : isLockError ? (
-                "Account Locked"
+                t('signin_form.btn_locked')
               ) : (
-                "Sign In"
+                t('signin_form.btn_sign_in')
               )}
             </Button>
           </motion.div>

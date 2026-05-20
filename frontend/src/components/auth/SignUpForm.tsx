@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { signup } from "../../../services/auth.service";
 import GoogleLoginButton from "@/components/auth/GoogleLoginButton";
 import { motion } from "framer-motion";
+import { useTranslation } from '@/context/LanguageContext';
 
 // Animation variants
 const containerVariants = {
@@ -57,6 +58,7 @@ const validatePassword = (password: string): PasswordValidation => {
 
 export default function SignUpForm() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -90,7 +92,7 @@ export default function SignUpForm() {
     e.preventDefault();
 
     if (!passwordValidation.isValid) {
-      setError('Please ensure your password meets all requirements.');
+      setError(t('signup_form.error_pw_invalid'));
       return;
     }
 
@@ -106,7 +108,7 @@ export default function SignUpForm() {
       setError(
         err instanceof Error
           ? err.message
-          : 'An error occurred during registration.',
+          : t('signup_form.error_generic'),
       );
     } finally {
       setIsLoading(false);
@@ -123,10 +125,10 @@ export default function SignUpForm() {
       {/* Title */}
       <motion.div variants={itemVariants} className="mb-6">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-          Create an account
+          {t('signup_form.title')}
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Enter your details to get started
+          {t('signup_form.subtitle')}
         </p>
       </motion.div>
 
@@ -167,7 +169,7 @@ export default function SignUpForm() {
         </div>
         <div className="relative flex justify-center text-xs">
           <span className="px-3 bg-white dark:bg-gray-900 text-gray-400 dark:text-gray-500">
-            Or sign up with email
+            {t('signup_form.divider')}
           </span>
         </div>
       </motion.div>
@@ -179,12 +181,12 @@ export default function SignUpForm() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <motion.div variants={itemVariants}>
               <Label>
-                First Name <span className="text-error-500">*</span>
+                {t('signup_form.label_first_name')} <span className="text-error-500">*</span>
               </Label>
               <Input
                 type="text"
                 name="firstName"
-                placeholder="John"
+                placeholder={t('signup_form.placeholder_first_name')}
                 value={formData.firstName}
                 onChange={handleChange}
                 required
@@ -193,12 +195,12 @@ export default function SignUpForm() {
             </motion.div>
             <motion.div variants={itemVariants}>
               <Label>
-                Last Name <span className="text-error-500">*</span>
+                {t('signup_form.label_last_name')} <span className="text-error-500">*</span>
               </Label>
               <Input
                 type="text"
                 name="lastName"
-                placeholder="Doe"
+                placeholder={t('signup_form.placeholder_last_name')}
                 value={formData.lastName}
                 onChange={handleChange}
                 required
@@ -210,12 +212,12 @@ export default function SignUpForm() {
           {/* Email */}
           <motion.div variants={itemVariants}>
             <Label>
-              Email <span className="text-error-500">*</span>
+              {t('signup_form.label_email')} <span className="text-error-500">*</span>
             </Label>
             <Input
               type="email"
               name="email"
-              placeholder="bader@gmail.com"
+              placeholder={t('signup_form.placeholder_email')}
               value={formData.email}
               onChange={handleChange}
               required
@@ -226,12 +228,12 @@ export default function SignUpForm() {
           {/* Password with validation */}
           <motion.div variants={itemVariants}>
             <Label>
-              Password <span className="text-error-500">*</span>
+              {t('signup_form.label_password')} <span className="text-error-500">*</span>
             </Label>
             <div className="relative">
               <Input
                 name="password"
-                placeholder="Create a password"
+                placeholder={t('signup_form.placeholder_password')}
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={handleChange}
@@ -263,26 +265,26 @@ export default function SignUpForm() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs space-y-1.5"
               >
-                <p className="text-gray-600 dark:text-gray-400 mb-1 font-medium">Password must contain:</p>
+                <p className="text-gray-600 dark:text-gray-400 mb-1 font-medium">{t('signup_form.pw_must_contain')}</p>
                 <div className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   <span className="text-sm">{passwordValidation.hasMinLength ? '✓' : '○'}</span>
-                  <span>At least 8 characters</span>
+                  <span>{t('signup_form.pw_min_length')}</span>
                 </div>
                 <div className={`flex items-center gap-2 ${passwordValidation.hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   <span className="text-sm">{passwordValidation.hasUppercase ? '✓' : '○'}</span>
-                  <span>One uppercase letter</span>
+                  <span>{t('signup_form.pw_uppercase')}</span>
                 </div>
                 <div className={`flex items-center gap-2 ${passwordValidation.hasLowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   <span className="text-sm">{passwordValidation.hasLowercase ? '✓' : '○'}</span>
-                  <span>One lowercase letter</span>
+                  <span>{t('signup_form.pw_lowercase')}</span>
                 </div>
                 <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   <span className="text-sm">{passwordValidation.hasNumber ? '✓' : '○'}</span>
-                  <span>One number</span>
+                  <span>{t('signup_form.pw_number')}</span>
                 </div>
                 <div className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   <span className="text-sm">{passwordValidation.hasSpecialChar ? '✓' : '○'}</span>
-                  <span>One special character (!@#$%^&*...)</span>
+                  <span>{t('signup_form.pw_special')}</span>
                 </div>
               </motion.div>
             )}
@@ -301,10 +303,10 @@ export default function SignUpForm() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  Creating account...
+                  {t('signup_form.btn_creating')}
                 </div>
               ) : (
-                "Sign Up"
+                t('signup_form.btn_sign_up')
               )}
             </Button>
           </motion.div>

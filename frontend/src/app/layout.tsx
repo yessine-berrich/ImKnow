@@ -34,21 +34,23 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${outfit.className} dark:bg-gray-900`}>
-        
-          <LanguageProvider>
-            <UserProvider>
-              <SidebarProvider>
-                <GoogleAuthProvider>
-                  <ChatProvider>
-                    {children}
-                    <ToastContainer />
-                    <ConfirmModal />
-                  </ChatProvider>
-                </GoogleAuthProvider>
-              </SidebarProvider>
-            </UserProvider>
-          </LanguageProvider>
-       
+
+          <ThemeProvider>
+            <LanguageProvider>
+              <UserProvider>
+                <SidebarProvider>
+                  <GoogleAuthProvider>
+                    <ChatProvider>
+                      {children}
+                      <ToastContainer />
+                      <ConfirmModal />
+                    </ChatProvider>
+                  </GoogleAuthProvider>
+                </SidebarProvider>
+              </UserProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+
       </body>
     </html>
   );

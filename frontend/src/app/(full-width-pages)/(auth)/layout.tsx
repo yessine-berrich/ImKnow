@@ -1,6 +1,5 @@
 "use client";
 
-import { ThemeProvider } from "@/context/ThemeContext";
 import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -9,12 +8,14 @@ import SignUpForm from "@/components/auth/SignUpForm";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTranslation } from "@/context/LanguageContext";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isPanelActive, setIsPanelActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -51,7 +52,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </video>
       <div className="absolute inset-0 bg-black/30" />
 
-      <ThemeProvider>
         <div className={`auth-wrapper relative z-10 ${isPanelActive ? 'panel-active' : ''}`}>
           
           <div className="auth-form-box login-form-box">
@@ -63,8 +63,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               </div>
               {!isMobile && (
                 <div className="mobile-switch">
-                  <p>Don't have an account?</p>
-                  <button onClick={handleSignUpClick}>Sign Up</button>
+                  <p>{t('auth_layout.mobile_no_account')}</p>
+                  <button onClick={handleSignUpClick}>{t('auth_layout.mobile_sign_up')}</button>
                 </div>
               )}
             </div>
@@ -77,8 +77,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               </div>
               {!isMobile && (
                 <div className="mobile-switch">
-                  <p>Already have an account?</p>
-                  <button onClick={handleSignInClick}>Sign In</button>
+                  <p>{t('auth_layout.mobile_has_account')}</p>
+                  <button onClick={handleSignInClick}>{t('auth_layout.mobile_sign_in')}</button>
                 </div>
               )}
             </div>
@@ -89,7 +89,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <div className="slide-panel">
               
               <div className="panel-content panel-content-left">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4 }}
@@ -100,10 +100,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     className="inline-flex items-center gap-1 text-sm text-white/70 hover:text-white transition-all duration-300 group"
                   >
                     <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    Back
+                    {t('auth_layout.back')}
                   </Link>
                 </motion.div>
-                
+
                 <div className="relative w-44 h-44 mb-4">
                   <Image
                     src="/images/logo/logo_2_dark.png"
@@ -113,18 +113,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   />
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                  Welcome Back!
+                  {t('auth_layout.panel_left_title')}
                 </h1>
                 <p className="text-white/80 text-sm text-center max-w-xs mb-5">
-                  Stay connected by logging in with your credentials and continue your experience
+                  {t('auth_layout.panel_left_desc')}
                 </p>
                 <button className="transparent-btn" onClick={handleSignInClick}>
-                  Sign In
+                  {t('auth_layout.panel_left_btn')}
                 </button>
               </div>
               
               <div className="panel-content panel-content-right">
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.4 }}
@@ -135,10 +135,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                     className="inline-flex items-center gap-1 text-sm text-white/70 hover:text-white transition-all duration-300 group"
                   >
                     <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                    Back
+                    {t('auth_layout.back')}
                   </Link>
                 </motion.div>
-                
+
                 <div className="relative w-44 h-44 mb-4">
                   <Image
                     src="/images/logo/logo_2_dark.png"
@@ -148,13 +148,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
                   />
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                  Hey There!
+                  {t('auth_layout.panel_right_title')}
                 </h1>
                 <p className="text-white/80 text-sm text-center max-w-xs mb-5">
-                  Begin your amazing journey by creating an account with us today
+                  {t('auth_layout.panel_right_desc')}
                 </p>
                 <button className="transparent-btn" onClick={handleSignUpClick}>
-                  Sign Up
+                  {t('auth_layout.panel_right_btn')}
                 </button>
               </div>
             </div>
@@ -178,6 +178,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             width: 1100px;
             max-width: 95%;
             min-height: 700px;
+          }
+
+          html.dark .auth-wrapper {
+            background-color: #111827;
+            box-shadow: 0 20px 60px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255,255,255,0.06);
           }
 
           .auth-form-box {
@@ -228,6 +233,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             overflow-y: auto;
           }
 
+          html.dark .form-container {
+            background-color: #111827;
+          }
+
           .form-container::-webkit-scrollbar {
             width: 5px;
           }
@@ -235,6 +244,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           .form-container::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 10px;
+          }
+
+          html.dark .form-container::-webkit-scrollbar-track {
+            background: #374151;
           }
 
           .form-container::-webkit-scrollbar-thumb {
@@ -424,6 +437,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               color: #666;
             }
 
+            html.dark .mobile-switch p {
+              color: #9ca3af;
+            }
+
             .mobile-switch button {
               background: transparent;
               color: #168F6F;
@@ -441,7 +458,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             }
           }
         `}</style>
-      </ThemeProvider>
     </div>
   );
 }

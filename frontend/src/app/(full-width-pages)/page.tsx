@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
 
 export default function WelcomePageFinal() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#0a1a14]">
       {/* Video background */}
@@ -51,7 +53,7 @@ export default function WelcomePageFinal() {
           >
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/25">
               <Sparkles className="w-4 h-4 text-emerald-300" />
-              <span className="text-sm font-medium text-white/90">Intelligent Knowledge Management Platform</span>
+              <span className="text-sm font-medium text-white/90">{t('landing_page.badge')}</span>
             </div>
           </motion.div>
 
@@ -63,11 +65,11 @@ export default function WelcomePageFinal() {
             className="text-4xl md:text-6xl lg:text-7xl font-bold text-center mb-6"
           >
             <span className="text-white drop-shadow-lg">
-              Your knowledge,
+              {t('landing_page.title_line1')}
             </span>
             <br />
             <span className="bg-gradient-to-r from-emerald-300 to-[#1AA886] bg-clip-text text-transparent drop-shadow-lg">
-              intelligently organized
+              {t('landing_page.title_line2')}
             </span>
           </motion.h1>
 
@@ -78,9 +80,9 @@ export default function WelcomePageFinal() {
             transition={{ delay: 0.4 }}
             className="text-base md:text-lg text-white/80 text-center max-w-3xl mx-auto mb-12 leading-relaxed"
           >
-            Transform how your team shares and uses knowledge.
-            <span className="font-semibold text-emerald-300"> ImKnow</span> provides all the tools you need
-            for efficient and collaborative knowledge management.
+            {t('landing_page.description')}
+            <span className="font-semibold text-emerald-300"> {t('landing_page.description_brand')}</span>{' '}
+            {t('landing_page.description_suffix')}
           </motion.p>
 
           {/* Buttons */}
@@ -92,13 +94,13 @@ export default function WelcomePageFinal() {
           >
             <Link href="/signin">
               <button className="px-8 py-3.5 bg-[#168F6F] text-white rounded-xl font-semibold text-base hover:bg-[#1AA886] transition-all duration-300 shadow-lg shadow-emerald-900/40 hover:shadow-xl hover:scale-105 flex items-center gap-2">
-                Get Started
+                {t('landing_page.btn_get_started')}
                 <ArrowRight className="w-5 h-5" />
               </button>
             </Link>
             <Link href="/signup">
               <button className="px-8 py-3.5 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold text-base border-2 border-white/40 hover:bg-white/20 hover:border-white/60 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
-                Sign Up
+                {t('landing_page.btn_sign_up')}
                 <ChevronRight className="inline-block ml-1 w-5 h-5" />
               </button>
             </Link>
