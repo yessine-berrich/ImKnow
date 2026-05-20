@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { statsService, EmployeeTrendingStats } from '../../../../../../services/stats.service';
 import { publicationService } from '../../../../../../services/publication.service';
 import { usePublicationModal } from '@/context/PublicationModalContext';
+import { useTranslation } from '@/context/LanguageContext';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -21,11 +22,11 @@ const fmt = (n: number) => {
   return n.toString();
 };
 
-const fmtDate = (d: string) =>
-  new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const fmtDate = (d: string, locale = 'fr-FR') =>
+  new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 
-const fmtDateLong = (d: string) =>
-  new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtDateLong = (d: string, locale = 'fr-FR') =>
+  new Date(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 
 const engagementScore = (a: EmployeeTrendingStats['topPublications'][0]) => {
   const total = a.likesCount + a.commentsCount * 2;
@@ -157,6 +158,8 @@ function HeroPublication({ publication, onPublicationClick }: {
   publication: EmployeeTrendingStats['topPublications'][0];
   onPublicationClick: (publication: EmployeeTrendingStats['topPublications'][0]) => void;
 }) {
+  const { t, language } = useTranslation();
+  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
   const score = engagementScore(publication);
   const initials = publication.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
@@ -176,7 +179,7 @@ function HeroPublication({ publication, onPublicationClick }: {
               </span>
               <span className="flex items-center gap-1 text-[11px] text-gray-400">
                 <Clock className="h-3 w-3" />
-                {fmtDateLong(publication.publishedAt)}
+                {fmtDateLong(publication.publishedAt, locale)}
               </span>
             </div>
 
@@ -207,22 +210,22 @@ function HeroPublication({ publication, onPublicationClick }: {
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <Eye className="h-3.5 w-3.5" />
                 <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(publication.viewsCount)}</span>
-                <span>vues</span>
+                <span>{t('trending.views')}</span>
               </span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <Heart className="h-3.5 w-3.5 text-rose-400" />
                 <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(publication.likesCount)}</span>
-                <span>j&apos;aime</span>
+                <span>{t('trending.likes')}</span>
               </span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <MessageCircle className="h-3.5 w-3.5" />
                 <span className="font-semibold text-gray-700 dark:text-gray-200">{fmt(publication.commentsCount)}</span>
-                <span>comm.</span>
+                <span>{t('trending.comments')}</span>
               </span>
               {score > 0 && (
                 <span className="flex items-center gap-1.5 text-xs">
                   <Zap className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="font-semibold text-amber-600 dark:text-amber-400">{score}% engagement</span>
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">{score}{t('trending.engagement')}</span>
                 </span>
               )}
             </div>
@@ -241,6 +244,8 @@ function PublicationRow({ publication, rank, onPublicationClick }: {
   rank: number;
   onPublicationClick: (publication: EmployeeTrendingStats['topPublications'][0]) => void;
 }) {
+  const { t, language } = useTranslation();
+  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
   const score = engagementScore(publication);
   const initials = publication.author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
@@ -271,7 +276,7 @@ function PublicationRow({ publication, rank, onPublicationClick }: {
             </div>
             <span className="text-[11px] text-gray-500 dark:text-gray-400">{publication.author.name}</span>
             <span className="text-gray-300 dark:text-gray-700 text-[11px]">·</span>
-            <span className="text-[11px] text-gray-400 dark:text-gray-500">{fmtDate(publication.publishedAt)}</span>
+            <span className="text-[11px] text-gray-400 dark:text-gray-500">{fmtDate(publication.publishedAt, locale)}</span>
           </div>
 
           {/* Stats */}
@@ -306,10 +311,11 @@ function PublicationRow({ publication, rank, onPublicationClick }: {
 // ── Tag Card ───────────────────────────────────────────────────────────────────
 
 function TagCard({ tag, maxViews }: { tag: EmployeeTrendingStats['trendingTags'][0]; maxViews: number }) {
+  const { t } = useTranslation();
   const trendConfig = {
-    up:     { icon: <ArrowUp className="h-3 w-3" />,    cls: 'text-[#168F6F] bg-[#168F6F]/10 dark:bg-[#168F6F]/15', label: 'En hausse' },
-    down:   { icon: <ArrowDown className="h-3 w-3" />,  cls: 'text-red-500 bg-red-50 dark:bg-red-900/20',           label: 'En baisse'  },
-    stable: { icon: <Minus className="h-3 w-3" />,      cls: 'text-gray-400 bg-gray-100 dark:bg-gray-800',          label: 'Stable'     },
+    up:     { icon: <ArrowUp className="h-3 w-3" />,    cls: 'text-[#168F6F] bg-[#168F6F]/10 dark:bg-[#168F6F]/15', label: t('trending.tag_trend_up') },
+    down:   { icon: <ArrowDown className="h-3 w-3" />,  cls: 'text-red-500 bg-red-50 dark:bg-red-900/20',           label: t('trending.tag_trend_down') },
+    stable: { icon: <Minus className="h-3 w-3" />,      cls: 'text-gray-400 bg-gray-100 dark:bg-gray-800',          label: t('trending.tag_trend_stable') },
   };
   const { icon, cls, label } = trendConfig[tag.trend];
   const hotness: number = (tag as any)['热度'] ?? (tag as any).hotness ?? 0;
@@ -328,14 +334,14 @@ function TagCard({ tag, maxViews }: { tag: EmployeeTrendingStats['trendingTags']
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${cls}`}>{label}</span>
             </div>
             <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-              {tag.publicationCount} publication{tag.publicationCount > 1 ? 's' : ''} · {fmt(tag.totalViews)} vues
+              {t(tag.publicationCount > 1 ? 'trending.tag_publications_plural' : 'trending.tag_publications_one', { count: tag.publicationCount })} · {fmt(tag.totalViews)} {t('trending.tag_views')}
             </p>
           </div>
         </div>
         {hotness > 0 && (
           <div className="flex-shrink-0 text-right">
             <span className="text-sm font-extrabold text-[#168F6F]">{hotness}°</span>
-            <p className="text-[10px] text-gray-400">chaleur</p>
+            <p className="text-[10px] text-gray-400">{t('trending.tag_heat')}</p>
           </div>
         )}
       </div>
@@ -348,7 +354,7 @@ function TagCard({ tag, maxViews }: { tag: EmployeeTrendingStats['trendingTags']
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[10px] text-gray-400 mt-1">{pct}% de popularité relative</p>
+        <p className="text-[10px] text-gray-400 mt-1">{pct}{t('trending.tag_popularity')}</p>
       </div>
     </div>
   );
@@ -357,6 +363,7 @@ function TagCard({ tag, maxViews }: { tag: EmployeeTrendingStats['trendingTags']
 // ── Author Card ────────────────────────────────────────────────────────────────
 
 function AuthorCard({ author, rank }: { author: EmployeeTrendingStats['topAuthors'][0]; rank: number }) {
+  const { t } = useTranslation();
   const initials = author.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
@@ -388,7 +395,7 @@ function AuthorCard({ author, rank }: { author: EmployeeTrendingStats['topAuthor
           <div className="flex items-center gap-3 mb-1.5">
             <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
               <BookOpen className="h-3 w-3" />
-              <span className="font-medium text-gray-600 dark:text-gray-300">{author.publicationCount} publications</span>
+              <span className="font-medium text-gray-600 dark:text-gray-300">{t('trending.author_publications', { count: author.publicationCount })}</span>
             </span>
             <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-gray-500">
               <Eye className="h-3 w-3" />
@@ -415,6 +422,8 @@ function AuthorCard({ author, rank }: { author: EmployeeTrendingStats['topAuthor
 // ── Activity Chart ─────────────────────────────────────────────────────────────
 
 function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] }) {
+  const { t, language } = useTranslation();
+  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
   const maxViews    = Math.max(...data.map(d => d.views), 1);
   const maxPublications = Math.max(...data.map(d => d.publications), 1);
   const BAR_H       = 140;
@@ -427,9 +436,9 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: 'Publications total', value: totalPublications, icon: <FileText className="h-3.5 w-3.5 text-[#168F6F]" /> },
-          { label: 'Vues total', value: fmt(totalViews), icon: <Eye className="h-3.5 w-3.5 text-[#168F6F]" /> },
-          { label: 'Pic activité', value: fmtDate(peakDay?.date ?? ''), icon: <Star className="h-3.5 w-3.5 text-amber-500" /> },
+          { label: t('trending.chart_total_publications'), value: totalPublications, icon: <FileText className="h-3.5 w-3.5 text-[#168F6F]" /> },
+          { label: t('trending.chart_total_views'), value: fmt(totalViews), icon: <Eye className="h-3.5 w-3.5 text-[#168F6F]" /> },
+          { label: t('trending.chart_peak'), value: fmtDate(peakDay?.date ?? '', locale), icon: <Star className="h-3.5 w-3.5 text-amber-500" /> },
         ].map(({ label, value, icon }) => (
           <div key={label} className="rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 px-3 py-2">
             <div className="flex items-center gap-1.5 mb-1">{icon}<span className="text-[11px] text-gray-400">{label}</span></div>
@@ -442,11 +451,11 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
       <div className="flex items-center gap-5 mb-4">
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-sm bg-[#168F6F]" />
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Publications publiés</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('trending.chart_legend_publications')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="h-2.5 w-2.5 rounded-sm bg-[#168F6F]/25" />
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Vues</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('trending.chart_legend_views')}</span>
         </div>
       </div>
 
@@ -465,15 +474,15 @@ function ActivityChart({ data }: { data: EmployeeTrendingStats['dailyActivity'] 
           {data.map((day, i) => {
             const publicationH = Math.max(3, (day.publications / maxPublications) * BAR_H);
             const viewH    = Math.max(3, (day.views / maxViews) * BAR_H);
-            const label    = new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'short' });
+            const label    = new Date(day.date).toLocaleDateString(locale, { weekday: 'short' });
             const isPeak   = peakDay && day.date === peakDay.date;
 
             return (
               <div key={i} className="group relative flex-1 flex flex-col items-center gap-1">
                 {/* Tooltip */}
                 <div className="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-gray-900 dark:bg-gray-700 text-white text-[10px] rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-lg">
-                  <p className="font-semibold capitalize">{new Date(day.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
-                  <p className="text-gray-300">{day.publications} publications · {fmt(day.views)} vues</p>
+                  <p className="font-semibold capitalize">{new Date(day.date).toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+                  <p className="text-gray-300">{t('trending.chart_tooltip', { count: day.publications, views: fmt(day.views) })}</p>
                 </div>
 
                 <div className="relative w-full flex justify-center gap-0.5" style={{ height: BAR_H }}>
@@ -509,6 +518,8 @@ export default function TrendingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState<string | null>(null);
   const { openPublicationModal } = usePublicationModal();
+  const { t, language } = useTranslation();
+  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
 
   const handlePublicationClick = async (publication: EmployeeTrendingStats['topPublications'][0]) => {
     let authorId: number | undefined = publication.author.id;
@@ -571,7 +582,7 @@ export default function TrendingPage() {
       const result = await statsService.getEmployeeTrendingStats();
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('trending.error_generic'));
     } finally {
       setLoading(false);
     }
@@ -589,14 +600,14 @@ export default function TrendingPage() {
             <AlertCircle className="h-7 w-7 text-red-500" />
           </div>
           <div>
-            <p className="text-base font-bold text-gray-900 dark:text-white">Impossible de charger les tendances</p>
+            <p className="text-base font-bold text-gray-900 dark:text-white">{t('trending.error_load')}</p>
             <p className="text-sm text-gray-400 mt-1">{error}</p>
           </div>
           <button
             onClick={fetchTrendingData}
             className="px-5 py-2 rounded-xl bg-[#168F6F] text-white text-sm font-semibold hover:bg-[#127a5f] transition-colors shadow-sm"
           >
-            Réessayer
+            {t('trending.retry')}
           </button>
         </div>
       </div>
@@ -622,15 +633,15 @@ export default function TrendingPage() {
               <Flame className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Tendances</h1>
+              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t('trending.page_title')}</h1>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
-                Semaine du {fmtDate(data.period.from)} au {fmtDate(data.period.to)}
+                {t('trending.period', { from: fmtDate(data.period.from, locale), to: fmtDate(data.period.to, locale) })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/15 border border-[#168F6F]/20 self-start sm:self-auto">
             <TrendingUp className="h-4 w-4 text-[#168F6F]" />
-            <span className="text-sm font-semibold text-[#168F6F]">Cette semaine</span>
+            <span className="text-sm font-semibold text-[#168F6F]">{t('trending.this_week')}</span>
           </div>
         </div>
 
@@ -638,28 +649,28 @@ export default function TrendingPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           <StatCard
             icon={<FileText className="h-5 w-5 text-white" />}
-            title="Publications publiés"
+            title={t('trending.stat_publications')}
             value={data.stats.totalPublications}
             growth={data.stats.publicationsGrowth}
-            sub={data.stats.publicationsGrowth !== 0 ? `vs semaine précédente` : undefined}
+            sub={data.stats.publicationsGrowth !== 0 ? t('trending.stat_vs_prev') : undefined}
           />
           <StatCard
             icon={<Eye className="h-5 w-5 text-white" />}
-            title="Vues totales"
+            title={t('trending.stat_views')}
             value={data.stats.totalViews}
             growth={data.stats.viewsGrowth}
-            sub={data.stats.viewsGrowth !== 0 ? `vs semaine précédente` : undefined}
+            sub={data.stats.viewsGrowth !== 0 ? t('trending.stat_vs_prev') : undefined}
           />
           <StatCard
             icon={<Users className="h-5 w-5 text-white" />}
-            title="Auteurs actifs"
+            title={t('trending.stat_authors')}
             value={data.stats.activeAuthors}
           />
           <StatCard
             icon={<Heart className="h-5 w-5 text-white" />}
-            title="J'aime reçus"
+            title={t('trending.stat_likes')}
             value={totalLikes}
-            sub="Top publications cumulés"
+            sub={t('trending.stat_top_cumul')}
           />
         </div>
 
@@ -672,8 +683,8 @@ export default function TrendingPage() {
             {/* Publications populaires */}
             <Section
               icon={<TrendingUp className="h-4 w-4 text-[#168F6F]" />}
-              title="Publications populaires"
-              subtitle={`Top ${data.topPublications.length} de la semaine`}
+              title={t('trending.section_popular')}
+              subtitle={t('trending.section_popular_sub', { count: data.topPublications.length })}
             >
               <div className="space-y-3">
                 {/* Hero for rank 1 */}
@@ -689,7 +700,7 @@ export default function TrendingPage() {
                 )}
 
                 {data.topPublications.length === 0 && (
-                  <p className="py-10 text-center text-sm text-gray-400">Aucun publication cette semaine.</p>
+                  <p className="py-10 text-center text-sm text-gray-400">{t('trending.empty_publications')}</p>
                 )}
               </div>
             </Section>
@@ -697,12 +708,12 @@ export default function TrendingPage() {
             {/* Activité quotidienne */}
             <Section
               icon={<BarChart2 className="h-4 w-4 text-[#168F6F]" />}
-              title="Activité quotidienne"
-              subtitle="Publications et consultations par jour"
+              title={t('trending.section_activity')}
+              subtitle={t('trending.section_activity_sub')}
             >
               {data.dailyActivity.length > 0
                 ? <ActivityChart data={data.dailyActivity} />
-                : <p className="py-8 text-center text-sm text-gray-400">Pas de données d'activité.</p>}
+                : <p className="py-8 text-center text-sm text-gray-400">{t('trending.empty_activity')}</p>}
             </Section>
           </div>
 
@@ -712,15 +723,15 @@ export default function TrendingPage() {
             {/* Tags tendance */}
             <Section
               icon={<Tag className="h-4 w-4 text-[#168F6F]" />}
-              title="Tags tendance"
-              subtitle="Popularité relative de la semaine"
+              title={t('trending.section_tags')}
+              subtitle={t('trending.section_tags_sub')}
             >
               <div className="space-y-2.5">
                 {data.trendingTags.map(tag => (
                   <TagCard key={tag.id} tag={tag} maxViews={maxTagViews} />
                 ))}
                 {data.trendingTags.length === 0 && (
-                  <p className="py-6 text-center text-sm text-gray-400">Aucun tag tendance.</p>
+                  <p className="py-6 text-center text-sm text-gray-400">{t('trending.empty_tags')}</p>
                 )}
               </div>
             </Section>
@@ -728,15 +739,15 @@ export default function TrendingPage() {
             {/* Auteurs du moment */}
             <Section
               icon={<Users className="h-4 w-4 text-[#168F6F]" />}
-              title="Auteurs du moment"
-              subtitle="Classés par taux d'engagement"
+              title={t('trending.section_authors')}
+              subtitle={t('trending.section_authors_sub')}
             >
               <div className="space-y-0.5 -mx-2">
                 {data.topAuthors.map((author, i) => (
                   <AuthorCard key={author.id} author={author} rank={i + 1} />
                 ))}
                 {data.topAuthors.length === 0 && (
-                  <p className="py-6 text-center text-sm text-gray-400">Aucun auteur cette semaine.</p>
+                  <p className="py-6 text-center text-sm text-gray-400">{t('trending.empty_authors')}</p>
                 )}
               </div>
             </Section>

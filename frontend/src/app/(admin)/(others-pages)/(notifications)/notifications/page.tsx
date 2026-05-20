@@ -7,6 +7,7 @@ import { fetchCurrentUser, getToken } from '../../../../../../services/auth.serv
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { usePublicationModal } from '@/context/PublicationModalContext';
+import { useTranslation } from '@/context/LanguageContext';
 
 const enum NotificationType {
   MENTION = 'mention',
@@ -73,6 +74,7 @@ export default function NotificationsPage() {
   const [preferencesSaved, setPreferencesSaved] = useState(false);
 
   const { openPublicationModal } = usePublicationModal();
+  const { t, language } = useTranslation();
 
   const token = getToken() ?? '';
 
@@ -221,7 +223,7 @@ export default function NotificationsPage() {
   };
 
   const deleteNotification = async (id: number) => {
-    if (!await confirm('Supprimer cette notification ?')) return;
+    if (!await confirm(t('notifications_page.confirm_delete'))) return;
 
     setDeletingId(id);
     try {
@@ -253,38 +255,38 @@ export default function NotificationsPage() {
     switch (type) {
       case NotificationType.NEW_COMMENT:
       case NotificationType.COMMENT_ON_PUBLICATION:
-        return 'Commentaire';
+        return t('notifications.type_comment');
       case NotificationType.REPLY:
-        return 'Réponse';
+        return t('notifications.type_reply');
       case NotificationType.MENTION:
-        return 'Mention';
+        return t('notifications.type_mention');
       case NotificationType.NEW_FOLLOWER:
-        return 'Nouvel abonné';
+        return t('notifications.type_new_follower');
       case NotificationType.PUBLICATION_PUBLISHED:
-        return 'Publication publié';
+        return t('notifications.type_publication_published');
       case NotificationType.PUBLICATION_PENDING_MODERATION:
-        return 'En attente de modération';
+        return t('notifications.type_publication_pending');
       case NotificationType.PUBLICATION_REJECTED:
-        return 'Publication refusé';
+        return t('notifications.type_publication_rejected');
       case NotificationType.PUBLICATION_LIKED:
       case NotificationType.LIKE_ON_PUBLICATION:
-        return "J'aime";
+        return t('notifications.type_publication_liked');
       case NotificationType.COMMENT_LIKED:
-        return "J'aime sur commentaire";
+        return t('notifications.type_comment_liked');
       case NotificationType.PUBLICATION_BOOKMARKED:
-        return 'Sauvegarde';
+        return t('notifications.type_publication_bookmarked');
       case NotificationType.SYSTEM_INFO:
-        return 'Information';
+        return t('notifications.type_system_info');
       case NotificationType.SYSTEM_ERROR:
-        return 'Erreur système';
+        return t('notifications.type_system_error');
       case NotificationType.USER_ROLE_CHANGED:
-        return 'Changement de rôle';
+        return t('notifications.type_user_role_changed');
       case NotificationType.NEWSLETTER:
-        return 'Newsletter';
+        return t('notifications.type_newsletter');
       case NotificationType.PLATFORM_UPDATE:
-        return 'Mise à jour plateforme';
+        return t('notifications.type_platform_update');
       default:
-        return 'Notification';
+        return t('notifications_page.type_default');
     }
   };
 
@@ -292,30 +294,30 @@ export default function NotificationsPage() {
     switch (type) {
       case NotificationType.NEW_COMMENT:
       case NotificationType.COMMENT_ON_PUBLICATION:
-        return `${senderName} a commenté votre publication`;
+        return t('notifications.msg_commented', { name: senderName });
       case NotificationType.REPLY:
-        return `${senderName} a répondu à votre commentaire`;
+        return t('notifications.msg_replied', { name: senderName });
       case NotificationType.MENTION:
-        return `${senderName} vous a mentionné`;
+        return t('notifications.msg_mentioned', { name: senderName });
       case NotificationType.NEW_FOLLOWER:
-        return `${senderName} veut vous suivre`;
+        return t('notifications.msg_followed', { name: senderName });
       case NotificationType.PUBLICATION_LIKED:
       case NotificationType.LIKE_ON_PUBLICATION:
-        return `${senderName} a aimé votre publication`;
+        return t('notifications.msg_liked_pub', { name: senderName });
       case NotificationType.COMMENT_LIKED:
-        return `${senderName} a aimé votre commentaire`;
+        return t('notifications.msg_liked_comment', { name: senderName });
       case NotificationType.PUBLICATION_BOOKMARKED:
-        return `${senderName} a sauvegardé votre publication`;
+        return t('notifications.msg_bookmarked', { name: senderName });
       case NotificationType.PUBLICATION_PUBLISHED:
-        return 'Votre publication a été publié';
+        return t('notifications.msg_pub_published');
       case NotificationType.PUBLICATION_REJECTED:
-        return 'Votre publication a été refusé';
+        return t('notifications.msg_pub_rejected');
       case NotificationType.ACCOUNT_ACTIVATED:
-        return 'Votre compte a été activé. Vous pouvez maintenant accéder à la plateforme.';
+        return t('notifications_page.msg_account_activated');
       case NotificationType.ACCOUNT_DEACTIVATED:
-        return "Votre compte a été désactivé. Contactez un administrateur pour plus d'informations.";
+        return t('notifications_page.msg_account_deactivated');
       default:
-        return `${senderName} a interagi avec votre contenu`;
+        return t('notifications.msg_default', { name: senderName });
     }
   };
 
@@ -392,13 +394,14 @@ export default function NotificationsPage() {
       openPublicationModal(formattedPublication, commentId);
     } catch (error) {
       console.error('❌ Erreur chargement publication:', error);
-      toast.error("Impossible de charger l'publication");
+      toast.error(t('notifications_page.err_load_publication'));
     }
   };
 
   const formatDate = (dateStr: string) => {
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US';
     const date = new Date(dateStr);
-    return date.toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString(locale, {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -408,17 +411,18 @@ export default function NotificationsPage() {
   };
 
   const getTimeAgo = (dateStr: string) => {
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US';
     const date = new Date(dateStr);
     const diffMs = Date.now() - date.getTime();
     const minutes = Math.floor(diffMs / 60000);
 
-    if (minutes < 1) return "à l'instant";
-    if (minutes < 60) return `il y a ${minutes} min`;
+    if (minutes < 1) return t('notifications.just_now');
+    if (minutes < 60) return t('notifications.minutes_ago', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `il y a ${hours} h`;
+    if (hours < 24) return t('notifications.hours_ago', { count: hours });
     const days = Math.floor(hours / 24);
-    if (days < 30) return `il y a ${days} jour${days > 1 ? 's' : ''}`;
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    if (days < 30) return t(days > 1 ? 'notifications_page.days_ago_plural' : 'notifications_page.days_ago_one', { count: days });
+    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
   };
 
   const getProfileImageUrl = (userData: any) => {
@@ -447,7 +451,7 @@ export default function NotificationsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des notifications...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('notifications_page.loading')}</p>
         </div>
       </div>
     );
@@ -462,12 +466,12 @@ export default function NotificationsPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
                 <Bell className="h-8 w-8 text-blue-600" />
-                Notifications
+                {t('notifications_page.title')}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {unreadCount > 0 
-                  ? `${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`
-                  : 'Toutes les notifications ont été lues'}
+                {unreadCount > 0
+                  ? t(unreadCount > 1 ? 'notifications_page.unread_plural' : 'notifications_page.unread_one', { count: unreadCount })
+                  : t('notifications_page.all_read')}
               </p>
             </div>
             
@@ -477,7 +481,7 @@ export default function NotificationsPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Check className="h-4 w-4" />
-                Tout marquer comme lu
+                {t('notifications_page.mark_all_read')}
               </button>
             )}
           </div>
@@ -493,7 +497,7 @@ export default function NotificationsPage() {
               }`}
             >
               <Filter className="h-4 w-4" />
-              Toutes ({notifications.length})
+              {t('notifications_page.filter_all', { count: notifications.length })}
             </button>
             <button
               onClick={() => setFilter('unread')}
@@ -503,7 +507,7 @@ export default function NotificationsPage() {
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
             >
-              Non lues ({unreadCount})
+              {t('notifications_page.filter_unread', { count: unreadCount })}
             </button>
           </div>
         </div>
@@ -514,19 +518,19 @@ export default function NotificationsPage() {
             <div className="flex items-center gap-2">
               <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-                Préférences de notifications
+                {t('notifications_page.pref_title')}
               </h2>
             </div>
             {savingPreferences && (
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Sauvegarde...
+                {t('notifications_page.pref_saving')}
               </span>
             )}
             {preferencesSaved && !savingPreferences && (
               <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                 <Check className="h-3.5 w-3.5" />
-                Sauvegardé
+                {t('notifications_page.pref_saved')}
               </span>
             )}
           </div>
@@ -534,7 +538,7 @@ export default function NotificationsPage() {
           {preferencesLoading ? (
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Chargement des préférences...
+              {t('notifications_page.pref_loading')}
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-3">
@@ -565,10 +569,10 @@ export default function NotificationsPage() {
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}>
-                    Notifications par email
+                    {t('notifications_page.email_notif')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {preferences.emailNotificationsEnabled ? 'Activées' : 'Désactivées'}
+                    {t(preferences.emailNotificationsEnabled ? 'notifications_page.enabled' : 'notifications_page.disabled')}
                   </p>
                 </div>
                 {/* Toggle switch */}
@@ -610,10 +614,10 @@ export default function NotificationsPage() {
                       ? 'text-gray-900 dark:text-white'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}>
-                    Notifications push
+                    {t('notifications_page.push_notif')}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {preferences.pushNotificationsEnabled ? 'Activées' : 'Désactivées'}
+                    {t(preferences.pushNotificationsEnabled ? 'notifications_page.enabled' : 'notifications_page.disabled')}
                   </p>
                 </div>
                 {/* Toggle switch */}
@@ -636,12 +640,12 @@ export default function NotificationsPage() {
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-12 text-center">
             <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Aucune notification
+              {t('notifications_page.empty_title')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {filter === 'unread' 
-                ? 'Vous avez lu toutes vos notifications'
-                : 'Vous n\'avez pas encore de notifications'}
+              {filter === 'unread'
+                ? t('notifications_page.empty_all_read')
+                : t('notifications_page.empty_none')}
             </p>
           </div>
         ) : (
@@ -649,7 +653,7 @@ export default function NotificationsPage() {
             {filteredNotifications.map((notif) => {
               const senderName = notif.sender?.firstName && notif.sender?.lastName
                 ? `${notif.sender.firstName} ${notif.sender.lastName}`
-                : notif.sender?.name || 'Utilisateur';
+                : notif.sender?.name || t('notifications.default_sender');
 
               return (
                 <div
@@ -689,14 +693,14 @@ export default function NotificationsPage() {
                             {/* Rejection reason */}
                             {notif.type === NotificationType.PUBLICATION_REJECTED && notif.data?.reason && (
                               <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                                Raison : {notif.data.reason}
+                                {t('notifications_page.reason_label')} {notif.data.reason}
                               </p>
                             )}
 
                             {/* Moderation info */}
                             {notif.type === NotificationType.PUBLICATION_PENDING_MODERATION && (
                               <p className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
-                                Votre publication est en attente de modération
+                                {t('notifications_page.pending_moderation')}
                               </p>
                             )}
                           </div>
@@ -710,7 +714,7 @@ export default function NotificationsPage() {
                                   markAsRead(notif.id);
                                 }}
                                 className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                title="Marquer comme lu"
+                                title={t('notifications_page.mark_read_title')}
                               >
                                 <Check className="h-4 w-4" />
                               </button>
@@ -722,7 +726,7 @@ export default function NotificationsPage() {
                               }}
                               disabled={deletingId === notif.id}
                               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
-                              title="Supprimer"
+                              title={t('notifications_page.delete_title')}
                             >
                               {deletingId === notif.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />

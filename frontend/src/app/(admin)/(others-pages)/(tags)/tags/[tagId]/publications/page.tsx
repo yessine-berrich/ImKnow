@@ -6,6 +6,7 @@ import { toast } from '@/components/modals/ToastContainer';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, FileText, TrendingUp, Clock, Eye, Tag } from 'lucide-react';
 import PublicationCard from '@/components/publication/PublicationCard';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface TagData {
   id: number;
@@ -14,6 +15,7 @@ interface TagData {
 }
 
 export default function TagPublicationsPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const tagId = params.tagId as string;
@@ -85,7 +87,7 @@ export default function TagPublicationsPage() {
       });
 
       if (!tagResponse.ok) {
-        throw new Error('Tag introuvable');
+        throw new Error(t('cat_pub.not_found_tag'));
       }
 
       const tagData = await tagResponse.json();
@@ -101,7 +103,7 @@ export default function TagPublicationsPage() {
       });
 
       if (!publicationsResponse.ok) {
-        throw new Error('Erreur lors du chargement des publications');
+        throw new Error(t('cat_pub.load_error'));
       }
 
       const allPublications = await publicationsResponse.json();
@@ -202,7 +204,7 @@ export default function TagPublicationsPage() {
       setPublications(formatted);
     } catch (err: any) {
       console.error('Error loading tag publications:', err);
-      setError(err.message || 'Erreur lors du chargement');
+      setError(err.message || t('cat_pub.load_error'));
     } finally {
       setLoading(false);
     }
@@ -211,7 +213,7 @@ export default function TagPublicationsPage() {
   const handleLike = async (id: string) => {
     const token = getToken();
     if (!token) {
-      toast.info('Veuillez vous connecter pour liker un publication');
+      toast.info(t('cat_pub.toast_login_like'));
       return;
     }
 
@@ -220,7 +222,7 @@ export default function TagPublicationsPage() {
       if (!publication) return;
 
       const newIsLiked = !publication.isLiked;
-      
+
       // Optimistic update
       setPublications(prev => prev.map(publication => {
         if (publication.id === id) {
@@ -243,14 +245,14 @@ export default function TagPublicationsPage() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
-        throw new Error('Erreur lors du like');
+        throw new Error(t('cat_pub.toast_like_error'));
       }
-      
+
     } catch (err) {
       console.error('Erreur like:', err);
-      toast.error('Erreur lors du like');
+      toast.error(t('cat_pub.toast_like_error'));
       await loadTagAndPublications();
     }
   };
@@ -258,7 +260,7 @@ export default function TagPublicationsPage() {
   const handleBookmark = async (id: string) => {
     const token = getToken();
     if (!token) {
-      toast.info('Veuillez vous connecter pour sauvegarder un publication');
+      toast.info(t('cat_pub.toast_login_bookmark'));
       return;
     }
 
@@ -267,7 +269,7 @@ export default function TagPublicationsPage() {
       if (!publication) return;
 
       const newIsBookmarked = !publication.isBookmarked;
-      
+
       setPublications(prev => prev.map(publication => {
         if (publication.id === id) {
           return {
@@ -285,14 +287,14 @@ export default function TagPublicationsPage() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       if (!response.ok) {
-        throw new Error('Erreur lors du bookmark');
+        throw new Error(t('cat_pub.toast_bookmark_error'));
       }
-      
+
     } catch (err) {
       console.error('Erreur bookmark:', err);
-      toast.error('Erreur lors du bookmark');
+      toast.error(t('cat_pub.toast_bookmark_error'));
       await loadTagAndPublications();
     }
   };
@@ -309,7 +311,7 @@ export default function TagPublicationsPage() {
         url: url,
       }).catch(() => {
         navigator.clipboard.writeText(url);
-        toast.success('Lien copié !');
+        toast.success(t('cat_pub.toast_link_copied'));
       });
     } else {
       navigator.clipboard.writeText(url);
@@ -322,7 +324,7 @@ export default function TagPublicationsPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-[#168F6F] mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Chargement des publications...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('cat_pub.loading')}</p>
         </div>
       </div>
     );
@@ -335,20 +337,20 @@ export default function TagPublicationsPage() {
           <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <FileText className="h-8 w-8 text-red-600 dark:text-red-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('cat_pub.error_title')}</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => router.back()}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
-              Retour
+              {t('cat_pub.back')}
             </button>
             <button
               onClick={loadTagAndPublications}
               className="px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
             >
-              Réessayer
+              {t('cat_pub.retry')}
             </button>
           </div>
         </div>
@@ -367,7 +369,7 @@ export default function TagPublicationsPage() {
             className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>Retour</span>
+            <span>{t('cat_pub.back')}</span>
           </button>
 
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -380,16 +382,19 @@ export default function TagPublicationsPage() {
               </div>
               <div className="flex items-center gap-4 mt-3">
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {publications.length} publication{publications.length > 1 ? 's' : ''}
+                  {t(publications.length > 1 ? 'cat_pub.pub_count_plural' : 'cat_pub.pub_count', { count: publications.length })}
                 </span>
-                {tag?.publicationCount && tag.publicationCount > publications.length && (
-                  <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                    {tag.publicationCount - publications.length} publication{tag.publicationCount - publications.length > 1 ? 's' : ''} non publié{tag.publicationCount - publications.length > 1 ? 's' : ''}
-                  </span>
-                )}
+                {tag?.publicationCount && tag.publicationCount > publications.length && (() => {
+                  const diff = tag.publicationCount - publications.length;
+                  return (
+                    <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                      {t(diff > 1 ? 'cat_pub.tag_unpublished_plural' : 'cat_pub.tag_unpublished', { count: diff })}
+                    </span>
+                  );
+                })()}
                 {!isAuthenticated && (
                   <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                    Connectez-vous pour interagir
+                    {t('cat_pub.login_to_interact')}
                   </span>
                 )}
               </div>
@@ -398,7 +403,7 @@ export default function TagPublicationsPage() {
             {/* Filtres de tri */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
-                Trier par:
+                {t('cat_pub.sort_by')}
               </span>
               <div className="flex items-center gap-2 bg-white dark:bg-gray-900 rounded-lg p-1 border border-gray-200 dark:border-gray-800">
                 <button
@@ -410,7 +415,7 @@ export default function TagPublicationsPage() {
                   }`}
                 >
                   <Clock className="w-4 h-4" />
-                  <span className="hidden sm:inline">Récents</span>
+                  <span className="hidden sm:inline">{t('cat_pub.sort_recent')}</span>
                 </button>
                 <button
                   onClick={() => setSortBy('popular')}
@@ -421,7 +426,7 @@ export default function TagPublicationsPage() {
                   }`}
                 >
                   <TrendingUp className="w-4 h-4" />
-                  <span className="hidden sm:inline">Populaires</span>
+                  <span className="hidden sm:inline">{t('cat_pub.sort_popular')}</span>
                 </button>
                 <button
                   onClick={() => setSortBy('views')}
@@ -432,7 +437,7 @@ export default function TagPublicationsPage() {
                   }`}
                 >
                   <Eye className="w-4 h-4" />
-                  <span className="hidden sm:inline">Vues</span>
+                  <span className="hidden sm:inline">{t('cat_pub.sort_views')}</span>
                 </button>
               </div>
             </div>
@@ -460,16 +465,16 @@ export default function TagPublicationsPage() {
               <Tag className="h-8 w-8 text-gray-400 dark:text-gray-500" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Aucun publication avec ce tag
+              {t('cat_pub.tag_empty_title')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Ce tag n'est associé à aucun publication publié pour le moment.
+              {t('cat_pub.tag_empty_text')}
             </p>
             <button
               onClick={() => router.back()}
               className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              Retour
+              {t('cat_pub.tag_back')}
             </button>
           </div>
         )}

@@ -11,6 +11,7 @@ import CategoriesManager from '@/components/categories/CategoriesManager';
 import { categoryService, Category as ApiCategory } from '../../../../../../services/category.service';
 import { toast } from '@/components/modals/ToastContainer';
 import { publicationService } from '../../../../../../services/publication.service';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface Category {
   id: string;
@@ -20,6 +21,7 @@ interface Category {
 }
 
 export default function CategoriesPage() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -28,7 +30,6 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // ✅ 1. VÉRIFICATION DU RÔLE - Redirection vers /error-403 si pas ADMIN
   useEffect(() => {
     const checkUserRole = () => {
       try {
@@ -39,11 +40,8 @@ export default function CategoriesPage() {
         }
 
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('👤 Rôle utilisateur sur CategoriesPage:', payload.role);
 
-        // 🔴 Redirection vers 403 si EMPLOYEE
         if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') {
-          console.log('⛔ Accès refusé - redirection vers 403');
           router.push('/error-403');
           return;
         }
@@ -51,7 +49,6 @@ export default function CategoriesPage() {
         setIsCheckingRole(false);
         loadCategories();
       } catch (err) {
-        console.error('❌ Erreur de vérification du rôle:', err);
         router.push('/login');
       }
     };
@@ -80,7 +77,7 @@ export default function CategoriesPage() {
           return acc;
         }, {} as Record<number, number>);
       } catch (err) {
-        console.error('Erreur chargement publications:', err);
+        // ignore publication count errors
       }
 
       // Transformer pour le frontend
@@ -93,8 +90,7 @@ export default function CategoriesPage() {
 
       setCategories(frontendCategories);
     } catch (err) {
-      console.error('Erreur chargement catégories:', err);
-      setError('Impossible de charger les catégories');
+      setError(t('categories_page.load_error'));
     } finally {
       setLoading(false);
     }
@@ -106,10 +102,10 @@ export default function CategoriesPage() {
   }) => {
     if (editingCategory) {
       await categoryService.update(Number(editingCategory.id), categoryData);
-      toast.success('Catégorie modifiée avec succès');
+      toast.success(t('categories_page.toast_updated'));
     } else {
       await categoryService.create(categoryData);
-      toast.success('Catégorie créée avec succès');
+      toast.success(t('categories_page.toast_created'));
     }
 
     await loadCategories();
@@ -121,16 +117,16 @@ export default function CategoriesPage() {
     if (!category) return;
 
     const message = category.publicationCount > 0
-      ? `Êtes-vous sûr de vouloir supprimer "${category.name}" ? Cette catégorie contient ${category.publicationCount} publication(s).`
-      : `Êtes-vous sûr de vouloir supprimer "${category.name}" ?`;
+      ? t('categories_page.delete_confirm_with_count', { name: category.name, count: category.publicationCount })
+      : t('categories_page.delete_confirm', { name: category.name });
 
     if (await confirm(message)) {
       try {
         await categoryService.delete(Number(id));
         await loadCategories();
-        toast.success('Catégorie supprimée avec succès');
+        toast.success(t('categories_page.toast_deleted'));
       } catch (err) {
-        const errMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression de la catégorie';
+        const errMessage = err instanceof Error ? err.message : t('categories_page.toast_delete_error');
         toast.error(errMessage);
       }
     }
@@ -162,10 +158,10 @@ export default function CategoriesPage() {
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Vérification des accès...
+            {t('categories_page.checking_role')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Veuillez patienter
+            {t('categories_page.please_wait')}
           </p>
         </div>
       </div>
@@ -177,7 +173,7 @@ export default function CategoriesPage() {
       <div className="p-4 md:p-6 flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-300 dark:border-gray-600 border-t-[#168F6F] rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Chargement des catégories...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('categories_page.loading')}</p>
         </div>
       </div>
     );
@@ -192,7 +188,7 @@ export default function CategoriesPage() {
             onClick={loadCategories}
             className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            Réessayer
+            {t('categories_page.retry')}
           </button>
         </div>
       </div>
@@ -205,10 +201,10 @@ export default function CategoriesPage() {
         {/* Header */}
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Catégories
+            {t('categories_page.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Organisez vos publications par thème et facilitez la navigation
+            {t('categories_page.subtitle')}
           </p>
         </div>
 

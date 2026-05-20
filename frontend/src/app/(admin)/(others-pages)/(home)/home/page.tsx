@@ -12,6 +12,7 @@ import { fetchCurrentUser, isAuthenticated } from '../../../../../../services/au
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { publicationService } from '../../../../../../services/publication.service';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface Publication {
   id: string;
@@ -77,6 +78,7 @@ function HomePageContent() {
   const [selectedPublication, setSelectedPublication] = useState<any>(null);
   const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
 
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const publicationIdFromUrl = searchParams.get('publication');
   const publicationRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -148,7 +150,7 @@ function HomePageContent() {
 
       setPublications(transformedPublications);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('home.error_generic'));
       console.error('❌ Erreur:', err);
     } finally {
       setLoading(false);
@@ -213,7 +215,7 @@ function HomePageContent() {
   const handleLike = async (id: string) => {
     try {
       if (!isAuthenticated()) {
-        toast.info('Veuillez vous connecter pour liker un publication');
+        toast.info(t('home.toast_login_like'));
         return;
       }
       const result = await publicationService.toggleLike(parseInt(id));
@@ -230,7 +232,7 @@ function HomePageContent() {
   const handleBookmark = async (id: string) => {
     try {
       if (!isAuthenticated()) {
-        toast.info('Veuillez vous connecter pour sauvegarder un publication');
+        toast.info(t('home.toast_login_bookmark'));
         return;
       }
       const result = await publicationService.toggleBookmark(parseInt(id));
@@ -250,7 +252,7 @@ function HomePageContent() {
       navigator.share({ title: publication.title, text: publication.description, url });
     } else {
       navigator.clipboard.writeText(url);
-      toast.success('Lien copié dans le presse-papier !');
+      toast.success(t('home.toast_link_copied'));
     }
   };
 
@@ -260,13 +262,13 @@ function HomePageContent() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!await confirm('Êtes-vous sûr de vouloir supprimer cet publication ?')) return;
+    if (!await confirm(t('home.confirm_delete'))) return;
     try {
       await publicationService.delete(parseInt(id));
       setPublications(prev => prev.filter(publication => publication.id !== id));
     } catch (err) {
       console.error('❌ Erreur:', err);
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la suppression');
+      toast.error(err instanceof Error ? err.message : t('home.error_delete'));
     }
   };
 
@@ -275,7 +277,7 @@ function HomePageContent() {
       <div className="h-full bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-[#168F6F] mx-auto" />
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Chargement des publications...</p>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">{t('home.loading')}</p>
         </div>
       </div>
     );
@@ -286,13 +288,13 @@ function HomePageContent() {
       <div className="h-full bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 dark:text-red-400 mb-4">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Erreur</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('home.error_title')}</h3>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
           <button
             onClick={fetchPublications}
             className="mt-4 px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
           >
-            Réessayer
+            {t('home.error_retry')}
           </button>
         </div>
       </div>
@@ -312,14 +314,14 @@ function HomePageContent() {
               {/* En-tête - PAS sticky, défile avec les publications */}
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Publications de la communauté
+                  {t('home.hero_title')}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Découvrez les derniers publications partagés par nos collaborateurs
+                  {t('home.hero_subtitle')}
                 </p>
                 {!isAuthenticated() && (
                   <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
-                    ⚠️ Connectez-vous pour liker et sauvegarder des publications
+                    {t('home.auth_warning')}
                   </p>
                 )}
               </div>
@@ -330,17 +332,17 @@ function HomePageContent() {
                   <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-8 text-center">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Aucun publication publié
+                      {t('home.empty_title')}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400">
-                      Soyez le premier à partager votre savoir !
+                      {t('home.empty_text')}
                     </p>
                     {currentUserId && (
                       <button
                         onClick={() => setCreateModalOpen(true)}
                         className="mt-4 px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
                       >
-                        Créer un publication
+                        {t('home.empty_create')}
                       </button>
                     )}
                   </div>
@@ -372,7 +374,7 @@ function HomePageContent() {
                         onClick={fetchPublications}
                         className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
                       >
-                        Actualiser les publications
+                        {t('home.refresh')}
                       </button>
                     </div>
                   </>

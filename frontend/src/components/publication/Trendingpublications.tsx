@@ -5,6 +5,7 @@ import { TrendingUp, Eye, Heart, AlertCircle, Flame } from 'lucide-react';
 import { statsService, TrendingPublication } from '../../../services/stats.service';
 import { isAuthenticated } from '../../../services/auth.service';
 import { publicationService } from '../../../services/publication.service';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface TrendingPublicationsResponse {
   period: { from: string; to: string };
@@ -104,6 +105,7 @@ function SkeletonRow() {
 }
 
 export default function TrendingPublications({ limit = 5, onPublicationClick }: TrendingPublicationsProps) {
+  const { t } = useTranslation();
   const { data, loading, error } = useTrendingPublications(limit);
   const [publicationsState, setPublicationsState] = useState<Record<number, {
     isLiked: boolean;
@@ -204,10 +206,10 @@ export default function TrendingPublications({ limit = 5, onPublicationClick }: 
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
-                Publications tendances
+                {t('trending_widget.title')}
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                Les plus populaires cette semaine
+                {t('trending_widget.subtitle')}
               </p>
             </div>
           </div>
@@ -224,14 +226,14 @@ export default function TrendingPublications({ limit = 5, onPublicationClick }: 
           {!loading && error && (
             <div className="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
               <AlertCircle className="h-6 w-6 text-red-400" />
-              <span>Impossible de charger les publications</span>
+              <span>{t('trending_widget.error')}</span>
             </div>
           )}
 
           {!loading && !error && data?.publications.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
               <TrendingUp className="h-6 w-6" />
-              <span>Aucun publication publié cette semaine.</span>
+              <span>{t('trending_widget.empty')}</span>
             </div>
           )}
 

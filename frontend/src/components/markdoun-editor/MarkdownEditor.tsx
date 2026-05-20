@@ -23,6 +23,7 @@ import {
   Type
 } from 'lucide-react';
 import MarkdownPreview from './MarkdownPreview';
+import { useTranslation } from '@/context/LanguageContext';
 
 export interface MarkdownEditorRef {
   textarea: HTMLTextAreaElement | null;
@@ -54,6 +55,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
   showPreview,
   setShowPreview
 }, ref) => {
+  const { t } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useImperativeHandle(ref, () => ({
@@ -62,9 +64,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
   }));
 
   useEffect(() => {
-    if (textareaRef.current) {
-      console.log('✅ Textarea ref is ready in child');
-    }
+    // textarea ref ready
   }, []);
 
   // Fonction pour insérer du texte à la position du curseur
@@ -88,8 +88,6 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
   };
 
   const handleToolbarClick = (type: string) => {
-    console.log('🎯 Toolbar clicked:', type);
-    
     const textarea = textareaRef.current;
     if (!textarea) {
       // Fallback: utiliser insertMarkdown du parent
@@ -106,43 +104,43 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
     
     switch (type) {
       case 'heading1':
-        newText = `# ${selectedText || 'Titre 1'}`;
+        newText = `# ${selectedText || t('markdown_editor.md_heading1')}`;
         cursorOffset = newText.length;
         break;
       case 'heading2':
-        newText = `## ${selectedText || 'Titre 2'}`;
+        newText = `## ${selectedText || t('markdown_editor.md_heading2')}`;
         cursorOffset = newText.length;
         break;
       case 'heading3':
-        newText = `### ${selectedText || 'Titre 3'}`;
+        newText = `### ${selectedText || t('markdown_editor.md_heading3')}`;
         cursorOffset = newText.length;
         break;
       case 'bold':
-        newText = `**${selectedText || 'texte en gras'}**`;
+        newText = `**${selectedText || t('markdown_editor.md_bold')}**`;
         cursorOffset = newText.length;
         break;
       case 'italic':
-        newText = `*${selectedText || 'texte en italique'}*`;
+        newText = `*${selectedText || t('markdown_editor.md_italic')}*`;
         cursorOffset = newText.length;
         break;
       case 'code':
-        newText = `\`${selectedText || 'code'}\``;
+        newText = `\`${selectedText || t('markdown_editor.md_code')}\``;
         cursorOffset = newText.length;
         break;
       case 'quote':
-        newText = `> ${selectedText || 'Citation'}\n`;
+        newText = `> ${selectedText || t('markdown_editor.md_quote')}\n`;
         cursorOffset = newText.length;
         break;
       case 'list':
-        newText = `- ${selectedText || 'élément de liste'}\n`;
+        newText = `- ${selectedText || t('markdown_editor.md_list')}\n`;
         cursorOffset = newText.length;
         break;
       case 'orderedlist':
-        newText = `1. ${selectedText || 'élément numéroté'}\n`;
+        newText = `1. ${selectedText || t('markdown_editor.md_ordered_list')}\n`;
         cursorOffset = newText.length;
         break;
       case 'checkbox':
-        newText = `- [ ] ${selectedText || 'tâche à faire'}\n`;
+        newText = `- [ ] ${selectedText || t('markdown_editor.md_checkbox')}\n`;
         cursorOffset = newText.length;
         break;
       case 'hr':
@@ -150,18 +148,18 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
         cursorOffset = newText.length;
         break;
       case 'codeblock': {
-        newText = `\`\`\`javascript\n${selectedText || '// Votre code ici'}\n\`\`\`\n`;
+        newText = `\`\`\`javascript\n${selectedText || t('markdown_editor.md_code_placeholder')}\n\`\`\`\n`;
         cursorOffset = newText.length;
         break;
       }
       case 'link': {
-        const text = selectedText || 'texte du lien';
+        const text = selectedText || t('markdown_editor.md_link_text');
         newText = `[${text}](https://)`;
         cursorOffset = newText.length;
         break;
       }
       case 'table':
-        newText = `\n| Colonne 1 | Colonne 2 | Colonne 3 |\n|-----------|-----------|-----------|\n| Cellule 1 | Cellule 2 | Cellule 3 |\n| Cellule 4 | Cellule 5 | Cellule 6 |\n`;
+        newText = `\n| ${t('markdown_editor.md_col1')} | ${t('markdown_editor.md_col2')} | ${t('markdown_editor.md_col3')} |\n|-----------|-----------|-----------|\n| ${t('markdown_editor.md_cell1')} | ${t('markdown_editor.md_cell2')} | ${t('markdown_editor.md_cell3')} |\n| ${t('markdown_editor.md_cell4')} | ${t('markdown_editor.md_cell5')} | ${t('markdown_editor.md_cell6')} |\n`;
         cursorOffset = newText.length;
         break;
       default:
@@ -190,11 +188,14 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
         <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Contenu <span className="text-red-500">*</span>
+          {t('markdown_editor.label_content')} <span className="text-red-500">*</span>
         </label>
         <div className="flex items-center gap-4">
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {content.length} caractères • {content.split(/\s+/).filter(word => word.length > 0).length} mots
+            {t('markdown_editor.chars_count', {
+              chars: content.length,
+              words: content.split(/\s+/).filter(word => word.length > 0).length,
+            })}
           </div>
           <button
             onClick={() => setShowPreview(!showPreview)}
@@ -202,7 +203,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
             className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors disabled:opacity-50 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <Eye size={16} />
-            {showPreview ? 'Éditer' : 'Aperçu'}
+            {showPreview ? t('markdown_editor.btn_edit') : t('markdown_editor.btn_preview')}
           </button>
         </div>
       </div>
@@ -213,7 +214,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
             <MarkdownPreview content={content} />
           ) : (
             <div className="text-gray-400 dark:text-gray-500 italic text-center py-10">
-              Rien à prévisualiser. Commencez à écrire !
+              {t('markdown_editor.preview_empty')}
             </div>
           )}
         </div>
@@ -227,23 +228,23 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => handleToolbarClick('heading1')}
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Titre 1 (Ctrl+1)"
+                title={t('markdown_editor.toolbar_h1')}
               >
                 <Heading1 size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('heading2')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Titre 2 (Ctrl+2)"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_h2')}
               >
                 <Heading2 size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('heading3')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Titre 3 (Ctrl+3)"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_h3')}
               >
                 <Heading3 size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -255,15 +256,15 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => handleToolbarClick('bold')}
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Gras (Ctrl+B)"
+                title={t('markdown_editor.toolbar_bold')}
               >
                 <Bold size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('italic')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Italique (Ctrl+I)"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_italic')}
               >
                 <Italic size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -275,23 +276,23 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => handleToolbarClick('list')}
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Liste à puces"
+                title={t('markdown_editor.toolbar_ul')}
               >
                 <List size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('orderedlist')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Liste numérotée"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_ol')}
               >
                 <ListOrdered size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('checkbox')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Case à cocher"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_checkbox')}
               >
                 <CheckSquare size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -303,15 +304,15 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => handleToolbarClick('code')}
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Code inline"
+                title={t('markdown_editor.toolbar_code')}
               >
                 <Code size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('codeblock')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Bloc de code"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_codeblock')}
               >
                 <FileCode size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -332,7 +333,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSubmitting || isUploadingImage}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50 flex items-center gap-1" 
-                title="Insérer une image ou un fichier"
+                title={t('markdown_editor.toolbar_image')}
               >
                 {isUploadingImage ? (
                   <>
@@ -347,7 +348,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => handleToolbarClick('link')}
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Insérer un lien (Ctrl+K)"
+                title={t('markdown_editor.toolbar_link')}
               >
                 <LinkIcon size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -359,23 +360,23 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
                 onClick={() => handleToolbarClick('quote')}
                 disabled={isSubmitting}
                 className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Citation"
+                title={t('markdown_editor.toolbar_quote')}
               >
                 <Quote size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('table')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Tableau"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_table')}
               >
                 <Table size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
-              <button 
+              <button
                 onClick={() => handleToolbarClick('hr')}
                 disabled={isSubmitting}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50" 
-                title="Ligne horizontale"
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+                title={t('markdown_editor.toolbar_hr')}
               >
                 <Minus size={18} className="text-gray-700 dark:text-gray-300" />
               </button>
@@ -388,25 +389,14 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({
               ref={textareaRef}
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder={`# Bienvenue dans l'éditeur Markdown !
-
-## Fonctionnalités disponibles :
-- **Gras** avec ** ou Ctrl+B
-- *Italique* avec * ou Ctrl+I
-- \`Code inline\` avec backticks
-- Listes avec - ou 1.
-- ![images](url)
-- [liens](url)
-- > Citations
-- \`\`\`blocs de code\`\`\`
-- Et bien plus !`}
+              placeholder={t('markdown_editor.placeholder')}
               disabled={isSubmitting}
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 border-t-0 rounded-b-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 min-h-[300px] resize-y custom-scrollbar disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 font-mono text-sm"
               spellCheck="true"
             />
             <div className="absolute bottom-3 right-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <Type size={12} />
-              <span>Markdown supporté</span>
+              <span>{t('markdown_editor.markdown_supported')}</span>
             </div>
           </div>
         </>

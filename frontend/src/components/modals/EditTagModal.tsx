@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Hash } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface EditTagModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface EditTagModalProps {
 }
 
 export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: EditTagModalProps) {
+  const { t } = useTranslation();
   const [tagName, setTagName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
     try {
       await onUpdateTag(tag.id, tagName.trim());
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la modification');
+      setError(err.message || t('tags_page.modal_edit_error'));
     } finally {
       setIsLoading(false);
     }
@@ -85,8 +87,8 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
                     <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Modifier le tag</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Modifiez le nom du tag</p>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('tags_page.edit_modal_title')}</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{t('tags_page.edit_modal_subtitle')}</p>
                   </div>
                 </div>
                 <button
@@ -105,7 +107,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
                 )}
                 <div className="mb-6">
                   <label htmlFor="tagName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nom du tag
+                    {t('tags_page.modal_name_label')}
                   </label>
                   <input
                     type="text"
@@ -119,7 +121,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
                   />
                   {tag.count !== undefined && (
                     <p className="mt-2 text-sm text-gray-500">
-                      Utilisé dans <span className="font-medium text-gray-900 dark:text-white">{tag.count}</span> publication(s)
+                      {t('tags_page.modal_usage', { count: tag.count })}
                     </p>
                   )}
                 </div>
@@ -130,14 +132,14 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
                     onClick={onClose}
                     className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
                   >
-                    Annuler
+                    {t('tags_page.modal_cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading || !tagName.trim()}
                     className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? 'Modification...' : 'Modifier'}
+                    {isLoading ? t('tags_page.modal_updating') : t('tags_page.modal_update_btn')}
                   </button>
                 </div>
               </form>

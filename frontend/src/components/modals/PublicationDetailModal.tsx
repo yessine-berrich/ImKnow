@@ -15,6 +15,7 @@ import SharePublicationModal from '../publication/SharePublicationModal';
 import ReportPublicationModal from '../publication/ReportPublicationModal';
 import CreatePublicationModal from '../modals/CreatePublicationModal';
 import PublicationHistoryModal from '../modals/PublicationHistoryModal';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface Publication {
   id: string;
@@ -96,6 +97,7 @@ export default function PublicationDetailModal({
   showHistory = false,
 }: PublicationDetailModalProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [isLiked, setIsLiked] = useState(publication?.isLiked || false);
   const [isBookmarked, setIsBookmarked] = useState(publication?.isBookmarked || false);
   const [likesCount, setLikesCount] = useState(publication?.stats?.likes || 0);
@@ -143,8 +145,8 @@ export default function PublicationDetailModal({
         const friends = await followService.getFriends();
         setFriends(friends);
       }
-      catch (error) {
-        console.error('❌ Erreur lors du chargement de la liste des amis:', error);
+      catch {
+        // ignore friend loading errors
       }
     };
 
@@ -224,7 +226,7 @@ export default function PublicationDetailModal({
     if (!publication || !publication.id) return;
 
     if (!isAuthenticated()) {
-      toast.info('Veuillez vous connecter pour liker un publication');
+      toast.info(t('publication_card.toast_login_like'));
       return;
     }
 
@@ -242,9 +244,8 @@ export default function PublicationDetailModal({
       setLikesCount(newLikesCount);
 
       onModalLikeUpdate?.(newIsLiked, newLikesCount);
-    } catch (error) {
-      console.error('❌ Erreur lors du like:', error);
-      toast.error('Erreur lors du like. Veuillez réessayer.');
+    } catch {
+      toast.error(t('publication_card.toast_like_error'));
     } finally {
       setIsLiking(false);
     }
@@ -254,7 +255,7 @@ export default function PublicationDetailModal({
     if (!publication || !publication.id) return;
 
     if (!isAuthenticated()) {
-      toast.info('Veuillez vous connecter pour sauvegarder un publication');
+      toast.info(t('publication_card.toast_login_bookmark'));
       return;
     }
 
@@ -268,9 +269,8 @@ export default function PublicationDetailModal({
       const newIsBookmarked = result.publication.isBookmarked;
       setIsBookmarked(newIsBookmarked);
       onModalBookmarkUpdate?.(newIsBookmarked);
-    } catch (error) {
-      console.error('❌ Erreur lors du bookmark:', error);
-      toast.error('Erreur lors de la sauvegarde. Veuillez réessayer.');
+    } catch {
+      toast.error(t('publication_card.toast_bookmark_error'));
     } finally {
       setIsBookmarking(false);
     }
@@ -325,7 +325,7 @@ export default function PublicationDetailModal({
             <h1 class="title">${publication.title}</h1>
             <p class="meta">${publication.author.name} · ${publication.author.department} · ${getTimeAgo(publication.publishedAt)}</p>
             <div class="content">${cleanContent.replace(/\n/g, '<br>')}</div>
-            <div class="footer">Exporté depuis KnowledgeHub · ${new Date().toLocaleDateString('fr-FR')}</div>
+            <div class="footer">${t('publication_card.export_footer')} · ${new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</div>
           </body>
         </html>
       `;
@@ -368,13 +368,15 @@ export default function PublicationDetailModal({
     const diffInMs = now.getTime() - date.getTime();
     const minutes = Math.floor(diffInMs / 60000);
 
-    if (minutes < 1) return "à l'instant";
-    if (minutes < 60) return `il y a ${minutes} min`;
+    if (minutes < 1) return t('publication_card.time_just_now');
+    if (minutes < 60) return t('publication_card.time_minutes_ago', { count: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `il y a ${hours} h`;
+    if (hours < 24) return t('publication_card.time_hours_short', { count: hours });
     const days = Math.floor(hours / 24);
-    if (days < 30) return `il y a ${days} jour${days > 1 ? 's' : ''}`;
-    return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+    if (days < 30) return days === 1
+      ? t('publication_card.time_days_ago_one', { count: days })
+      : t('publication_card.time_days_ago_plural', { count: days });
+    return date.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: "numeric", month: "short" });
   };
 
   const hasBeenUpdated = (): boolean => {
@@ -460,7 +462,7 @@ export default function PublicationDetailModal({
 
               {hasBeenUpdated() && (
                 <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  <span>Mis à jour {getTimeAgo(publication.updatedAt!)}</span>
+                  <span>{t('publication_card.updated_at', { time: getTimeAgo(publication.updatedAt!) })}</span>
                 </div>
               )}
             </div>
@@ -494,12 +496,12 @@ export default function PublicationDetailModal({
                       {isExporting ? (
                         <>
                           <div className="w-4 h-4 border-2 border-[#00926B] border-t-transparent rounded-full animate-spin"></div>
-                          <span>Export en cours...</span>
+                          <span>{t('publication_card.menu_exporting')}</span>
                         </>
                       ) : (
                         <>
                           <FileText size={16} />
-                          <span>Exporter en PDF</span>
+                          <span>{t('publication_card.menu_export_pdf')}</span>
                         </>
                       )}
                     </button>
@@ -512,8 +514,8 @@ export default function PublicationDetailModal({
                             <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
                               <h1 style="color: #00926B;">${publication.title}</h1>
                               <div style="color: #6b7280; margin: 15px 0;">
-                                <strong>Auteur:</strong> ${publication.author.name}<br/>
-                                <strong>Date:</strong> ${new Date(publication.publishedAt).toLocaleDateString('fr-FR')}
+                                <strong>${t('publication_card.print_author')}:</strong> ${publication.author.name}<br/>
+                                <strong>${t('publication_card.print_date')}:</strong> ${new Date(publication.publishedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                               </div>
                               <div style="margin: 20px 0; color: #4b5563;">
                                 ${publication.content.replace(/\n/g, '<br>')}
@@ -532,7 +534,7 @@ export default function PublicationDetailModal({
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                     >
                       <Printer size={16} />
-                      <span>Imprimer</span>
+                      <span>{t('publication_card.menu_print')}</span>
                     </button>
 
                     <button
@@ -540,11 +542,11 @@ export default function PublicationDetailModal({
                         const url = `${window.location.origin}/home?publication=${publication.id}`;
                         navigator.clipboard.writeText(url);
                         setIsMenuOpen(false);
-                        toast.success('Lien copié !');
+                        toast.success(t('publication_card.toast_link_copied'));
                       }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                     >
-                      <span>Copier le lien</span>
+                      <span>{t('publication_card.menu_copy_link')}</span>
                     </button>
                     
                     {onEdit && (
@@ -553,7 +555,7 @@ export default function PublicationDetailModal({
                         className="w-full text-left px-4 py-2 text-sm text-[#00926B] dark:text-[#00B383] hover:bg-[#00926B]/10 dark:hover:bg-[#00926B]/20 transition-colors flex items-center gap-2"
                       >
                         <Edit size={16} />
-                        <span>Modifier</span>
+                        <span>{t('publication_card.menu_edit')}</span>
                       </button>
                     )}
                     
@@ -563,14 +565,14 @@ export default function PublicationDetailModal({
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                       >
                         <Clock size={16} />
-                        <span>Historique des versions</span>
+                        <span>{t('publication_card.menu_history')}</span>
                       </button>
                     )}
                     
                     {onDelete && (
                       <button
                         onClick={async () => {
-                          if (await confirm('Êtes-vous sûr de vouloir supprimer cet publication ?')) {
+                          if (await confirm(t('publication_card.delete_confirm'))) {
                             onDelete(publication.id);
                             onClose();
                           }
@@ -579,7 +581,7 @@ export default function PublicationDetailModal({
                         className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                       >
                         <Trash2 size={16} />
-                        <span>Supprimer</span>
+                        <span>{t('publication_card.menu_delete')}</span>
                       </button>
                     )}
 
@@ -592,7 +594,7 @@ export default function PublicationDetailModal({
                           className="w-full text-left px-4 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                         >
                           <Flag size={16} />
-                          <span>Signaler</span>
+                          <span>{t('publication_card.menu_report')}</span>
                         </button>
                       </>
                     )}
@@ -604,7 +606,7 @@ export default function PublicationDetailModal({
             <button
               onClick={onClose}
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
-              aria-label="Fermer"
+              aria-label={t('publication_card.aria_close')}
             >
               <X size={24} />
             </button>
@@ -677,7 +679,7 @@ export default function PublicationDetailModal({
                   ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
                   : 'text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400'
                   }`}
-                aria-label={isLiked ? "Retirer le like" : "Aimer l'publication"}
+                aria-label={isLiked ? t('publication_card.aria_unlike') : t('publication_card.aria_like')}
               >
                 <Heart
                   size={20}
@@ -700,11 +702,11 @@ export default function PublicationDetailModal({
               <button
                 onClick={handleShare}
                 className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors"
-                title="Partager"
-                aria-label="Partager l'publication"
+                title={t('publication_card.share_label')}
+                aria-label={t('publication_card.aria_share')}
               >
                 <Share2 size={20} />
-                <span className="text-sm font-medium hidden sm:inline">Partager</span>
+                <span className="text-sm font-medium hidden sm:inline">{t('publication_card.share_label')}</span>
               </button>
             </div>
 
@@ -716,8 +718,8 @@ export default function PublicationDetailModal({
                   ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400'
                   : 'text-gray-600 dark:text-gray-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 hover:text-yellow-600 dark:hover:text-yellow-400'
                   } ${isBookmarking ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={isBookmarked ? "Retirer des favoris" : "Ajouter aux favoris"}
-                aria-label={isBookmarked ? "Retirer des favoris" : "Ajouter aux favoris"}
+                title={isBookmarked ? t('publication_card.aria_bookmark_remove') : t('publication_card.aria_bookmark_add')}
+                aria-label={isBookmarked ? t('publication_card.aria_bookmark_remove') : t('publication_card.aria_bookmark_add')}
               >
                 <Bookmark
                   size={20}

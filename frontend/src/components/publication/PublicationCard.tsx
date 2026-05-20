@@ -12,6 +12,7 @@ import { fetchCurrentUser } from '../../../services/auth.service';
 import Avatar from '@/components/ui/avatar/Avatar';
 import SharePublicationModal from './SharePublicationModal';
 import ReportPublicationModal from './ReportPublicationModal';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface PublicationCardProps {
   publication: {
@@ -63,18 +64,19 @@ interface PublicationCardProps {
   showHistory?: boolean; 
 }
 
-export default function PublicationCard({ 
-  publication, 
-  onLike, 
-  onBookmark, 
+export default function PublicationCard({
+  publication,
+  onLike,
+  onBookmark,
   onShare,
   onEdit,
   onDelete,
   onPublicationUpdated,
   showActions = true ,
   currentUserId ,
-  showHistory = false 
+  showHistory = false
 }: PublicationCardProps) {
+  const { t, language } = useTranslation();
   // États
   const [isLiked, setIsLiked] = useState(publication.isLiked || false);
   const [isBookmarked, setIsBookmarked] = useState(publication.isBookmarked || false);
@@ -208,10 +210,16 @@ export default function PublicationCard({
     const diffInDays = Math.floor(diffInHours / 24);
     const diffInYears = Math.floor(diffInDays / 365);
 
-    if (diffInYears > 0) return `il y a ${diffInYears} an${diffInYears > 1 ? 's' : ''}`;
-    if (diffInDays > 0) return `il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
-    if (diffInHours > 0) return `il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
-    return 'il y a quelques minutes';
+    if (diffInYears > 0) return diffInYears === 1
+      ? t('publication_card.time_years_ago_one', { count: diffInYears })
+      : t('publication_card.time_years_ago_plural', { count: diffInYears });
+    if (diffInDays > 0) return diffInDays === 1
+      ? t('publication_card.time_days_ago_one', { count: diffInDays })
+      : t('publication_card.time_days_ago_plural', { count: diffInDays });
+    if (diffInHours > 0) return diffInHours === 1
+      ? t('publication_card.time_hours_ago_one', { count: diffInHours })
+      : t('publication_card.time_hours_ago_plural', { count: diffInHours });
+    return t('publication_card.time_few_minutes');
   };
 
   const exportToPDF = () => {
@@ -240,7 +248,7 @@ export default function PublicationCard({
             <h1 class="title">${publication.title}</h1>
             <p class="meta">${publication.author.name} · ${publication.author.department} · ${getTimeAgo(publication.publishedAt)}</p>
             <div class="content">${cleanContent.replace(/\n/g, '<br>')}</div>
-            <div class="footer">Exporté depuis KnowledgeHub · ${new Date().toLocaleDateString('fr-FR')}</div>
+            <div class="footer">${t('publication_card.export_footer')} · ${new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</div>
           </body>
         </html>
       `;
@@ -291,7 +299,7 @@ export default function PublicationCard({
 
   return (
     <>
-      <publication className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 hover:shadow-lg transition-all duration-200 group">
+      <article className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 hover:shadow-lg transition-all duration-200 group">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3 flex-1">
@@ -299,7 +307,7 @@ export default function PublicationCard({
             <button
               onClick={navigateToAuthorProfile}
               className="relative group/avatar"
-              aria-label={`Voir le profil de ${publication.author.name}`}
+              aria-label={t('publication_card.view_profile', { name: publication.author.name })}
             >
               <Avatar
                 src={publication.author.avatar}
@@ -360,12 +368,12 @@ export default function PublicationCard({
                     {isExporting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-[#00926B] border-t-transparent rounded-full animate-spin"></div>
-                        <span>Export en cours...</span>
+                        <span>{t('publication_card.menu_exporting')}</span>
                       </>
                     ) : (
                       <>
                         <FileText size={16} />
-                        <span>Exporter en PDF</span>
+                        <span>{t('publication_card.menu_export_pdf')}</span>
                       </>
                     )}
                   </button>
@@ -379,8 +387,8 @@ export default function PublicationCard({
                           <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
                             <h1 style="color: #00926B;">${publication.title}</h1>
                             <div style="color: #6b7280; margin: 15px 0;">
-                              <strong>Auteur:</strong> ${publication.author.name}<br/>
-                              <strong>Date:</strong> ${new Date(publication.publishedAt).toLocaleDateString('fr-FR')}
+                              <strong>${t('publication_card.print_author')}:</strong> ${publication.author.name}<br/>
+                              <strong>${t('publication_card.print_date')}:</strong> ${new Date(publication.publishedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                             </div>
                             <div style="margin: 20px 0; color: #4b5563;">
                               ${cleanContent.replace(/\n/g, '<br>')}
@@ -399,7 +407,7 @@ export default function PublicationCard({
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                   >
                     <Printer size={16} />
-                    <span>Imprimer</span>
+                    <span>{t('publication_card.menu_print')}</span>
                   </button>
 
                   <button
@@ -407,11 +415,11 @@ export default function PublicationCard({
                       const url = `${window.location.origin}/home?publication=${publication.id}`;
                       navigator.clipboard.writeText(url);
                       setIsMenuOpen(false);
-                      toast.success('Lien copié !');
+                      toast.success(t('publication_card.toast_link_copied'));
                     }}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    Copier le lien
+                    {t('publication_card.menu_copy_link')}
                   </button>
                   
                   {/* Bouton Signaler — visible uniquement si l'utilisateur n'est pas l'auteur */}
@@ -423,7 +431,7 @@ export default function PublicationCard({
                         className="w-full text-left px-4 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                       >
                         <Flag size={16} />
-                        <span>Signaler</span>
+                        <span>{t('publication_card.menu_report')}</span>
                       </button>
                     </>
                   )}
@@ -435,7 +443,7 @@ export default function PublicationCard({
                       className="w-full text-left px-4 py-2 text-sm text-[#00926B] dark:text-[#00B383] hover:bg-[#00926B]/10 dark:hover:bg-[#00926B]/20 transition-colors flex items-center gap-2"
                     >
                       <Edit size={16} />
-                      <span>Modifier</span>
+                      <span>{t('publication_card.menu_edit')}</span>
                     </button>
                   )}
                  {/* Historique des versions - conditionné par showHistory */}
@@ -445,7 +453,7 @@ export default function PublicationCard({
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                     >
                       <Clock size={16} />
-                      <span>Historique des versions</span>
+                      <span>{t('publication_card.menu_history')}</span>
                     </button>
                   )}
                   
@@ -453,7 +461,7 @@ export default function PublicationCard({
                   {onDelete && (
                     <button
                       onClick={async () => {
-                        if (await confirm('Êtes-vous sûr de vouloir supprimer cet publication ?')) {
+                        if (await confirm(t('publication_card.delete_confirm'))) {
                           onDelete(publication.id);
                           setIsMenuOpen(false);
                         }
@@ -461,7 +469,7 @@ export default function PublicationCard({
                       className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                     >
                       <Trash2 size={16} />
-                      <span>Supprimer</span>
+                      <span>{t('publication_card.menu_delete')}</span>
                     </button>
                   )}
                 </div>
@@ -619,7 +627,7 @@ export default function PublicationCard({
             <button
               onClick={exportToPDF}
               className="hidden sm:flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-[#00926B] dark:hover:text-[#00B383] transition-colors"
-              title="Exporter en PDF"
+              title={t('publication_card.export_pdf_title')}
               disabled={isExporting}
             >
               {isExporting ? (
@@ -654,7 +662,7 @@ export default function PublicationCard({
             </button>
           </div>
         </div>
-      </publication>
+      </article>
 
       {/* Modal de lecture */}
 <PublicationDetailModal

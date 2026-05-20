@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/context/LanguageContext';
 import {
   Plus,
   Edit,
@@ -38,6 +39,7 @@ export default function CategoriesManager({
   onEditCategory,
   onDeleteCategory,
 }: CategoriesManagerProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -87,8 +89,7 @@ export default function CategoriesManager({
             }));
           });
         } catch (error) {
-          console.error('Erreur chargement publications:', error);
-          // En cas d'erreur, mettre tous les compteurs à 0
+          // On error, set all counts to 0
           categories.forEach(category => {
             counts[category.id] = 0;
             setLoadingCategories(prev => ({
@@ -100,7 +101,7 @@ export default function CategoriesManager({
         
         setCategoryPublications(counts);
       } catch (error) {
-        console.error('Erreur globale:', error);
+        // ignore
       } finally {
         setLoading(false);
       }
@@ -201,10 +202,10 @@ export default function CategoriesManager({
       {/* Stats Cards — clickable pour filtrer */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {([
-          { label: 'Total catégories',  value: stats.totalCategories,               gradient: 'from-blue-500 to-blue-600',    icon: <Folder size={18} />,    filter: 'all'    as FilterStatus | null },
-          { label: 'Publications total',    value: loading ? '…' : stats.totalPublications, gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} />,  filter: null     as FilterStatus | null },
-          { label: 'Moyenne publications',  value: loading ? '…' : stats.avgPublications,   gradient: 'from-purple-500 to-purple-600',icon: <BarChart2 size={18} />, filter: null     as FilterStatus | null },
-          { label: 'Catégories actives',value: loading ? '…' : stats.activeCategories, gradient: 'from-amber-500 to-amber-600', icon: <TrendingUp size={18} />, filter: 'active' as FilterStatus | null },
+          { label: t('categories_page.stat_total'),      value: stats.totalCategories,                    gradient: 'from-blue-500 to-blue-600',    icon: <Folder size={18} />,    filter: 'all'    as FilterStatus | null },
+          { label: t('categories_page.stat_total_pubs'), value: loading ? '…' : stats.totalPublications,  gradient: 'from-green-500 to-green-600',  icon: <FileText size={18} />,  filter: null     as FilterStatus | null },
+          { label: t('categories_page.stat_avg_pubs'),   value: loading ? '…' : stats.avgPublications,    gradient: 'from-purple-500 to-purple-600',icon: <BarChart2 size={18} />, filter: null     as FilterStatus | null },
+          { label: t('categories_page.stat_active'),     value: loading ? '…' : stats.activeCategories,   gradient: 'from-amber-500 to-amber-600', icon: <TrendingUp size={18} />, filter: 'active' as FilterStatus | null },
         ]).map(({ label, value, gradient, icon, filter }) => {
           const isActive = filter !== null && filterStatus === filter;
           return (
@@ -225,7 +226,7 @@ export default function CategoriesManager({
               </div>
               <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
               {isActive && (
-                <p className="text-xs text-[#168F6F] mt-1 font-medium">Filtre actif</p>
+                <p className="text-xs text-[#168F6F] mt-1 font-medium">{t('categories_page.filter_active')}</p>
               )}
             </button>
           );
@@ -238,7 +239,7 @@ export default function CategoriesManager({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher une catégorie par nom ou description..."
+            placeholder={t('categories_page.search_placeholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 pr-12 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent shadow-sm"
@@ -257,7 +258,7 @@ export default function CategoriesManager({
             {/* Filtres de statut */}
           <div className="flex items-center gap-2 border-l pl-3 border-gray-200 dark:border-gray-700">
             <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <span className="text-sm text-gray-500 dark:text-gray-400 mr-1">Filtre:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 mr-1">{t('categories_page.filter_label')}</span>
             <button
               onClick={() => setFilterStatus('all')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -266,7 +267,7 @@ export default function CategoriesManager({
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Tout
+              {t('categories_page.filter_all')}
             </button>
             <button
               onClick={() => setFilterStatus('active')}
@@ -276,7 +277,7 @@ export default function CategoriesManager({
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Actives
+              {t('categories_page.filter_active_btn')}
             </button>
             <button
               onClick={() => setFilterStatus('inactive')}
@@ -286,13 +287,13 @@ export default function CategoriesManager({
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Inactives
+              {t('categories_page.filter_inactive_btn')}
             </button>
           </div>
 
            {/* Options de tri */}
           <div className="flex items-center gap-2 border-l pl-3 border-gray-200 dark:border-gray-700">
-            <span className="text-sm text-gray-500 dark:text-gray-400">Trier:</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{t('categories_page.sort_label')}</span>
             <button
               onClick={() => toggleSort('name')}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
@@ -301,7 +302,7 @@ export default function CategoriesManager({
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Nom {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+              {t('categories_page.sort_name')} {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
             </button>
             <button
               onClick={() => toggleSort('publicationCount')}
@@ -311,7 +312,7 @@ export default function CategoriesManager({
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
-              Publications {sortBy === 'publicationCount' && (sortOrder === 'asc' ? '↑' : '↓')}
+              {t('categories_page.sort_publications')} {sortBy === 'publicationCount' && (sortOrder === 'asc' ? '↑' : '↓')}
             </button>
           </div>
           {/* Nouvelle catégorie */}
@@ -320,7 +321,7 @@ export default function CategoriesManager({
             className="flex items-center gap-2 px-5 py-2.5 bg-[#168F6F] hover:bg-[#0e6b52] text-white rounded-xl font-medium transition-all shadow-md hover:shadow-lg active:scale-95 text-sm whitespace-nowrap ml-auto"
           >
             <Plus className="h-4 w-4" />
-            Nouvelle catégorie
+            {t('categories_page.create_btn')}
           </button>
         </div>
       </div>
@@ -329,13 +330,13 @@ export default function CategoriesManager({
       {searchQuery && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {sortedAndFilteredCategories.length} résultat{sortedAndFilteredCategories.length > 1 ? 's' : ''} pour "{searchQuery}"
+            {t('categories_page.results_count', { count: sortedAndFilteredCategories.length, query: searchQuery })}
           </p>
           <button
             onClick={clearSearch}
             className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
           >
-            Effacer la recherche
+            {t('categories_page.clear_search')}
           </button>
         </div>
       )}
@@ -363,7 +364,7 @@ export default function CategoriesManager({
                     {loadingCategories[category.id] ? (
                       <span className="inline-block w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
                     ) : (
-                      `${category.publicationCount} publication${category.publicationCount > 1 ? 's' : ''}`
+                      t('categories_page.pub_count', { count: category.publicationCount })
                     )}
                   </span>
                 </div>
@@ -397,7 +398,7 @@ export default function CategoriesManager({
                           : 'bg-gray-400'
                       }`} />
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {category.publicationCount > 0 ? 'Active' : 'Inactive'}
+                        {category.publicationCount > 0 ? t('categories_page.status_active') : t('categories_page.status_inactive')}
                       </span>
                     </div>
                   </div>
@@ -411,7 +412,7 @@ export default function CategoriesManager({
                 }`}>
                   {category.description || (
                     <span className="text-gray-400 dark:text-gray-500 italic">
-                      Aucune description
+                      {t('categories_page.no_description')}
                     </span>
                   )}
                 </p>
@@ -420,7 +421,7 @@ export default function CategoriesManager({
                 {category.publicationCount > 0 && (
                   <div className="mb-4">
                     <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-500 dark:text-gray-400">Occupation</span>
+                      <span className="text-gray-500 dark:text-gray-400">{t('categories_page.occupation')}</span>
                       <span className="font-medium text-gray-700 dark:text-gray-300">
                         {Math.min(100, Math.round((category.publicationCount / stats.maxPublications) * 100))}%
                       </span>
@@ -446,10 +447,10 @@ export default function CategoriesManager({
                         ? 'text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
                         : 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                     }`}
-                    title={category.publicationCount === 0 ? "Aucun publication dans cette catégorie" : "Voir les publications"}
+                    title={category.publicationCount === 0 ? t('categories_page.no_pubs_tooltip') : t('categories_page.view_pubs_tooltip')}
                   >
                     <Eye className="h-4 w-4" />
-                    Voir publications
+                    {t('categories_page.view_pubs_btn')}
                     {category.publicationCount > 0 && (
                       <span className="ml-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs rounded-full">
                         {category.publicationCount}
@@ -461,14 +462,14 @@ export default function CategoriesManager({
                     <button
                       onClick={() => onEditCategory(category)}
                       className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                      title="Modifier la catégorie"
+                      title={t('categories_page.btn_edit_title')}
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onDeleteCategory(category.id)}
                       className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                      title="Supprimer la catégorie"
+                      title={t('categories_page.btn_delete_title')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -489,17 +490,21 @@ export default function CategoriesManager({
           </div>
           
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            {searchQuery || filterStatus !== 'all' ? 'Aucune catégorie trouvée' : 'Aucune catégorie'}
+            {searchQuery || filterStatus !== 'all' ? t('categories_page.empty_title_filtered') : t('categories_page.empty_title_none')}
           </h3>
-          
+
           <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
             {searchQuery
-              ? `Aucune catégorie ne correspond à "${searchQuery}"${
-                  filterStatus !== 'all' ? ` avec le filtre ${filterStatus === 'active' ? 'Actives' : 'Inactives'}` : ''
-                }. Essayez avec d'autres termes ou créez une nouvelle catégorie.`
+              ? filterStatus === 'active'
+                ? t('categories_page.empty_search_with_filter_active', { query: searchQuery })
+                : filterStatus === 'inactive'
+                ? t('categories_page.empty_search_with_filter_inactive', { query: searchQuery })
+                : t('categories_page.empty_search_only', { query: searchQuery })
               : filterStatus !== 'all'
-              ? `Aucune catégorie ${filterStatus === 'active' ? 'active' : 'inactive'} trouvée.`
-              : 'Vous n\'avez pas encore créé de catégorie. Commencez par organiser vos publications en créant votre première catégorie.'}
+              ? filterStatus === 'active'
+                ? t('categories_page.empty_filter_active')
+                : t('categories_page.empty_filter_inactive')
+              : t('categories_page.empty_no_cats')}
           </p>
           
           {searchQuery || filterStatus !== 'all' ? (
@@ -511,14 +516,14 @@ export default function CategoriesManager({
                 }}
                 className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
-                Effacer les filtres
+                {t('categories_page.clear_filters_btn')}
               </button>
               <button
                 onClick={onCreateClick}
                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                Nouvelle catégorie
+                {t('categories_page.new_category_btn')}
               </button>
             </div>
           ) : (
@@ -527,7 +532,7 @@ export default function CategoriesManager({
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-colors flex items-center gap-2 mx-auto"
             >
               <Plus className="h-4 w-4" />
-              Créer une catégorie
+              {t('categories_page.create_category_btn')}
             </button>
           )}
         </div>
@@ -537,13 +542,12 @@ export default function CategoriesManager({
       {sortedAndFilteredCategories.length > 0 && (
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
           <p>
-            Affichage de {sortedAndFilteredCategories.length} catégorie{sortedAndFilteredCategories.length > 1 ? 's' : ''}
-            {searchQuery && ` pour "${searchQuery}"`}
-            {filterStatus !== 'all' && ` (${filterStatus === 'active' ? 'actives' : 'inactives'})`}
+            {t('categories_page.footer_showing', { count: sortedAndFilteredCategories.length })}
+            {searchQuery && t('categories_page.footer_for_query', { query: searchQuery })}
+            {filterStatus !== 'all' && (filterStatus === 'active' ? t('categories_page.footer_filter_active') : t('categories_page.footer_filter_inactive'))}
           </p>
           <p>
-            {stats.activeCategories} active{stats.activeCategories > 1 ? 's' : ''} •{' '}
-            {stats.totalPublications} publication{stats.totalPublications > 1 ? 's' : ''} au total
+            {t('categories_page.footer_stats', { active: stats.activeCategories, pubs: stats.totalPublications })}
           </p>
         </div>
       )}

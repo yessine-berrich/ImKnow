@@ -1,12 +1,15 @@
 // components/markdoun-editor/MarkdownPreview.tsx
 'use client';
 
+import { useTranslation } from '@/context/LanguageContext';
+
 interface MarkdownPreviewProps {
   content: string;
 }
 
 export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
-  if (!content) return <p className="text-gray-500 italic">Aucun contenu</p>;
+  const { t } = useTranslation();
+  if (!content) return <p className="text-gray-500 italic">{t('markdown_preview.no_content')}</p>;
 
   // Helper function to escape HTML
   const escapeHtml = (text: string): string => {
@@ -172,7 +175,7 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
                           <svg class="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <p class="text-sm text-gray-500">${escapeHtml(alt || 'Image non disponible')}</p>
+                          <p class="text-sm text-gray-500">${escapeHtml(alt || t('markdown_preview.image_unavailable'))}</p>
                         `;
                         parent.appendChild(fallback);
                       }
@@ -184,7 +187,7 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-sm text-gray-500">{escapeHtml(alt || 'Lien image invalide')}</p>
+                  <p className="text-sm text-gray-500">{escapeHtml(alt || t('markdown_preview.invalid_image_link'))}</p>
                   <code className="text-xs text-gray-400 break-all">{escapeHtml(src)}</code>
                 </div>
               )}
@@ -260,7 +263,7 @@ export default function MarkdownPreview({ content }: MarkdownPreviewProps) {
               >
                 <span className="text-lg">{icon}</span>
                 <span className="text-blue-600 dark:text-blue-400 hover:underline">{text}</span>
-                <span className="text-xs text-gray-500">({fileExtension?.toUpperCase() || 'fichier'})</span>
+                <span className="text-xs text-gray-500">({fileExtension?.toUpperCase() || t('markdown_preview.file_label').toUpperCase()})</span>
               </a>
             );
           } else {

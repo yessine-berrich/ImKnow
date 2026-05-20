@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Hash } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface CreateTagModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export default function CreateTagModal({
   onClose,
   onCreateTag,
 }: CreateTagModalProps) {
+  const { t } = useTranslation();
   const [tagName, setTagName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function CreateTagModal({
       setTagName('');
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création du tag');
+      setError(err.message || t('tags_page.modal_create_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -64,10 +66,10 @@ export default function CreateTagModal({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Créer un nouveau tag
+                {t('tags_page.create_modal_title')}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Ajoutez un tag pour organiser vos publications
+                {t('tags_page.create_modal_subtitle')}
               </p>
             </div>
           </div>
@@ -90,7 +92,7 @@ export default function CreateTagModal({
             )}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Nom du tag <span className="text-red-500">*</span>
+                {t('tags_page.modal_name_label')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
@@ -100,14 +102,14 @@ export default function CreateTagModal({
                   type="text"
                   value={tagName}
                   onChange={(e) => setTagName(e.target.value.replace(/^#+/, ''))}
-                  placeholder="Ex: React, TypeScript, IA  (le # est ajouté automatiquement)"
+                  placeholder={t('tags_page.modal_name_placeholder')}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   autoFocus
                   disabled={isSubmitting}
                 />
               </div>
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Utilisez des noms descriptifs et pertinents
+                {t('tags_page.modal_name_hint')}
               </p>
             </div>
           </div>
@@ -120,7 +122,7 @@ export default function CreateTagModal({
               disabled={isSubmitting}
               className="px-4 py-2.5 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
-              Annuler
+              {t('tags_page.modal_cancel')}
             </button>
             <button
               type="submit"
@@ -131,7 +133,7 @@ export default function CreateTagModal({
                   : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
               }`}
             >
-              {isSubmitting ? 'Création...' : 'Créer le tag'}
+              {isSubmitting ? t('tags_page.modal_creating') : t('tags_page.modal_create_btn')}
             </button>
           </div>
         </form>

@@ -9,6 +9,7 @@ import { publicationService } from '../../../services/publication.service';
 import type { UpdatePublicationDto } from '../../../services/publication.service';
 import type { Publication } from '../../../services/publication.service';
 import { toast } from '@/components/modals/ToastContainer';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface CreatePublicationModalProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export default function CreatePublicationModal({
   onSuccess,
   publicationId,
 }: CreatePublicationModalProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<number | ''>('');
   const [content, setContent] = useState('');
@@ -107,7 +109,7 @@ export default function CreatePublicationModal({
         setAvailableTags(await tagRes.json());
       }
     } catch {
-      toast.error('❌ Erreur lors du chargement des données');
+      toast.error(t('create_pub_modal.toast_load_error'));
     } finally {
       setIsLoadingData(false);
     }
@@ -124,7 +126,7 @@ export default function CreatePublicationModal({
     });
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Erreur lors de la création du tag');
+      throw new Error(error.message || t('create_pub_modal.error_create_tag'));
     }
     const newTag = await response.json();
     setAvailableTags((prev) => [...prev, { id: newTag.id, name: newTag.name }]);
@@ -177,7 +179,7 @@ export default function CreatePublicationModal({
         setSelectedTags(resolvedIds);
       }
     } catch (error: any) {
-      toast.error(`❌ ${error.message || "Erreur lors du chargement de l'publication"}`);
+      toast.error(error.message || t('create_pub_modal.toast_pub_load_error'));
     } finally {
       setIsLoadingPublication(false);
     }
@@ -194,8 +196,8 @@ export default function CreatePublicationModal({
         setAvailableTags(newTags);
         setTagsVersion(prev => prev + 1);
       }
-    } catch (error) {
-      console.error('Erreur rafraîchissement tags:', error);
+    } catch {
+      // ignore
     }
   }, []);
 
@@ -206,9 +208,9 @@ export default function CreatePublicationModal({
   };
 
   const validateForm = () => {
-    if (!title.trim()) { toast.error( 'Le titre est obligatoire'); return false; }
-    if (!category) { toast.error('Veuillez sélectionner une catégorie'); return false; }
-    if (!content.trim()) { toast.error('Le contenu ne peut pas être vide'); return false; }
+    if (!title.trim()) { toast.error(t('create_pub_modal.validate_title_required')); return false; }
+    if (!category) { toast.error(t('create_pub_modal.validate_category_required')); return false; }
+    if (!content.trim()) { toast.error(t('create_pub_modal.validate_content_required')); return false; }
     return true;
   };
 
@@ -221,12 +223,12 @@ export default function CreatePublicationModal({
       const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
       if (!validTypes.includes(file.type)) {
-        toast.error(`Type non supporté: ${file.name}. Utilisez JPG, PNG, GIF, WebP, PDF, TXT, DOC, DOCX.`);
+        toast.error(t('create_pub_modal.toast_unsupported_type', { name: file.name }));
         return;
       }
 
       if (file.size > 10 * 1024 * 1024) {
-        toast.error(`${file.name} est trop lourd. Maximum 10 MB.`);
+        toast.error(t('create_pub_modal.toast_file_too_large', { name: file.name }));
         return;
       }
 
@@ -240,7 +242,7 @@ export default function CreatePublicationModal({
         insertAtCursor(`\n[${fileName}](${localUrl})\n`);
       }
 
-      toast.success(`${file.name} ajouté (envoyé lors de la soumission)`);
+      toast.success(t('create_pub_modal.toast_file_added', { name: file.name }));
     });
 
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -355,7 +357,7 @@ export default function CreatePublicationModal({
     }
 
     dto.status = status as any;
-    dto.changeSummary = changeSummary.trim() || (status === 'draft' ? 'Mise à jour du brouillon' : 'Soumission pour validation');
+    dto.changeSummary = changeSummary.trim() || (status === 'draft' ? t('create_pub_modal.change_summary_draft') : t('create_pub_modal.change_summary_submit'));
 
     return { ...dto, hasChanges };
   };
@@ -366,10 +368,10 @@ export default function CreatePublicationModal({
     try {
       if (isEditMode && publicationId) {
         const updateDto = buildUpdateDto('draft');
-        if (!updateDto?.hasChanges) { toast.info('Aucune modification détectée'); return; }
+        if (!updateDto?.hasChanges) { toast.info(t('create_pub_modal.toast_no_changes')); return; }
         const { hasChanges, ...dtoToSend } = updateDto;
         await publicationService.update(parseInt(publicationId), dtoToSend);
-        toast.success('Brouillon mis à jour avec succès !');
+        toast.success(t('create_pub_modal.toast_draft_updated'));
         setOriginalPublication((prev) =>
           prev
             ? {
@@ -384,11 +386,11 @@ export default function CreatePublicationModal({
         );
       } else {
         await handleCreateWithFiles('draft');
-        toast.success('Brouillon sauvegardé avec succès !');
+        toast.success(t('create_pub_modal.toast_draft_saved'));
       }
       setTimeout(() => { resetForm(); onSuccess?.(); if (!isEditMode) onClose(); }, 1000);
     } catch (error: any) {
-      toast.error(`❌ ${error.message || 'Erreur lors de la sauvegarde'}`);
+      toast.error(error.message || t('create_pub_modal.toast_save_error'));
     } finally {
       setIsSubmittingDraft(false);
     }
@@ -400,7 +402,7 @@ export default function CreatePublicationModal({
     try {
       if (isEditMode && publicationId) {
         const updateDto = buildUpdateDto('pending');
-        if (!updateDto) { toast.error('Erreur lors de la construction du DTO'); return; }
+        if (!updateDto) { toast.error(t('create_pub_modal.toast_build_error')); return; }
 
         const { hasChanges, ...dtoToSend } = updateDto;
         const hasContentChanges = Object.keys(dtoToSend).some(
@@ -411,23 +413,23 @@ export default function CreatePublicationModal({
         if (!hasContentChanges) {
           updatedPublication = await publicationService.update(parseInt(publicationId), {
             status: 'pending' as any,
-            changeSummary: 'Soumission pour validation (aucun changement)',
+            changeSummary: t('create_pub_modal.change_summary_no_change'),
           });
         } else {
           updatedPublication = await publicationService.update(parseInt(publicationId), dtoToSend);
         }
 
         if (updatedPublication.status === 'rejected') {
-          const rejectionMessage = (updatedPublication as any).rejectionReason || 'Contenu inapproprié ou doublon détecté';
-          toast.error(`❌ Publication rejeté : ${rejectionMessage}`);
+          const rejectionMessage = (updatedPublication as any).rejectionReason || t('create_pub_modal.rejection_default');
+          toast.error(t('create_pub_modal.toast_rejected', { reason: rejectionMessage }));
           setTimeout(() => { onClose(); }, 1500);
           return;
         } else if (updatedPublication.status === 'pending') {
-          toast.success('Publication soumis pour validation !');
+          toast.success(t('create_pub_modal.toast_submitted'));
         } else if (updatedPublication.status === 'published') {
-          toast.success('Publication publié avec succès !');
+          toast.success(t('create_pub_modal.toast_published'));
         } else {
-          toast.success('Publication soumis pour validation !');
+          toast.success(t('create_pub_modal.toast_submitted'));
         }
 
         setTimeout(() => {
@@ -439,16 +441,16 @@ export default function CreatePublicationModal({
         const createdPublication = await handleCreateWithFiles('pending');
 
         if (createdPublication.status === 'rejected') {
-          const rejectionMessage = createdPublication.rejectionReason || 'Contenu inapproprié ou doublon détecté';
-          toast.error(`❌ Publication rejeté : ${rejectionMessage}`);
+          const rejectionMessage = createdPublication.rejectionReason || t('create_pub_modal.rejection_default');
+          toast.error(t('create_pub_modal.toast_rejected', { reason: rejectionMessage }));
           setTimeout(() => { onClose(); }, 1500);
           return;
         } else if (createdPublication.status === 'pending') {
-          toast.success('Publication soumis pour validation !');
+          toast.success(t('create_pub_modal.toast_submitted'));
         } else if (createdPublication.status === 'published') {
-          toast.success('Publication publié avec succès !');
+          toast.success(t('create_pub_modal.toast_published'));
         } else {
-          toast.success('Publication soumis pour validation !');
+          toast.success(t('create_pub_modal.toast_submitted'));
         }
 
         setTimeout(() => {
@@ -458,7 +460,7 @@ export default function CreatePublicationModal({
         }, 1000);
       }
     } catch (error: any) {
-      toast.error(`❌ ${error.message || 'Erreur lors de la soumission'}`);
+      toast.error(error.message || t('create_pub_modal.toast_submit_error'));
       setTimeout(() => { onClose(); }, 2000);
     } finally {
       setIsSubmittingPending(false);
@@ -487,28 +489,28 @@ export default function CreatePublicationModal({
     };
 
     switch (type) {
-      case 'heading1': prefix('# ', 'Titre 1'); break;
-      case 'heading2': prefix('## ', 'Titre 2'); break;
-      case 'heading3': prefix('### ', 'Titre 3'); break;
-      case 'bold': wrap('**', '**', 'texte en gras'); break;
-      case 'italic': wrap('*', '*', 'texte en italique'); break;
-      case 'code': wrap('`', '`', 'code'); break;
-      case 'quote': prefix('> ', 'Citation'); break;
-      case 'list': prefix('- ', 'élément de liste'); break;
-      case 'orderedlist': prefix('1. ', 'élément numéroté'); break;
-      case 'checkbox': prefix('- [ ] ', 'tâche à faire'); break;
+      case 'heading1': prefix('# ', t('create_pub_modal.md_heading1')); break;
+      case 'heading2': prefix('## ', t('create_pub_modal.md_heading2')); break;
+      case 'heading3': prefix('### ', t('create_pub_modal.md_heading3')); break;
+      case 'bold': wrap('**', '**', t('create_pub_modal.md_bold')); break;
+      case 'italic': wrap('*', '*', t('create_pub_modal.md_italic')); break;
+      case 'code': wrap('`', '`', t('create_pub_modal.md_code')); break;
+      case 'quote': prefix('> ', t('create_pub_modal.md_quote')); break;
+      case 'list': prefix('- ', t('create_pub_modal.md_list')); break;
+      case 'orderedlist': prefix('1. ', t('create_pub_modal.md_ordered_list')); break;
+      case 'checkbox': prefix('- [ ] ', t('create_pub_modal.md_checkbox')); break;
       case 'hr':
         newText = content.substring(0, start) + '\n---\n' + content.substring(end);
         cur = start + 5;
         break;
       case 'codeblock': {
-        const inner = sel || '// Votre code ici';
+        const inner = sel || t('create_pub_modal.md_code_placeholder');
         newText = content.substring(0, start) + `\`\`\`javascript\n${inner}\n\`\`\`\n` + content.substring(end);
         cur = start + 'javascript'.length + inner.length + 8;
         break;
       }
       case 'link': {
-        const inner = sel || 'texte du lien';
+        const inner = sel || t('create_pub_modal.md_link_text');
         newText = content.substring(0, start) + `[${inner}](https://)` + content.substring(end);
         cur = start + inner.length + 'https://'.length + 4;
         break;
@@ -516,10 +518,10 @@ export default function CreatePublicationModal({
       case 'table':
         newText =
           content.substring(0, start) +
-          '\n| Colonne 1 | Colonne 2 | Colonne 3 |\n' +
+          `\n| ${t('create_pub_modal.md_col1')} | ${t('create_pub_modal.md_col2')} | ${t('create_pub_modal.md_col3')} |\n` +
           '|-----------|-----------|-----------|\n' +
-          '| Cellule 1 | Cellule 2 | Cellule 3 |\n' +
-          '| Cellule 4 | Cellule 5 | Cellule 6 |\n' +
+          `| ${t('create_pub_modal.md_cell1')} | ${t('create_pub_modal.md_cell2')} | ${t('create_pub_modal.md_cell3')} |\n` +
+          `| ${t('create_pub_modal.md_cell4')} | ${t('create_pub_modal.md_cell5')} | ${t('create_pub_modal.md_cell6')} |\n` +
           content.substring(end);
         cur = start + 15;
         break;
@@ -562,9 +564,9 @@ export default function CreatePublicationModal({
 
   if (!isOpen) return null;
 
-  const modalTitle = isEditMode ? "Modifier l'publication" : 'Créer un publication';
-  const draftButtonText = isEditMode ? 'Mettre à jour le brouillon' : 'Sauvegarder brouillon';
-  const submitButtonText = isEditMode ? 'Mettre à jour et soumettre' : 'Soumettre pour validation';
+  const modalTitle = isEditMode ? t('create_pub_modal.title_edit') : t('create_pub_modal.title_create');
+  const draftButtonText = isEditMode ? t('create_pub_modal.btn_update_draft') : t('create_pub_modal.btn_save_draft');
+  const submitButtonText = isEditMode ? t('create_pub_modal.btn_update_submit') : t('create_pub_modal.btn_submit');
 
   const isSubmitting = isSubmittingDraft || isSubmittingPending;
 
@@ -583,7 +585,7 @@ export default function CreatePublicationModal({
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{modalTitle}</h2>
               {isEditMode && originalPublication && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Statut actuel : <span className="font-medium">{(originalPublication as any).status}</span>
+                  {t('create_pub_modal.current_status')} <span className="font-medium">{(originalPublication as any).status}</span>
                 </p>
               )}
             </div>
@@ -602,7 +604,7 @@ export default function CreatePublicationModal({
               <div className="flex items-center justify-center py-12">
                 <Loader2 size={32} className="animate-spin text-blue-600" />
                 <span className="ml-3 text-gray-600 dark:text-gray-400">
-                  {isLoadingPublication ? "Chargement de l'publication..." : 'Chargement...'}
+                  {isLoadingPublication ? t('create_pub_modal.loading_pub') : t('create_pub_modal.loading')}
                 </span>
               </div>
             ) : (
@@ -610,13 +612,13 @@ export default function CreatePublicationModal({
                 {/* Title */}
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Titre <span className="text-red-500">*</span>
+                    {t('create_pub_modal.label_title')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Donnez un titre accrocheur à votre publication..."
+                    placeholder={t('create_pub_modal.placeholder_title')}
                     disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800"
                   />
@@ -625,7 +627,7 @@ export default function CreatePublicationModal({
                 {/* Category */}
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Catégorie <span className="text-red-500">*</span>
+                    {t('create_pub_modal.label_category')} <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={category}
@@ -633,7 +635,7 @@ export default function CreatePublicationModal({
                     disabled={isSubmitting}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white appearance-none bg-white dark:bg-gray-800 cursor-pointer disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
                   >
-                    <option value="">Sélectionner une catégorie</option>
+                    <option value="">{t('create_pub_modal.select_category')}</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.icon} {cat.label}
@@ -646,7 +648,9 @@ export default function CreatePublicationModal({
                 {pendingFiles.length > 0 && (
                   <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                     <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 mb-2">
-                      📎 {pendingFiles.length} image{pendingFiles.length > 1 ? 's' : ''} en attente d'envoi
+                      {pendingFiles.length === 1
+                        ? t('create_pub_modal.pending_files_one', { count: pendingFiles.length })
+                        : t('create_pub_modal.pending_files_plural', { count: pendingFiles.length })}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {pendingFiles.map((pf, i) => (
@@ -669,7 +673,7 @@ export default function CreatePublicationModal({
                               setPendingFiles((prev) => prev.filter((_, idx) => idx !== i));
                             }}
                             className="hover:text-red-500 transition-colors ml-1 flex-shrink-0"
-                            title="Retirer cette image"
+                            title={t('create_pub_modal.remove_image')}
                           >
                             <X size={12} />
                           </button>
@@ -710,16 +714,16 @@ export default function CreatePublicationModal({
                 {isEditMode && (
                   <div className="mt-6">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Résumé des modifications
+                      {t('create_pub_modal.label_change_summary')}
                     </label>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-                      Décrivez brièvement ce que vous avez changé (visible dans l'historique des versions).
+                      {t('create_pub_modal.hint_change_summary')}
                     </p>
                     <input
                       type="text"
                       value={changeSummary}
                       onChange={(e) => setChangeSummary(e.target.value)}
-                      placeholder="Ex : Correction de fautes, ajout d'une section, mise à jour des sources…"
+                      placeholder={t('create_pub_modal.placeholder_change_summary')}
                       maxLength={200}
                       disabled={isSubmitting}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-sm"
@@ -737,7 +741,7 @@ export default function CreatePublicationModal({
           <div className="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 px-8 py-5 flex items-center justify-between z-10">
             <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
               <span>💡</span>
-              <span>Ctrl+B gras · Ctrl+I italique · Ctrl+K lien · Ctrl+E code</span>
+              <span>{t('create_pub_modal.keyboard_shortcuts')}</span>
             </p>
             <div className="flex items-center gap-3">
               <button

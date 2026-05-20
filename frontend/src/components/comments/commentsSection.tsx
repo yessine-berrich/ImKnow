@@ -20,6 +20,7 @@ import { fetchCurrentUser } from '../../../services/auth.service';
 import { resolveAvatarUrl } from '@/utils/profile-image';
 import { commentService, Comment, CommentAuthor } from '../../../services/comment.service';
 import UIAvatar from '@/components/ui/avatar/Avatar';
+import { useTranslation } from '@/context/LanguageContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,16 +40,16 @@ interface CommentsSectionProps {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getTimeAgo(dateString: string): string {
+function getTimeAgo(dateString: string, t: (key: string, params?: Record<string, unknown>) => string): string {
   try {
     const diffInMs = Date.now() - new Date(dateString).getTime();
     const m = Math.floor(diffInMs / 60000);
     const h = Math.floor(m / 60);
     const d = Math.floor(h / 24);
-    if (d > 0) return `il y a ${d} j`;
-    if (h > 0) return `il y a ${h} h`;
-    if (m > 0) return `il y a ${m} min`;
-    return "à l'instant";
+    if (d > 0) return t('comments_section.time_days_ago', { count: d });
+    if (h > 0) return t('comments_section.time_hours_ago', { count: h });
+    if (m > 0) return t('comments_section.time_minutes_ago', { count: m });
+    return t('comments_section.time_just_now');
   } catch {
     return '';
   }
@@ -92,10 +93,6 @@ function RenderContent({ content, mentionableUsers }: { content: string; mention
     userMap.set(`@${u.firstName.toLowerCase()}`, u.id);
   });
 
-  // Ajouter un log pour déboguer
-  console.log('Mentionable users:', mentionableUsers.map(u => `${u.firstName} ${u.lastName}`));
-  console.log('Content:', content);
-
   // Découper le texte par les espaces
   const words = content.split(/(\s+)/);
   
@@ -115,7 +112,6 @@ function RenderContent({ content, mentionableUsers }: { content: string; mention
             className="text-[#168F6F] hover:underline font-semibold cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              console.log('Navigating to profile:', userId);
             }}
           >
             {word}
@@ -308,6 +304,7 @@ function CommentItem({
   onReplySubmit,
   onUpdateComment,
 }: CommentItemProps) {
+  const { t } = useTranslation();
   const isOwner = currentUserId === comment.author?.id;
   const [showReplies, setShowReplies] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -357,7 +354,7 @@ function CommentItem({
                 {authorName}
               </Link>
               {comment.isEdited && (
-                <span className="text-xs text-gray-400">(modifié)</span>
+                <span className="text-xs text-gray-400">{t('comments_section.edited_label')}</span>
               )}
             </div>
 
@@ -367,7 +364,7 @@ function CommentItem({
                   value={editContent}
                   onChange={setEditContent}
                   mentionableUsers={mentionableUsers}
-                  placeholder="Modifier votre commentaire..."
+                  placeholder={t('comments_section.edit_placeholder')}
                   multiline
                   className="w-full px-3 py-2 rounded-xl border border-[#168F6F] text-sm bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-[#168F6F] resize-none"
                 />
@@ -378,14 +375,14 @@ function CommentItem({
                     className="flex items-center gap-1 px-3 py-1 bg-[#168F6F] text-white rounded-full text-xs font-semibold hover:bg-[#0F6B54] disabled:opacity-50 transition-colors"
                   >
                     <Check size={12} />
-                    {isSavingEdit ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {isSavingEdit ? t('comments_section.btn_saving') : t('comments_section.btn_save')}
                   </button>
                   <button
                     onClick={handleCancelEdit}
                     className="flex items-center gap-1 px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   >
                     <X size={12} />
-                    Annuler
+                    {t('comments_section.btn_cancel')}
                   </button>
                 </div>
               </div>
@@ -405,7 +402,7 @@ function CommentItem({
                 } disabled:opacity-50 transition-colors`}
               >
                 <Heart size={14} className={comment.isLiked ? 'fill-[#168F6F]' : ''} />
-                <span>{comment.likes > 0 ? comment.likes : "J'aime"}</span>
+                <span>{comment.likes > 0 ? comment.likes : t('comments_section.like_label')}</span>
               </button>
 
               {currentUserId && (
@@ -415,11 +412,11 @@ function CommentItem({
                   }}
                   className="text-xs font-semibold text-gray-500 hover:text-[#168F6F] transition-colors"
                 >
-                  Répondre
+                  {t('comments_section.btn_reply')}
                 </button>
               )}
 
-              <span className="text-xs text-gray-400">{getTimeAgo(comment.createdAt)}</span>
+              <span className="text-xs text-gray-400">{getTimeAgo(comment.createdAt, t)}</span>
 
               {isOwner && (
                 <>
@@ -428,13 +425,13 @@ function CommentItem({
                     className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-amber-600 transition-colors"
                   >
                     <Pencil size={12} />
-                    Modifier
+                    {t('comments_section.btn_edit')}
                   </button>
                   <button
                     onClick={() => onDelete(comment.id)}
                     className="text-xs font-semibold text-gray-500 hover:text-red-600 transition-colors"
                   >
-                    Supprimer
+                    {t('comments_section.btn_delete')}
                   </button>
                 </>
               )}
@@ -449,7 +446,7 @@ function CommentItem({
                 <MentionInput
                   value={replyContent}
                   onChange={onReplyContentChange}
-                  placeholder={`Répondre à ${comment.author.firstName}... (utilisez @ pour mentionner)`}
+                  placeholder={t('comments_section.reply_placeholder', { name: comment.author.firstName })}
                   mentionableUsers={mentionableUsers}
                   onEnter={() => onReplySubmit(comment.id)}
                   className="w-full px-4 py-2 pr-24 border border-gray-300 dark:border-gray-700 rounded-full text-sm focus:ring-2 focus:ring-[#168F6F] focus:border-transparent outline-none bg-white dark:bg-gray-800"
@@ -459,7 +456,7 @@ function CommentItem({
                   disabled={!replyContent.trim()}
                   className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#168F6F] text-white rounded-full text-xs font-semibold hover:bg-[#0F6B54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Répondre
+                  {t('comments_section.btn_reply')}
                 </button>
               </div>
             </div>
@@ -476,8 +473,11 @@ function CommentItem({
                   size={14}
                   className={`transform transition-transform ${showReplies ? '' : '-rotate-90'}`}
                 />
-                {showReplies ? 'Masquer' : 'Voir'} {comment.replies.length} réponse
-                {comment.replies.length > 1 ? 's' : ''}
+                {showReplies
+                  ? t('comments_section.replies_hide')
+                  : comment.replies.length === 1
+                    ? t('comments_section.replies_show_one', { count: comment.replies.length })
+                    : t('comments_section.replies_show_plural', { count: comment.replies.length })}
               </button>
 
               {showReplies && (
@@ -517,6 +517,7 @@ export default function CommentsSection({
   onCommentAdded,
   mentionableUsers = [],
 }: CommentsSectionProps) {
+  const { t } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [commentsCollapsed, setCommentsCollapsed] = useState(false);
@@ -544,8 +545,7 @@ export default function CommentsSection({
       setLoading(true);
       const data = await commentService.findByPublication(publicationId);
       setComments(data);
-    } catch (err) {
-      console.error('Erreur de chargement des commentaires:', err);
+    } catch {
       setComments([]);
     } finally {
       setLoading(false);
@@ -567,8 +567,8 @@ export default function CommentsSection({
       setNewComment('');
       await fetchComments();
       onCommentAdded?.();
-    } catch (err) {
-      console.error('Erreur lors de la création du commentaire:', err);
+    } catch {
+      // ignore
     }
   };
 
@@ -587,25 +587,25 @@ export default function CommentsSection({
       setActiveReplyId(null);
       await fetchComments();
       onCommentAdded?.();
-    } catch (err) {
-      console.error('Erreur lors de la réponse:', err);
+    } catch {
+      // ignore
     }
   };
 
   // Delete comment
   const handleDelete = async (commentId: number) => {
-    if (!await confirm('Supprimer ce commentaire ?')) return;
+    if (!await confirm(t('comments_section.delete_confirm'))) return;
     try {
       await commentService.remove(commentId);
       await fetchComments();
-    } catch (err) {
-      console.error('Erreur lors de la suppression:', err);
+    } catch {
+      // ignore
     }
   };
 
   // Like toggle with optimistic update
   const handleLike = async (commentId: number) => {
-    if (!currentUserId) { toast.info('Connectez-vous pour liker'); return; }
+    if (!currentUserId) { toast.info(t('comments_section.toast_login_like')); return; }
 
     const updateLikes = (list: Comment[]): Comment[] =>
       list.map((c) => {
@@ -653,7 +653,9 @@ export default function CommentsSection({
           >
             <MessageCircle size={20} />
             <span className="font-semibold">
-              {totalCount} commentaire{totalCount > 1 ? 's' : ''}
+              {totalCount === 1
+                ? t('comments_section.comment_count_one', { count: totalCount })
+                : t('comments_section.comment_count_plural', { count: totalCount })}
             </span>
           </button>
           <button
@@ -684,8 +686,8 @@ export default function CommentsSection({
                 onChange={setNewComment}
                 placeholder={
                   currentUserId
-                    ? 'Écrire un commentaire... (@ pour mentionner)'
-                    : 'Connectez-vous pour commenter'
+                    ? t('comments_section.placeholder_write')
+                    : t('comments_section.placeholder_login')
                 }
                 disabled={loading || !currentUserId}
                 mentionableUsers={mentionableUsers}
@@ -697,7 +699,7 @@ export default function CommentsSection({
                 disabled={!newComment.trim() || loading || !currentUserId}
                 className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-[#168F6F] text-white rounded-full text-xs font-semibold hover:bg-[#0F6B54] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? '...' : 'Publier'}
+                {loading ? '...' : t('comments_section.btn_publish')}
               </button>
             </div>
           </div>
@@ -706,7 +708,7 @@ export default function CommentsSection({
           {currentUserId && mentionableUsers.length > 0 && (
             <p className="flex items-center gap-1 text-xs text-gray-400 mb-4 ml-13">
               <AtSign size={11} />
-              Tapez @ pour mentionner quelqu'un
+              {t('comments_section.mention_hint')}
             </p>
           )}
 
@@ -714,7 +716,7 @@ export default function CommentsSection({
           {loading ? (
             <div className="text-center py-8">
               <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-[#168F6F] border-t-transparent" />
-              <p className="text-sm text-gray-500 mt-2">Chargement...</p>
+              <p className="text-sm text-gray-500 mt-2">{t('comments_section.loading')}</p>
             </div>
           ) : rootComments.length > 0 ? (
             <div className="space-y-4">
@@ -742,7 +744,7 @@ export default function CommentsSection({
           ) : (
             <div className="text-center py-8">
               <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500 text-sm">Soyez le premier à commenter !</p>
+              <p className="text-gray-500 text-sm">{t('comments_section.empty')}</p>
             </div>
           )}
         </div>

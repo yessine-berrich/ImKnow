@@ -10,6 +10,7 @@ import { confirm } from '@/components/modals/ConfirmModal';
 import TagsManager from '@/components/tags/tagsManager';
 import { toast } from '@/components/modals/ToastContainer';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface TagItem {
   id: string;
@@ -22,10 +23,11 @@ interface TagItem {
 const API_URL = "http://localhost:3000/api/tags";
 
 export default function TagsPage() {
+  const { t } = useTranslation();
   const [tags, setTags] = useState<TagItem[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Nouvel état
-  const [selectedTag, setSelectedTag] = useState<TagItem | null>(null); // Tag sélectionné pour édition
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<TagItem | null>(null);
   const [viewMode, setViewMode] = useState<'cloud' | 'list'>('list');
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
@@ -43,19 +45,15 @@ export default function TagsPage() {
         }
 
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('👤 Rôle utilisateur sur TagsPage:', payload.role);
 
-        // 🔴 Redirection vers 403 si EMPLOYEE
         if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') {
-          console.log('⛔ Accès refusé - redirection vers 403');
-          router.push('/error-403'); // ✅ Redirection vers la page 403
+          router.push('/error-403');
           return;
         }
 
         setIsCheckingRole(false);
         fetchTags();
       } catch (err) {
-        console.error('❌ Erreur de vérification du rôle:', err);
         router.push('/login');
       }
     };
@@ -79,18 +77,16 @@ export default function TagsPage() {
 
       // 🔴 GESTION DES ERREURS 403
       if (response.status === 403) {
-        console.log('⛔ Accès interdit par le backend');
         router.push('/error-403');
         return;
       }
 
       if (response.status === 401) {
-        console.log('❌ Non authentifié');
         router.push('/login');
         return;
       }
 
-      if (!response.ok) throw new Error('Erreur lors du chargement');
+      if (!response.ok) throw new Error('load_error');
       
       const data = await response.json();
       
@@ -108,9 +104,8 @@ export default function TagsPage() {
       
       setTags(formattedTags);
     } catch (error) {
-      console.error(error);
-      setError("Impossible de récupérer les tags");
-      toast.error("Impossible de récupérer les tags");
+      setError(t('tags_page.load_error_desc'));
+      toast.error(t('tags_page.load_error_desc'));
     } finally {
       setIsLoading(false);
     }
@@ -138,11 +133,11 @@ export default function TagsPage() {
       const errorData = await response.json().catch(() => ({}));
       const message = Array.isArray(errorData.message)
         ? errorData.message[0]
-        : (errorData.message || 'Erreur lors de la création du tag');
+        : (errorData.message || t('tags_page.modal_create_error'));
       throw new Error(message);
     }
 
-    toast.success('Tag créé avec succès');
+    toast.success(t('tags_page.toast_created'));
     fetchTags();
   };
 
@@ -174,11 +169,11 @@ export default function TagsPage() {
       const errorData = await response.json().catch(() => ({}));
       const message = Array.isArray(errorData.message)
         ? errorData.message[0]
-        : (errorData.message || 'Erreur lors de la modification');
+        : (errorData.message || t('tags_page.modal_edit_error'));
       throw new Error(message);
     }
 
-    toast.success('Tag modifié avec succès');
+    toast.success(t('tags_page.toast_updated'));
     fetchTags();
     setIsEditModalOpen(false);
     setSelectedTag(null);
@@ -188,7 +183,7 @@ export default function TagsPage() {
   const handleDeleteTag = async (id: string) => {
     const token = getToken();
     
-    if (await confirm('Êtes-vous sûr de vouloir supprimer ce tag ?')) {
+    if (await confirm(t('tags_page.delete_confirm'))) {
       try {
         const response = await fetch(`${API_URL}/${id}`, {
           method: 'DELETE',
@@ -197,60 +192,55 @@ export default function TagsPage() {
           },
         });
 
-        // 🔴 GESTION DES ERREURS 403
         if (response.status === 403) {
-          console.log('⛔ Action non autorisée');
           router.push('/error-403');
           return;
         }
 
-        if (!response.ok) throw new Error('Suppression échouée');
+        if (!response.ok) throw new Error('delete_failed');
 
         setTags(prev => prev.filter(tag => tag.id !== id));
-        toast.success('Tag supprimé');
+        toast.success(t('tags_page.toast_deleted'));
       } catch (error: any) {
-        toast.error("Erreur : Vérifiez vos permissions (Admin requis)");
+        toast.error(t('tags_page.toast_error'));
       }
     }
   };
 
   // ✅ 2. GESTION DES ÉTATS DE CHARGEMENT
 
-  // Vérification du rôle en cours
   if (isCheckingRole) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Vérification des accès...
+            {t('tags_page.checking_role')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Veuillez patienter
+            {t('tags_page.please_wait')}
           </p>
         </div>
       </div>
     );
   }
 
-  // Chargement des tags
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-[#168F6F] mx-auto mb-6"></div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Chargement des tags...
+            {t('tags_page.loading')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Connexion à la base de données
+            {t('tags_page.db_connecting')}
           </p>
         </div>
       </div>
     );
   }
 
-  // Erreur de chargement
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
@@ -259,7 +249,7 @@ export default function TagsPage() {
             <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-            Erreur de chargement
+            {t('tags_page.load_error')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             {error}
@@ -271,7 +261,7 @@ export default function TagsPage() {
             }}
             className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Réessayer
+            {t('tags_page.retry')}
           </button>
         </div>
       </div>
@@ -286,20 +276,20 @@ export default function TagsPage() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Gestion des Tags
+              {t('tags_page.title')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Connecté à la base de données KnowledgeHub
+              {t('tags_page.subtitle')}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-2">
               <span className="font-medium text-gray-900 dark:text-white">{tags.length}</span> tags
               <span className="mx-2">•</span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {tags.filter(t => t.trending).length}
-              </span> tendances
+                {tags.filter(tag => tag.trending).length}
+              </span> {t('tags_page.trending_label')}
             </div>
           </div>
         </div>

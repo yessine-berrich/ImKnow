@@ -6,6 +6,7 @@ import { statsService, TopContributor } from '../../../services/stats.service';
 import { useRouter } from 'next/navigation';
 import { fetchCurrentUser } from '../../../services/auth.service';
 import Avatar from '../ui/avatar/Avatar';
+import { useTranslation } from '../../context/LanguageContext';
 
 interface TopContributorsResponse {
   period: { from: string; to: string };
@@ -85,6 +86,7 @@ function SkeletonRow() {
 }
 
 export default function TopContributors({ limit = 5 }: { limit?: number }) {
+  const { t } = useTranslation();
   const { data, loading, error } = useTopContributors(limit);
   const router = useRouter();
 
@@ -121,16 +123,16 @@ export default function TopContributors({ limit = 5 }: { limit?: number }) {
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
-                Top contributeurs
+                {t('top_contributors.title')}
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                Meilleurs de la semaine
+                {t('top_contributors.subtitle')}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#168F6F]/10 dark:bg-[#168F6F]/15 border border-[#168F6F]/20">
             <Crown className="h-3.5 w-3.5 text-[#168F6F]" />
-            <span className="text-xs font-semibold text-[#168F6F]">Classement</span>
+            <span className="text-xs font-semibold text-[#168F6F]">{t('top_contributors.ranking')}</span>
           </div>
         </div>
 
@@ -141,14 +143,14 @@ export default function TopContributors({ limit = 5 }: { limit?: number }) {
           {!loading && error && (
             <div className="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
               <AlertCircle className="h-6 w-6 text-red-400" />
-              <span>Impossible de charger le classement</span>
+              <span>{t('top_contributors.error')}</span>
             </div>
           )}
 
           {!loading && !error && data?.contributors.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
               <Trophy className="h-6 w-6" />
-              <span>Aucun contributeur cette semaine.</span>
+              <span>{t('top_contributors.empty')}</span>
             </div>
           )}
 
@@ -213,7 +215,7 @@ export default function TopContributors({ limit = 5 }: { limit?: number }) {
                     <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
                       <BookOpen className="h-3.5 w-3.5" />
                       <span className="font-medium text-gray-600 dark:text-gray-300">{contributor.publicationsCount}</span>
-                      <span>publications</span>
+                      <span>{t('top_contributors.publications')}</span>
                     </div>
 
                     {/* Progress bar */}
@@ -242,13 +244,13 @@ export default function TopContributors({ limit = 5 }: { limit?: number }) {
       <div className="mx-5 mb-5 mt-1 pt-4 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <span className="text-[11px] text-gray-400 dark:text-gray-500">
-            Basé sur qualité &amp; quantité des contributions
+            {t('top_contributors.footer_note')}
           </span>
           <button
             onClick={() => router.push('/trending')}
             className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#168F6F]/10 dark:bg-[#168F6F]/15 text-[#168F6F] border border-[#168F6F]/20 hover:bg-[#168F6F]/20 transition-colors"
           >
-            Voir tout
+            {t('top_contributors.see_all')}
             <ChevronRight className="h-3 w-3" />
           </button>
         </div>

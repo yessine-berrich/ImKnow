@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslation } from "@/context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tag as TagIcon,
@@ -50,6 +51,7 @@ export default function TagsManager({
   onViewModeChange,
   onCreateTagClick,
 }: TagsManagerProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [sortField, setSortField] = useState<SortField>("count");
@@ -123,21 +125,21 @@ export default function TagsManager({
   const statCards: { filter: ActiveFilter; label: string; value: number; gradient: string; icon: React.ReactNode }[] = [
     {
       filter: "all",
-      label: "Total Tags",
+      label: t("tags_page.stat_total"),
       value: tags.length,
       gradient: "from-blue-500 to-blue-600",
       icon: <TagIcon size={18} />,
     },
     {
       filter: "trending",
-      label: "Tags Tendance",
+      label: t("tags_page.stat_trending"),
       value: trendingTags.length,
       gradient: "from-green-500 to-green-600",
       icon: <TrendingUp size={18} />,
     },
     {
       filter: "unused",
-      label: "Non utilisés",
+      label: t("tags_page.stat_unused"),
       value: unusedTags.length,
       gradient: "from-amber-500 to-amber-600",
       icon: <Hash size={18} />,
@@ -168,7 +170,7 @@ export default function TagsManager({
                 {value}
               </p>
               {isActive && (
-                <p className="text-xs text-[#168F6F] mt-1 font-medium">Filtre actif — cliquer pour réinitialiser</p>
+                <p className="text-xs text-[#168F6F] mt-1 font-medium">{t("tags_page.active_filter_reset")}</p>
               )}
             </button>
           );
@@ -182,7 +184,7 @@ export default function TagsManager({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher un tag..."
+            placeholder={t("tags_page.search_placeholder")}
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-12 pr-10 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-[#168F6F] outline-none transition-all shadow-sm"
@@ -202,7 +204,7 @@ export default function TagsManager({
           <div className="flex items-center gap-1 border border-gray-200 dark:border-gray-700 rounded-xl p-1 bg-white dark:bg-gray-900">
             <button
               onClick={() => toggleSort("name")}
-              title="Trier par nom"
+              title={t("tags_page.sort_by_name_title")}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 sortField === "name"
                   ? "bg-[#168F6F] text-white shadow-sm"
@@ -210,11 +212,11 @@ export default function TagsManager({
               }`}
             >
               {sortField === "name" && sortDir === "asc" ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />}
-              Nom
+              {t("tags_page.btn_name")}
             </button>
             <button
               onClick={() => toggleSort("count")}
-              title="Trier par usage"
+              title={t("tags_page.sort_by_usage_title")}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 sortField === "count"
                   ? "bg-[#168F6F] text-white shadow-sm"
@@ -222,7 +224,7 @@ export default function TagsManager({
               }`}
             >
               {sortField === "count" && sortDir === "asc" ? <SortAsc className="w-3 h-3" /> : <SortDesc className="w-3 h-3" />}
-              Usage
+              {t("tags_page.btn_usage")}
             </button>
           </div>
 
@@ -233,20 +235,20 @@ export default function TagsManager({
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 viewMode === "cloud" ? "bg-white dark:bg-gray-700 shadow-sm text-[#168F6F]" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
-              title="Vue Nuage"
+              title={t("tags_page.view_cloud_title")}
             >
               <Cloud className="w-4 h-4" />
-              Nuage
+              {t("tags_page.view_cloud")}
             </button>
             <button
               onClick={() => onViewModeChange("list")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 viewMode === "list" ? "bg-white dark:bg-gray-700 shadow-sm text-[#168F6F]" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-200"
               }`}
-              title="Vue Liste"
+              title={t("tags_page.view_list_title")}
             >
               <List className="w-4 h-4" />
-              Liste
+              {t("tags_page.view_list")}
             </button>
           </div>
 
@@ -255,7 +257,7 @@ export default function TagsManager({
             className="flex items-center gap-2 px-3 py-1.5 bg-[#168F6F] hover:bg-[#0e6b52] text-white rounded-xl text-xs font-medium transition-all shadow-md hover:shadow-lg active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            Nouveau Tag
+            {t("tags_page.create_btn")}
           </button>
         </div>
       </div>
@@ -264,14 +266,18 @@ export default function TagsManager({
       {activeFilter !== "all" && (
         <div className="flex items-center gap-2 text-sm">
           <Filter className="w-4 h-4 text-[#168F6F]" />
-          <span className="text-gray-500 dark:text-gray-400">Filtre actif :</span>
+          <span className="text-gray-500 dark:text-gray-400">{t("tags_page.filter_active_label")}</span>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#168F6F]/10 text-[#168F6F] rounded-full text-xs font-semibold border border-[#168F6F]/20">
-            {activeFilter === "trending" ? "Tags Tendance" : "Non utilisés"}
-            <button onClick={() => { setActiveFilter("all"); onSearch(""); }} aria-label="Supprimer le filtre">
+            {activeFilter === "trending" ? t("tags_page.filter_trending") : t("tags_page.filter_unused")}
+            <button onClick={() => { setActiveFilter("all"); onSearch(""); }} aria-label="remove filter">
               <X className="w-3 h-3" />
             </button>
           </span>
-          <span className="text-gray-400 text-xs">{processedTags.length} résultat{processedTags.length !== 1 ? "s" : ""}</span>
+          <span className="text-gray-400 text-xs">
+            {processedTags.length === 1
+              ? t("tags_page.results_one", { count: processedTags.length })
+              : t("tags_page.results_plural", { count: processedTags.length })}
+          </span>
         </div>
       )}
 
@@ -286,7 +292,7 @@ export default function TagsManager({
           >
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-2xl p-4 border border-blue-100 dark:border-blue-900/30">
               <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" /> Tags les plus utilisés
+                <TrendingUp className="w-4 h-4" /> {t("tags_page.trending_section_title")}
               </h3>
               <div className="flex flex-wrap gap-2">
                 {trendingTags.slice(0, 5).map((tag) => (
@@ -325,14 +331,14 @@ export default function TagsManager({
                     <button
                       onClick={() => onEditTag(tag)}
                       className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
-                      title="Modifier"
+                      title={t("tags_page.btn_edit")}
                     >
                       <Pencil className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => onDeleteTag(tag.id)}
                       className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
-                      title="Supprimer"
+                      title={t("tags_page.btn_delete")}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -348,13 +354,13 @@ export default function TagsManager({
             {/* Table header */}
             <div className="grid grid-cols-[1fr_auto_auto_auto] items-center px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors text-left">
-                Nom <ArrowUpDown className="w-3 h-3" />
+                {t("tags_page.col_name")} <ArrowUpDown className="w-3 h-3" />
               </button>
               <button onClick={() => toggleSort("count")} className="flex items-center gap-1 hover:text-gray-700 dark:hover:text-gray-200 transition-colors pr-4">
-                Publications <ArrowUpDown className="w-3 h-3" />
+                {t("tags_page.col_publications")} <ArrowUpDown className="w-3 h-3" />
               </button>
-              <span className="pr-4">Statut</span>
-              <span>Actions</span>
+              <span className="pr-4">{t("tags_page.col_status")}</span>
+              <span>{t("tags_page.col_actions")}</span>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-700">
               {processedTags.length > 0 ? (
@@ -382,15 +388,15 @@ export default function TagsManager({
                     <span className="pr-4">
                       {tag.trending ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-full text-xs font-medium border border-green-200 dark:border-green-800">
-                          <TrendingUp className="w-3 h-3" /> Tendance
+                          <TrendingUp className="w-3 h-3" /> {t("tags_page.status_trending")}
                         </span>
                       ) : tag.count === 0 ? (
                         <span className="inline-flex items-center px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-full text-xs font-medium border border-gray-200 dark:border-gray-700">
-                          Non utilisé
+                          {t("tags_page.status_unused")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800">
-                          Actif
+                          {t("tags_page.status_active")}
                         </span>
                       )}
                     </span>
@@ -399,14 +405,14 @@ export default function TagsManager({
                       <button
                         onClick={() => onEditTag(tag)}
                         className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                        title="Modifier"
+                        title={t("tags_page.btn_edit")}
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDeleteTag(tag.id)}
                         className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                        title="Supprimer"
+                        title={t("tags_page.btn_delete")}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -425,14 +431,15 @@ export default function TagsManager({
 }
 
 function EmptyState() {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
       <div className="w-20 h-20 bg-gray-50 dark:bg-gray-900 rounded-full flex items-center justify-center text-gray-300">
         <Search className="w-10 h-10" />
       </div>
       <div>
-        <p className="text-gray-900 dark:text-white font-medium">Aucun tag trouvé</p>
-        <p className="text-sm text-gray-500">Essayez une autre recherche ou modifiez les filtres.</p>
+        <p className="text-gray-900 dark:text-white font-medium">{t("tags_page.empty_title")}</p>
+        <p className="text-sm text-gray-500">{t("tags_page.empty_text")}</p>
       </div>
     </div>
   );

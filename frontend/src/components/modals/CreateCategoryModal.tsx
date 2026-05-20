@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Folder, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/context/LanguageContext';
 
 interface CreateCategoryModalProps {
   isOpen: boolean;
@@ -23,26 +24,27 @@ export default function CreateCategoryModal({
   onCreateCategory,
   editCategory,
 }: CreateCategoryModalProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({ name: false, description: false });
-  
+
   const nameInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Validation
-  const nameError = touched.name && !name.trim() 
-    ? 'Le nom est requis' 
-    : name.trim().length > 50 
-    ? 'Le nom ne doit pas dépasser 50 caractères'
+  const nameError = touched.name && !name.trim()
+    ? t('categories_page.modal_name_required')
+    : name.trim().length > 50
+    ? t('categories_page.modal_name_too_long')
     : null;
-    
+
   const descriptionError = touched.description && !description.trim()
-    ? 'La description est requise'
+    ? t('categories_page.modal_desc_required')
     : description.trim().length > 200
-    ? 'La description ne doit pas dépasser 200 caractères'
+    ? t('categories_page.modal_desc_too_long')
     : null;
 
   const isValid = name.trim() && description.trim() 
@@ -130,7 +132,7 @@ export default function CreateCategoryModal({
 
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(err instanceof Error ? err.message : t('categories_page.modal_error_generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -170,10 +172,10 @@ export default function CreateCategoryModal({
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  {editCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+                  {editCategory ? t('categories_page.edit_modal_title') : t('categories_page.create_modal_title')}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {editCategory ? 'Modifiez les informations ci-dessous' : 'Créez une nouvelle catégorie pour organiser vos publications'}
+                  {editCategory ? t('categories_page.edit_modal_subtitle') : t('categories_page.create_modal_subtitle')}
                 </p>
               </div>
             </div>
@@ -181,7 +183,7 @@ export default function CreateCategoryModal({
               onClick={handleClose}
               disabled={isSubmitting}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Fermer"
+              aria-label={t('categories_page.modal_close')}
             >
               <X className="w-5 h-5" />
             </button>
@@ -200,7 +202,7 @@ export default function CreateCategoryModal({
                     {error}
                   </p>
                   <p className="text-xs text-red-700 dark:text-red-400 mt-1">
-                    Veuillez réessayer ou contacter le support.
+                    {t('categories_page.modal_error_retry')}
                   </p>
                 </div>
               </div>
@@ -209,7 +211,7 @@ export default function CreateCategoryModal({
             {/* Name field */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Nom de la catégorie <span className="text-red-500">*</span>
+                {t('categories_page.modal_name_label')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -218,7 +220,7 @@ export default function CreateCategoryModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onBlur={() => handleBlur('name')}
-                  placeholder="Ex: Frontend, Backend, DevOps..."
+                  placeholder={t('categories_page.modal_name_placeholder')}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 pr-12 ${
                     nameError
                       ? 'border-red-500 dark:border-red-500'
@@ -248,14 +250,14 @@ export default function CreateCategoryModal({
             {/* Description field */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Description <span className="text-red-500">*</span>
+                {t('categories_page.modal_desc_label')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   onBlur={() => handleBlur('description')}
-                  placeholder="Décrivez cette catégorie et son contenu..."
+                  placeholder={t('categories_page.modal_desc_placeholder')}
                   rows={4}
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 resize-none pr-12 ${
                     descriptionError
@@ -291,20 +293,20 @@ export default function CreateCategoryModal({
                 </div>
                 <div>
                   <p className="text-xs font-medium text-blue-800 dark:text-blue-300">
-                    Conseils pour une bonne catégorie :
+                    {t('categories_page.modal_tips_title')}
                   </p>
                   <ul className="mt-1.5 text-xs text-blue-700 dark:text-blue-400 space-y-1">
                     <li className="flex items-start gap-1.5">
                       <span className="text-blue-500">•</span>
-                      Utilisez un nom court et évocateur (2-3 mots maximum)
+                      {t('categories_page.modal_tip_1')}
                     </li>
                     <li className="flex items-start gap-1.5">
                       <span className="text-blue-500">•</span>
-                      Décrivez le type d'publications que vous y placerez
+                      {t('categories_page.modal_tip_2')}
                     </li>
                     <li className="flex items-start gap-1.5">
                       <span className="text-blue-500">•</span>
-                      Évitez les noms trop génériques comme "Divers" ou "Autre"
+                      {t('categories_page.modal_tip_3')}
                     </li>
                   </ul>
                 </div>
@@ -315,7 +317,7 @@ export default function CreateCategoryModal({
             {name.trim() && description.trim() && (
               <div className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
-                  Aperçu de la catégorie :
+                  {t('categories_page.modal_preview_title')}
                 </p>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
@@ -342,7 +344,7 @@ export default function CreateCategoryModal({
               disabled={isSubmitting}
               className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
-              Annuler
+              {t('categories_page.modal_cancel')}
             </button>
             <button
               type="submit"
@@ -352,10 +354,10 @@ export default function CreateCategoryModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {editCategory ? 'Modification...' : 'Création...'}
+                  {editCategory ? t('categories_page.modal_updating') : t('categories_page.modal_creating')}
                 </>
               ) : (
-                editCategory ? 'Enregistrer' : 'Créer'
+                editCategory ? t('categories_page.modal_update_btn') : t('categories_page.modal_create_btn')
               )}
             </button>
           </div>

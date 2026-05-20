@@ -12,10 +12,14 @@ import frChat from './fr/chat.json';
 import enChat from './en/chat.json';
 import frLayout from './fr/layout.json';
 import enLayout from './en/layout.json';
+import frHome from './fr/home.json';
+import enHome from './en/home.json';
+import frPages from './fr/pages.json';
+import enPages from './en/pages.json';
 
 export const resources = {
-  fr: { ...frSettings, ...frCommon, ...frConnections, ...frProfile, ...frActivity, ...frChat, ...frLayout },
-  en: { ...enSettings, ...enCommon, ...enConnections, ...enProfile, ...enActivity, ...enChat, ...enLayout },
+  fr: { ...frSettings, ...frCommon, ...frConnections, ...frProfile, ...frActivity, ...frChat, ...frLayout, ...frHome, ...frPages },
+  en: { ...enSettings, ...enCommon, ...enConnections, ...enProfile, ...enActivity, ...enChat, ...enLayout, ...enHome, ...enPages },
 };
 
 export type Language = 'fr' | 'en';

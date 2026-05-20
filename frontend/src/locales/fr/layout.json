@@ -19,7 +19,7 @@
     "nav_rejected_duplicated": "Dupliqués",
     "nav_rejected_moderation": "Modération",
     "nav_reports": "Signalements",
-    "nav_reported_publications": "Publications signalés",
+    "nav_reported_publications": "Publications signalées",
     "nav_reported_users": "Utilisateurs signalés",
     "nav_statistics": "Statistiques",
     "categories_label": "Catégories",
@@ -41,7 +41,7 @@
     "publication_count_plural": "{{count}} publications",
     "ai_assistant": "Assistant IA",
     "my_drafts": "Mes brouillons",
-    "add_publication": "Ajouter un publication"
+    "add_publication": "Ajouter une publication"
   },
   "user_dropdown": {
     "user_label": "Utilisateur",
@@ -68,9 +68,9 @@
     "type_reply": "Réponse",
     "type_mention": "Mention",
     "type_new_follower": "Nouvel abonné",
-    "type_publication_published": "Publication publié",
+    "type_publication_published": "Publication publiée",
     "type_pending_moderation": "En attente de modération",
-    "type_publication_rejected": "Publication refusé",
+    "type_publication_rejected": "Publication refusée",
     "type_publication_liked": "J'aime",
     "type_comment_liked": "J'aime sur commentaire",
     "type_bookmarked": "Sauvegarde",
@@ -87,12 +87,12 @@
     "msg_publication_liked": "{{name}} a aimé votre publication",
     "msg_comment_liked": "{{name}} a aimé votre commentaire",
     "msg_bookmarked": "{{name}} a sauvegardé votre publication",
-    "msg_publication_published": "Votre publication a été publié",
-    "msg_publication_rejected": "Votre publication a été refusé",
+    "msg_publication_published": "Votre publication a été publiée",
+    "msg_publication_rejected": "Votre publication a été refusée",
     "msg_account_activated": "Votre compte a été activé. Vous pouvez maintenant accéder à la plateforme.",
     "msg_account_deactivated": "Votre compte a été désactivé. Contactez un administrateur pour plus d'informations.",
     "msg_default": "{{name}} a interagi avec votre contenu",
-    "err_load_publication": "Impossible de charger l'publication"
+    "err_load_publication": "Impossible de charger la publication"
   },
   "messages_dropdown": {
     "title": "Messages",

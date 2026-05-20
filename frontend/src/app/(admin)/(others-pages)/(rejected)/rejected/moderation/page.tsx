@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ModerationTable from '@/components/tables/ModerationTable';
+import { useTranslation } from '@/context/LanguageContext';
 
 export interface ModerationPublication {
   id: number;
@@ -41,6 +42,7 @@ export interface ModerationPublication {
 }
 
 export default function ModerationRejectedPage() {
+  const { t } = useTranslation();
   const [publications, setPublications] = useState<ModerationPublication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +72,7 @@ export default function ModerationRejectedPage() {
       setLoading(true);
       setError(null);
       const token = getToken();
-      if (!token) throw new Error('Non authentifié');
+      if (!token) throw new Error(t('rejected.not_authenticated'));
 
       const response = await fetch('http://localhost:3000/api/publications/rejected/moderation', {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -83,7 +85,7 @@ export default function ModerationRejectedPage() {
       const data = await response.json();
       setPublications(data.publications || []);
     } catch (err: any) {
-      setError(err.message || 'Erreur de chargement');
+      setError(err.message || t('rejected.load_error'));
     } finally {
       setLoading(false);
     }
@@ -93,8 +95,8 @@ export default function ModerationRejectedPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
       <div className="text-center">
         <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Vérification des accès...</h3>
-        <p className="text-gray-600 dark:text-gray-400">Veuillez patienter</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('rejected.checking_role')}</h3>
+        <p className="text-gray-600 dark:text-gray-400">{t('rejected.please_wait')}</p>
       </div>
     </div>
   );
@@ -103,8 +105,8 @@ export default function ModerationRejectedPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
       <div className="text-center">
         <Loader2 className="h-16 w-16 animate-spin text-[#168F6F] mx-auto mb-6" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Chargement des publications...</h3>
-        <p className="text-gray-600 dark:text-gray-400">Veuillez patienter</p>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('rejected.loading')}</h3>
+        <p className="text-gray-600 dark:text-gray-400">{t('rejected.please_wait')}</p>
       </div>
     </div>
   );
@@ -115,10 +117,10 @@ export default function ModerationRejectedPage() {
         <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Erreur de chargement</h3>
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{t('rejected.error_title')}</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
         <button onClick={fetchPublications} className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium">
-          <RefreshCw size={18} /> Réessayer
+          <RefreshCw size={18} /> {t('rejected.retry')}
         </button>
       </div>
     </div>
@@ -129,8 +131,8 @@ export default function ModerationRejectedPage() {
       <ModerationTable
         publications={publications}
         onRefresh={fetchPublications}
-        title="Publications Rejetés — Modération IA"
-        description="Publications rejetés automatiquement par le système de modération suite à la détection de contenu inapproprié"
+        title={t('rejected.mod_title')}
+        description={t('rejected.mod_description')}
       />
     </div>
   );
