@@ -1199,6 +1199,7 @@ export class StatsService {
       'user.firstName',
       'user.lastName',
       'user.department',
+      'user.profileImage',
     ])
     .addSelect('COUNT(DISTINCT publication.id)', 'publicationCount')
     .addSelect('SUM(publication.viewsCount)', 'totalViews')
@@ -1213,7 +1214,7 @@ export class StatsService {
   return authors.map(author => ({
     id: author.user_id,
     name: `${author.user_firstName || ''} ${author.user_lastName || ''}`.trim(),
-    avatar: null,
+    avatar: author.user_profileImage ?? null,
     department: author.user_department,
     publicationCount: parseInt(author.publicationCount, 10),
     totalViews: parseInt(author.totalViews || '0', 10),

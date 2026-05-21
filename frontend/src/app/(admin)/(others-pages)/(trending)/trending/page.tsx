@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Avatar from '@/components/ui/avatar/Avatar';
 import { statsService, EmployeeTrendingStats } from '../../../../../../services/stats.service';
 import { publicationService } from '../../../../../../services/publication.service';
 import { usePublicationModal } from '@/context/PublicationModalContext';
@@ -373,11 +374,12 @@ function AuthorCard({ author, rank }: { author: EmployeeTrendingStats['topAuthor
         <RankIcon rank={rank} size="sm" />
 
         {/* Avatar */}
-        <div className={`h-11 w-11 flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center bg-[#168F6F]/10 dark:bg-[#168F6F]/20 text-[#168F6F] font-bold text-sm transition-transform duration-200 group-hover:scale-105 ${RANK_RING[rank] ?? ''}`}>
-          {author.avatar
-            ? <Image src={author.avatar} alt={author.name} width={44} height={44} className="object-cover w-full h-full" />
-            : initials}
-        </div>
+        <Avatar
+          src={author.avatar}
+          alt={author.name}
+          size="medium"
+          className={`!h-11 !w-11 flex-shrink-0 transition-transform duration-200 group-hover:scale-105 ${RANK_RING[rank] ?? ''}`}
+        />
 
         {/* Info */}
         <div className="flex-1 min-w-0">

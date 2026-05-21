@@ -4,16 +4,17 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Flag, Search, ChevronLeft, ChevronRight,
-  AlertTriangle, CheckCircle, XCircle, Eye,
-  User, RefreshCw, X, Shield, Users,
+  AlertTriangle, CheckCircle, XCircle,
+  RefreshCw, X, Shield, Users,
   TrendingUp, TrendingDown, Minus, Clock,
   MessageSquare, Ban, Mail, Building, Download, UserCheck,
-  ChevronDown,
 } from 'lucide-react';
+
+type TabType = 'analysis' | 'reports' | 'notes';
 import {
   adminReportsService,
   ReportedUserItem, UserReportDetail,
-  UserReportListResponse, RiskLevel, UserAction,
+  UserReportListResponse, RiskLevel, UserAction, AdminNote,
 } from '../../../../../../../services/admin-reports.service';
 import { getToken } from '../../../../../../../services/auth.service';
 import { useTranslation } from '@/context/LanguageContext';
@@ -130,21 +131,142 @@ function ConfirmModal({
   );
 }
 
+// ─── Admin Notes ─────────────────────────────────────────────────────────────
+
+function AdminNotesSection({
+  type, targetId, currentAdminId,
+}: {
+  type: 'user' | 'publication'; targetId: number; currentAdminId: number;
+}) {
+  const { t, language } = useTranslation();
+  const [notes, setNotes]         = useState<AdminNote[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [input, setInput]         = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState<number | null>(null);
+
+  useEffect(() => {
+    adminReportsService.getNotes(type, targetId).then(setNotes).catch(() => {});
+  }, [type, targetId]);
+
+  const myNote = notes.find((n) => n.adminId === currentAdminId) ?? null;
+
+  const handleSave = async () => {
+    if (!input.trim()) return;
+    setSaving(true);
+    try {
+      const saved = await adminReportsService.saveNote(type, targetId, input.trim());
+      setNotes((prev) => {
+        const idx = prev.findIndex((n) => n.adminId === currentAdminId);
+        return idx >= 0 ? prev.map((n, i) => (i === idx ? saved : n)) : [saved, ...prev];
+      });
+      setEditingId(null);
+      setInput('');
+    } catch {}
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async (noteId: number) => {
+    setDeleting(noteId);
+    try {
+      await adminReportsService.deleteNote(type, targetId, noteId);
+      setNotes((prev) => prev.filter((n) => n.id !== noteId));
+    } catch {}
+    finally { setDeleting(null); }
+  };
+
+  const startEdit = (note: AdminNote) => {
+    setEditingId(note.id);
+    setInput(note.content);
+  };
+
+  const cancelEdit = () => { setEditingId(null); setInput(''); };
+
+  return (
+    <div className="space-y-3">
+      <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+        <MessageSquare size={12} /> {t('reported_page.note_section_title')}
+      </h4>
+
+      {/* Other admins' notes */}
+      {notes.filter((n) => n.adminId !== currentAdminId).map((n) => (
+        <div key={n.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">{n.adminName}</span>
+            <span className="text-xs text-gray-400">{new Date(n.updatedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</span>
+          </div>
+          <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{n.content}</p>
+        </div>
+      ))}
+
+      {/* Current admin's note */}
+      {myNote && editingId !== myNote.id ? (
+        <div className="p-3 rounded-xl border border-[#00926B]/30 bg-emerald-50/50 dark:bg-emerald-900/10 space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#00926B]">{myNote.adminName} ({t('reported_page.note_you')})</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">{new Date(myNote.updatedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</span>
+              <button onClick={() => startEdit(myNote)} className="text-xs text-gray-400 hover:text-[#00926B] transition-colors">{t('reported_page.note_edit')}</button>
+              <button
+                onClick={() => handleDelete(myNote.id)}
+                disabled={deleting === myNote.id}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+              >{t('reported_page.note_delete')}</button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{myNote.content}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            rows={3}
+            placeholder={t('reported_page.note_placeholder')}
+            className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30 resize-none"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              disabled={saving || !input.trim()}
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-[#00926B] hover:bg-[#007a59] rounded-lg disabled:opacity-50 transition-colors"
+            >{saving ? '…' : t('reported_page.note_save')}</button>
+            {editingId && (
+              <button onClick={cancelEdit} className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                {t('reported_page.cancel')}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* No notes yet */}
+      {notes.length === 0 && !myNote && (
+        <p className="text-xs text-gray-400 italic">{t('reported_page.note_empty')}</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Detail Drawer ────────────────────────────────────────────────────────────
 
 function UserDetailDrawer({
-  userId, onClose, onActionDone,
+  userId, onClose, onActionDone, initialTab,
 }: {
-  userId: number; onClose: () => void; onActionDone: () => void;
+  userId: number; onClose: () => void; onActionDone: () => void; initialTab: TabType;
 }) {
   const { t, language } = useTranslation();
   const [detail, setDetail]         = useState<UserReportDetail | null>(null);
   const [loading, setLoading]       = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [note, setNote]             = useState('');
   const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null);
-  const [showNote, setShowNote]     = useState(false);
   const [confirm, setConfirm]       = useState<{ action: UserAction; label: string } | null>(null);
+  const [activeTab, setActiveTab]   = useState<TabType>(initialTab);
+
+  const currentAdminId = (() => {
+    try { const token = getToken(); return JSON.parse(atob(token!.split('.')[1])).sub as number; }
+    catch { return 0; }
+  })();
 
   useEffect(() => {
     setLoading(true);
@@ -158,7 +280,7 @@ function UserDetailDrawer({
     setActionLoading(true);
     setConfirm(null);
     try {
-      const res = await adminReportsService.takeUserAction(userId, action, note || undefined);
+      const res = await adminReportsService.takeUserAction(userId, action, undefined);
       setToast({ msg: res.message, ok: true });
       setTimeout(() => { onActionDone(); onClose(); }, 1400);
     } catch (err) {
@@ -179,7 +301,9 @@ function UserDetailDrawer({
   const isSuspended = detail ? !detail.user.isActive : false;
 
   return (
-    <div className="fixed inset-0 z-50 flex">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
       {confirm && (
         <ConfirmModal
           title={confirm.action === 'ban' ? t('reported_page.confirm_ban_title') : t('reported_page.confirm_unban_title')}
@@ -193,10 +317,9 @@ function UserDetailDrawer({
         />
       )}
 
-      <div className="flex-1 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="w-full max-w-xl bg-white dark:bg-gray-900 h-full overflow-y-auto shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-gray-100 dark:border-gray-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
               <Flag size={15} className="text-red-500" />
@@ -206,6 +329,27 @@ function UserDetailDrawer({
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
             <X size={16} />
           </button>
+        </div>
+
+        {/* Tab navigation */}
+        <div className="flex border-b border-gray-100 dark:border-gray-800 flex-shrink-0">
+          {([
+            { key: 'analysis',  Icon: Shield,        labelKey: 'reported_page.tab_analysis' },
+            { key: 'reports',   Icon: Flag,          labelKey: 'reported_page.tab_reports' },
+            { key: 'notes',     Icon: MessageSquare, labelKey: 'reported_page.tab_notes' },
+          ] as const).map(({ key, Icon, labelKey }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-1.5 px-5 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                activeTab === key
+                  ? 'border-[#00926B] text-[#00926B]'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+              }`}
+            >
+              <Icon size={12} /> {t(labelKey)}
+            </button>
+          ))}
         </div>
 
         {toast && (
@@ -229,184 +373,168 @@ function UserDetailDrawer({
             </div>
           </div>
         ) : (
-          <div className="flex-1 p-6 space-y-6">
-            {/* User info */}
-            <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white">{detail.user.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Mail size={12} className="text-gray-400" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{detail.user.email}</span>
+          <div className="flex-1 overflow-y-auto">
+
+            {/* ── Analysis tab ── */}
+            {activeTab === 'analysis' && (
+              <div className="p-6 space-y-6">
+                {/* User info */}
+                <div className="p-4 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-white">{detail.user.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Mail size={12} className="text-gray-400" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{detail.user.email}</span>
+                      </div>
+                      {detail.user.department && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Building size={12} className="text-gray-400" />
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{detail.user.department}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-2 py-0.5 rounded text-xs font-semibold ${detail.user.isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>
+                        {detail.user.isActive ? t('reported_page.status_active') : t('reported_page.status_suspended')}
+                      </span>
+                      <span className="text-xs text-gray-400">{detail.user.role}</span>
+                    </div>
                   </div>
-                  {detail.user.department && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <Building size={12} className="text-gray-400" />
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{detail.user.department}</span>
+                  <p className="text-xs text-gray-400">{t('reported_page.member_since')} {new Date(detail.user.createdAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</p>
+                </div>
+
+                {/* Intelligence */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('reported_page.section_ai')}</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { labelKey: 'reported_page.stat_risk_score',       value: detail.intelligence.riskScore,       Icon: TrendingUp },
+                      { labelKey: 'reported_page.stat_reports_24h',      value: detail.intelligence.recentCount,     Icon: Clock },
+                      { labelKey: 'reported_page.stat_unique_reporters', value: detail.intelligence.uniqueReporters, Icon: Users },
+                    ].map(({ labelKey, value, Icon }) => (
+                      <div key={labelKey} className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3 text-center">
+                        <Icon size={14} className="mx-auto text-gray-400 mb-1" />
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
+                        <p className="text-xs text-gray-400 mt-0.5">{t(labelKey)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{t('reported_page.level_label')}</span>
+                      <RiskBadge level={detail.intelligence.riskLevel} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{t('reported_page.priority_label')}</span>
+                      <PriorityBadge priority={detail.intelligence.priority} />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-500">{t('reported_page.trend_label')}</span>
+                      <TrendIcon trend={(detail.intelligence as any).trend ?? 'stable'} />
+                    </div>
+                  </div>
+                  {detail.intelligence.autoDecision !== 'human_review' && (
+                    <div className={`flex items-start gap-3 p-3 rounded-xl border ${detail.intelligence.autoDecision === 'auto_ban' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'}`}>
+                      <Shield size={15} className="flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold">{t('reported_page.auto_decision_title')}</p>
+                        <p className="text-xs mt-0.5">
+                          {detail.intelligence.autoDecision === 'auto_ban' ? t('reported_page.auto_ban') :
+                            detail.intelligence.autoDecision === 'auto_warn' ? t('reported_page.auto_warn') :
+                              t('reported_page.auto_close')}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">{t('reported_page.confidence_label')} {(detail.intelligence.confidence * 100).toFixed(0)}%</p>
+                      </div>
                     </div>
                   )}
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${detail.user.isActive ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>
-                    {detail.user.isActive ? t('reported_page.status_active') : t('reported_page.status_suspended')}
-                  </span>
-                  <span className="text-xs text-gray-400">{detail.user.role}</span>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400">{t('reported_page.member_since')} {new Date(detail.user.createdAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</p>
-            </div>
-
-            {/* Intelligence */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('reported_page.section_ai')}</h4>
-
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { labelKey: 'reported_page.stat_risk_score',       value: detail.intelligence.riskScore,       Icon: TrendingUp },
-                  { labelKey: 'reported_page.stat_reports_24h',      value: detail.intelligence.recentCount,     Icon: Clock },
-                  { labelKey: 'reported_page.stat_unique_reporters', value: detail.intelligence.uniqueReporters, Icon: Users },
-                ].map(({ labelKey, value, Icon }) => (
-                  <div key={labelKey} className="bg-gray-50 dark:bg-gray-800/60 rounded-xl p-3 text-center">
-                    <Icon size={14} className="mx-auto text-gray-400 mb-1" />
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{t(labelKey)}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">{t('reported_page.level_label')}</span>
-                  <RiskBadge level={detail.intelligence.riskLevel} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">{t('reported_page.priority_label')}</span>
-                  <PriorityBadge priority={detail.intelligence.priority} />
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-500">{t('reported_page.trend_label')}</span>
-                  <TrendIcon trend={(detail.intelligence as any).trend ?? 'stable'} />
-                </div>
-              </div>
-
-              {/* Auto-decision */}
-              {detail.intelligence.autoDecision !== 'human_review' && (
-                <div className={`flex items-start gap-3 p-3 rounded-xl border ${detail.intelligence.autoDecision === 'auto_ban' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'}`}>
-                  <Shield size={15} className="flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-bold">{t('reported_page.auto_decision_title')}</p>
-                    <p className="text-xs mt-0.5">
-                      {detail.intelligence.autoDecision === 'auto_ban' ? t('reported_page.auto_ban') :
-                        detail.intelligence.autoDecision === 'auto_warn' ? t('reported_page.auto_warn') :
-                          t('reported_page.auto_close')}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">{t('reported_page.confidence_label')} {(detail.intelligence.confidence * 100).toFixed(0)}%</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Recommendation */}
-              <div className={`flex items-start gap-3 p-3 rounded-xl border ${SEVERITY_COLORS[detail.intelligence.recommendation.severity]}`}>
-                <Shield size={15} className="flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold">{t('reported_page.recommendation_title')}</p>
-                  <p className="text-xs mt-0.5">{detail.intelligence.recommendation.label}</p>
-                </div>
-              </div>
-
-              {/* Top reasons */}
-              <div className="space-y-2">
-                <p className="text-xs text-gray-400 font-medium">{t('reported_page.top_reasons_title')}</p>
-                {detail.intelligence.topReasons.map(({ reason, count, severity }) => (
-                  <div key={reason} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-700 dark:text-gray-300 w-36 truncate">
-                      {REASON_LABEL_KEYS[reason] ? t(REASON_LABEL_KEYS[reason]) : reason}
-                    </span>
-                    <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.min(100, (severity / 10) * 100)}%` }} />
+                  <div className={`flex items-start gap-3 p-3 rounded-xl border ${SEVERITY_COLORS[detail.intelligence.recommendation.severity]}`}>
+                    <Shield size={15} className="flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-bold">{t('reported_page.recommendation_title')}</p>
+                      <p className="text-xs mt-0.5">{detail.intelligence.recommendation.label}</p>
                     </div>
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 w-4 text-right">{count}</span>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-400 font-medium">{t('reported_page.top_reasons_title')}</p>
+                    {detail.intelligence.topReasons.map(({ reason, count, severity }) => (
+                      <div key={reason} className="flex items-center gap-2">
+                        <span className="text-xs text-gray-700 dark:text-gray-300 w-36 truncate">
+                          {REASON_LABEL_KEYS[reason] ? t(REASON_LABEL_KEYS[reason]) : reason}
+                        </span>
+                        <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.min(100, (severity / 10) * 100)}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-gray-700 dark:text-gray-300 w-4 text-right">{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button onClick={() => handleAction('review_all')} disabled={actionLoading}
+                    className="py-2.5 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                    <CheckCircle size={13} /> {t('reported_page.action_review')}
+                  </button>
+                  <button onClick={() => handleAction('dismiss_all')} disabled={actionLoading}
+                    className="py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                    <XCircle size={13} /> {t('reported_page.action_dismiss')}
+                  </button>
+                  {!isSuspended && (
+                    <button onClick={() => handleAction('warn')} disabled={actionLoading}
+                      className="py-2.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                      <AlertTriangle size={13} /> {t('reported_page.action_warn')}
+                    </button>
+                  )}
+                  {isSuspended ? (
+                    <button onClick={() => requestAction('unban', t('reported_page.action_reactivate'))} disabled={actionLoading}
+                      className="py-2.5 rounded-xl text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 col-span-2">
+                      <UserCheck size={13} /> {t('reported_page.action_reactivate')}
+                    </button>
+                  ) : (
+                    <button onClick={() => requestAction('ban', t('reported_page.action_suspend'))} disabled={actionLoading}
+                      className="py-2.5 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5">
+                      <Ban size={13} /> {t('reported_page.action_suspend')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Reports tab ── */}
+            {activeTab === 'reports' && (
+              <div className="p-6 space-y-3">
+                <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {t('reported_page.individual_reports_title', { count: detail.reports.length })}
+                </h4>
+                {detail.reports.length === 0 && (
+                  <p className="text-xs text-gray-400 italic">{t('reported_page.no_reports')}</p>
+                )}
+                {detail.reports.map((r) => (
+                  <div key={r.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/60 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                        {REASON_LABEL_KEYS[r.reason] ? t(REASON_LABEL_KEYS[r.reason]) : r.reason}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === 'pending' ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' : r.status === 'reviewed' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'text-gray-400 bg-gray-100 dark:bg-gray-800'}`}>
+                        {r.status === 'pending' ? t('reported_page.status_pending') : r.status === 'reviewed' ? t('reported_page.status_reviewed') : t('reported_page.status_dismissed')}
+                      </span>
+                    </div>
+                    {r.details && <p className="text-xs text-gray-500 dark:text-gray-400 italic">{r.details}</p>}
+                    <p className="text-xs text-gray-400">Par <span className="font-medium">{r.reporter.name}</span> · {new Date(r.createdAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
 
-            {/* Individual reports */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                {t('reported_page.individual_reports_title', { count: detail.reports.length })}
-              </h4>
-              {detail.reports.map((r) => (
-                <div key={r.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900/60 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                      {REASON_LABEL_KEYS[r.reason] ? t(REASON_LABEL_KEYS[r.reason]) : r.reason}
-                    </span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === 'pending' ? 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' : r.status === 'reviewed' ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'text-gray-400 bg-gray-100 dark:bg-gray-800'}`}>
-                      {r.status === 'pending' ? t('reported_page.status_pending') : r.status === 'reviewed' ? t('reported_page.status_reviewed') : t('reported_page.status_dismissed')}
-                    </span>
-                  </div>
-                  {r.details && <p className="text-xs text-gray-500 dark:text-gray-400 italic">{r.details}</p>}
-                  <p className="text-xs text-gray-400">Par <span className="font-medium">{r.reporter.name}</span> · {new Date(r.createdAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</p>
-                </div>
-              ))}
-            </div>
+            {/* ── Notes tab ── */}
+            {activeTab === 'notes' && (
+              <div className="p-6">
+                <AdminNotesSection type="user" targetId={userId} currentAdminId={currentAdminId} />
+              </div>
+            )}
 
-            {/* Optional note */}
-            <div className="space-y-2">
-              <button onClick={() => setShowNote(!showNote)} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                <MessageSquare size={12} /> {showNote ? t('reported_page.note_hide') : t('reported_page.note_add')}
-                <ChevronDown size={12} className={`transition-transform ${showNote ? 'rotate-180' : ''}`} />
-              </button>
-              {showNote && (
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  placeholder={t('reported_page.note_placeholder')}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30 resize-none"
-                />
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <button
-                onClick={() => handleAction('review_all')} disabled={actionLoading}
-                className="py-2.5 rounded-xl text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                <CheckCircle size={13} /> {t('reported_page.action_review')}
-              </button>
-              <button
-                onClick={() => handleAction('dismiss_all')} disabled={actionLoading}
-                className="py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-              >
-                <XCircle size={13} /> {t('reported_page.action_dismiss')}
-              </button>
-              {!isSuspended && (
-                <button
-                  onClick={() => handleAction('warn')} disabled={actionLoading}
-                  className="py-2.5 rounded-xl text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <AlertTriangle size={13} /> {t('reported_page.action_warn')}
-                </button>
-              )}
-              {isSuspended ? (
-                <button
-                  onClick={() => requestAction('unban', t('reported_page.action_reactivate'))} disabled={actionLoading}
-                  className="py-2.5 rounded-xl text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 col-span-2"
-                >
-                  <UserCheck size={13} /> {t('reported_page.action_reactivate')}
-                </button>
-              ) : (
-                <button
-                  onClick={() => requestAction('ban', t('reported_page.action_suspend'))} disabled={actionLoading}
-                  className="py-2.5 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
-                >
-                  <Ban size={13} /> {t('reported_page.action_suspend')}
-                </button>
-              )}
-            </div>
           </div>
         )}
       </div>
@@ -428,7 +556,7 @@ export default function ReportedUsersPage() {
   const [riskFilter, setRiskFilter]     = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [page, setPage]                 = useState(1);
-  const [selectedId, setSelectedId]     = useState<number | null>(null);
+  const [selected, setSelected]         = useState<{ id: number; tab: TabType } | null>(null);
   const [toast, setToast]               = useState<{ msg: string; ok: boolean } | null>(null);
   const [exportOpen, setExportOpen]     = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -538,10 +666,11 @@ export default function ReportedUsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-8">
-      {selectedId !== null && (
+      {selected !== null && (
         <UserDetailDrawer
-          userId={selectedId}
-          onClose={() => setSelectedId(null)}
+          userId={selected.id}
+          initialTab={selected.tab}
+          onClose={() => setSelected(null)}
           onActionDone={() => { load(); showToast(t('reported_page.action_done'), true); }}
         />
       )}
@@ -692,8 +821,7 @@ export default function ReportedUsersPage() {
                   data.items.map((item) => (
                     <tr
                       key={item.userId}
-                      className={`hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer ${item.riskLevel === 'critical' ? 'border-l-2 border-l-red-500' : item.priority === 'urgent' ? 'border-l-2 border-l-red-400' : ''}`}
-                      onClick={() => setSelectedId(item.userId)}
+                      className={`hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors ${item.riskLevel === 'critical' ? 'border-l-2 border-l-red-500' : item.priority === 'urgent' ? 'border-l-2 border-l-red-400' : ''}`}
                     >
                       <td className="px-6 py-3">
                         <p className="font-medium text-gray-900 dark:text-white">{item.userName}</p>
@@ -728,13 +856,24 @@ export default function ReportedUsersPage() {
                       <td className="px-4 py-3">
                         <TrendIcon trend={item.trend} />
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSelectedId(item.userId); }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-lg transition-colors"
-                        >
-                          <Eye size={12} /> {t('reported_page.detail')}
-                        </button>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => setSelected({ id: item.userId, tab: 'analysis' })}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg transition-colors"
+                            title={t('reported_page.tab_analysis')}>
+                            <Shield size={11} /> {t('reported_page.tab_analysis')}
+                          </button>
+                          <button onClick={() => setSelected({ id: item.userId, tab: 'reports' })}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 text-xs font-medium rounded-lg transition-colors"
+                            title={t('reported_page.tab_reports')}>
+                            <Flag size={11} /> {t('reported_page.tab_reports')}
+                          </button>
+                          <button onClick={() => setSelected({ id: item.userId, tab: 'notes' })}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg transition-colors"
+                            title={t('reported_page.tab_notes')}>
+                            <MessageSquare size={11} /> {t('reported_page.tab_notes')}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

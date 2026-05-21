@@ -33,6 +33,9 @@ export class UserReport {
   @Column({ length: 20, default: 'pending' })
   status: UserReportStatus;
 
+  @Column({ type: 'text', nullable: true })
+  adminNote: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

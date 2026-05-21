@@ -141,6 +141,15 @@ export interface BulkAction {
   note?: string;
 }
 
+export interface AdminNote {
+  id: number;
+  content: string;
+  adminId: number;
+  adminName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AutoModerationConfig {
   autoBanThreshold: number;     // Score seuil pour bannissement auto
   autoWarnThreshold: number;    // Score seuil pour avertissement auto
@@ -235,6 +244,33 @@ class AdminReportsService {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({ action, note }),
+    });
+    return this.handle(res);
+  }
+
+  // ── Admin notes ────────────────────────────────────────────────────────
+
+  async getNotes(type: 'user' | 'publication', id: number): Promise<AdminNote[]> {
+    const path = type === 'user' ? `users/${id}` : `publications/${id}`;
+    const res = await fetch(`${API_URL}/admin/reports/${path}/notes`, { headers: this.getHeaders() });
+    return this.handle<AdminNote[]>(res);
+  }
+
+  async saveNote(type: 'user' | 'publication', id: number, content: string): Promise<AdminNote> {
+    const path = type === 'user' ? `users/${id}` : `publications/${id}`;
+    const res = await fetch(`${API_URL}/admin/reports/${path}/notes`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ content }),
+    });
+    return this.handle<AdminNote>(res);
+  }
+
+  async deleteNote(type: 'user' | 'publication', id: number, noteId: number): Promise<void> {
+    const path = type === 'user' ? `users/${id}` : `publications/${id}`;
+    const res = await fetch(`${API_URL}/admin/reports/${path}/notes/${noteId}`, {
+      method: 'DELETE',
+      headers: this.getHeaders(),
     });
     return this.handle(res);
   }

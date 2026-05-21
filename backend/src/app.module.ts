@@ -36,7 +36,7 @@ import { AdminReportsModule } from './admin-reports/admin-reports.module';
       password: 'postgres',
       database: 'pfe_db',
       autoLoadEntities: true,
-      synchronize: false, // dev only
+      synchronize: true, // dev only
     }),
     PublicationModule,
     CategoryModule,

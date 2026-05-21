@@ -6,12 +6,13 @@ import { PublicationReport } from 'src/publication/entities/publication-report.e
 import { UserReport } from 'src/users/entities/user-report.entity';
 import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
+import { ReportAdminNote } from './entities/report-admin-note.entity';
 import { UsersModule } from 'src/users/users.module';
 import { NotificationModule } from 'src/notification/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PublicationReport, UserReport, Publication, User]),
+    TypeOrmModule.forFeature([PublicationReport, UserReport, Publication, User, ReportAdminNote]),
     UsersModule,
     NotificationModule,
   ],

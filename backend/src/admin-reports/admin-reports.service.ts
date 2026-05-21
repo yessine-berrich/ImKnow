@@ -6,6 +6,7 @@ import { PublicationReport } from 'src/publication/entities/publication-report.e
 import { UserReport } from 'src/users/entities/user-report.entity';
 import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
+import { ReportAdminNote } from './entities/report-admin-note.entity';
 import { PublicationStatus, NotificationType, UserStatus } from 'utils/constants';
 import { NotificationService } from 'src/notification/notification.service';
 
@@ -120,8 +121,99 @@ export class AdminReportsService {
     private readonly publicationRepo: Repository<Publication>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(ReportAdminNote)
+    private readonly reportNoteRepo: Repository<ReportAdminNote>,
     private readonly notificationService: NotificationService,
   ) {}
+
+  // ─── Admin notes ─────────────────────────────────────────────────────────────
+
+  private formatNote(n: ReportAdminNote) {
+    return {
+      id: n.id,
+      content: n.content,
+      adminId: (n.admin as any)?.id ?? null,
+      adminName: (n.admin as any)
+        ? `${(n.admin as any).firstName ?? ''} ${(n.admin as any).lastName ?? ''}`.trim() || (n.admin as any).email
+        : 'Admin',
+      createdAt: n.createdAt,
+      updatedAt: n.updatedAt,
+    };
+  }
+
+  async getNotesForUser(reportedUserId: number) {
+    const notes = await this.reportNoteRepo.find({
+      where: { reportedUserId },
+      relations: ['admin'],
+      order: { createdAt: 'DESC' },
+    });
+    return notes.map((n) => this.formatNote(n));
+  }
+
+  async upsertUserNote(reportedUserId: number, adminId: number, content: string) {
+    let note = await this.reportNoteRepo.findOne({
+      where: { reportedUserId, admin: { id: adminId } },
+      relations: ['admin'],
+    });
+    if (note) {
+      note.content = content;
+      note = await this.reportNoteRepo.save(note);
+    } else {
+      const admin = await this.userRepo.findOne({ where: { id: adminId } });
+      if (!admin) throw new NotFoundException('Admin introuvable');
+      note = await this.reportNoteRepo.save(
+        this.reportNoteRepo.create({ content, reportedUserId, reportedPublicationId: null, admin }),
+      );
+    }
+    return this.formatNote(note);
+  }
+
+  async deleteUserNote(noteId: number, adminId: number) {
+    const note = await this.reportNoteRepo.findOne({
+      where: { id: noteId, reportedUserId: undefined },
+      relations: ['admin'],
+    });
+    if (!note || (note.admin as any)?.id !== adminId) throw new NotFoundException('Note introuvable');
+    await this.reportNoteRepo.remove(note);
+    return { success: true };
+  }
+
+  async getNotesForPublication(reportedPublicationId: number) {
+    const notes = await this.reportNoteRepo.find({
+      where: { reportedPublicationId },
+      relations: ['admin'],
+      order: { createdAt: 'DESC' },
+    });
+    return notes.map((n) => this.formatNote(n));
+  }
+
+  async upsertPublicationNote(reportedPublicationId: number, adminId: number, content: string) {
+    let note = await this.reportNoteRepo.findOne({
+      where: { reportedPublicationId, admin: { id: adminId } },
+      relations: ['admin'],
+    });
+    if (note) {
+      note.content = content;
+      note = await this.reportNoteRepo.save(note);
+    } else {
+      const admin = await this.userRepo.findOne({ where: { id: adminId } });
+      if (!admin) throw new NotFoundException('Admin introuvable');
+      note = await this.reportNoteRepo.save(
+        this.reportNoteRepo.create({ content, reportedPublicationId, reportedUserId: null, admin }),
+      );
+    }
+    return this.formatNote(note);
+  }
+
+  async deletePublicationNote(noteId: number, adminId: number) {
+    const note = await this.reportNoteRepo.findOne({
+      where: { id: noteId },
+      relations: ['admin'],
+    });
+    if (!note || (note.admin as any)?.id !== adminId) throw new NotFoundException('Note introuvable');
+    await this.reportNoteRepo.remove(note);
+    return { success: true };
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // PUBLICATION REPORTS
@@ -331,7 +423,7 @@ export class AdminReportsService {
       case 'dismiss_all':
         await this.publicationReportRepo.update(
           { publication: { id: publicationId }, status: 'pending' },
-          { status: 'dismissed' },
+          { status: 'dismissed', adminNote: note ?? null },
         );
         message = `${pendingReports.length} signalement(s) clôturé(s)`;
         break;
@@ -339,7 +431,7 @@ export class AdminReportsService {
       case 'review_all':
         await this.publicationReportRepo.update(
           { publication: { id: publicationId }, status: 'pending' },
-          { status: 'reviewed' },
+          { status: 'reviewed', adminNote: note ?? null },
         );
         message = `${pendingReports.length} signalement(s) marqué(s) comme examiné(s)`;
         break;
@@ -348,7 +440,7 @@ export class AdminReportsService {
         await this.publicationRepo.update(publicationId, { status: PublicationStatus.REJECTED });
         await this.publicationReportRepo.update(
           { publication: { id: publicationId }, status: 'pending' },
-          { status: 'reviewed' },
+          { status: 'reviewed', adminNote: note ?? null },
         );
         if ((publication as any).author) {
           await this.notificationService.createAndNotify(
@@ -366,7 +458,7 @@ export class AdminReportsService {
         await this.publicationRepo.update(publicationId, { status: PublicationStatus.PUBLISHED });
         await this.publicationReportRepo.update(
           { publication: { id: publicationId } },
-          { status: 'dismissed' },
+          { status: 'dismissed', adminNote: note ?? null },
         );
         if ((publication as any).author) {
           await this.notificationService.createAndNotify(
@@ -383,7 +475,7 @@ export class AdminReportsService {
       case 'warn_author':
         await this.publicationReportRepo.update(
           { publication: { id: publicationId }, status: 'pending' },
-          { status: 'reviewed' },
+          { status: 'reviewed', adminNote: note ?? null },
         );
         if ((publication as any).author) {
           await this.notificationService.createAndNotify(
@@ -614,7 +706,7 @@ export class AdminReportsService {
       case 'dismiss_all':
         await this.userReportRepo.update(
           { reportedUser: { id: userId }, status: 'pending' },
-          { status: 'dismissed' },
+          { status: 'dismissed', adminNote: note ?? null },
         );
         message = 'Signalements clôturés';
         break;
@@ -622,7 +714,7 @@ export class AdminReportsService {
       case 'review_all':
         await this.userReportRepo.update(
           { reportedUser: { id: userId }, status: 'pending' },
-          { status: 'reviewed' },
+          { status: 'reviewed', adminNote: note ?? null },
         );
         message = 'Signalements marqués comme examinés';
         break;
@@ -630,7 +722,7 @@ export class AdminReportsService {
       case 'warn':
         await this.userReportRepo.update(
           { reportedUser: { id: userId }, status: 'pending' },
-          { status: 'reviewed' },
+          { status: 'reviewed', adminNote: note ?? null },
         );
         await this.notificationService.createAndNotify(
           NotificationType.SYSTEM_INFO,
@@ -649,7 +741,7 @@ export class AdminReportsService {
         await this.userRepo.update(userId, { status: UserStatus.INACTIVE });
         await this.userReportRepo.update(
           { reportedUser: { id: userId }, status: 'pending' },
-          { status: 'reviewed' },
+          { status: 'reviewed', adminNote: note ?? null },
         );
         await this.notificationService.createAndNotify(
           NotificationType.ACCOUNT_DEACTIVATED,
@@ -668,7 +760,7 @@ export class AdminReportsService {
         await this.userRepo.update(userId, { status: UserStatus.ACTIVE });
         await this.userReportRepo.update(
           { reportedUser: { id: userId } },
-          { status: 'dismissed' },
+          { status: 'dismissed', adminNote: note ?? null },
         );
         await this.notificationService.createAndNotify(
           NotificationType.ACCOUNT_ACTIVATED,

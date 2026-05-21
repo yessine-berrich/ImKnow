@@ -1,6 +1,6 @@
 // src/admin-reports/admin-reports.controller.ts
 import {
-  Controller, Get, Post, Put, Param, Body, Query, Res,
+  Controller, Get, Post, Put, Delete, Patch, Param, Body, Query, Res,
   ParseIntPipe, DefaultValuePipe, UseGuards,
   HttpCode,
 } from '@nestjs/common';
@@ -147,6 +147,58 @@ export class AdminReportsController {
     @CurrentPayload() payload: JwtPayloadType,
   ) {
     return this.adminReportsService.bulkUserAction(dto.ids, dto.action, payload.sub, dto.note);
+  }
+
+  // ── User notes ───────────────────────────────────────────────────────────
+
+  @Get('users/:userId/notes')
+  getNotesForUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.adminReportsService.getNotesForUser(userId);
+  }
+
+  @Post('users/:userId/notes')
+  @HttpCode(200)
+  upsertUserNote(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body('content') content: string,
+    @CurrentPayload() payload: JwtPayloadType,
+  ) {
+    return this.adminReportsService.upsertUserNote(userId, payload.sub, content);
+  }
+
+  @Delete('users/:userId/notes/:noteId')
+  @HttpCode(200)
+  deleteUserNote(
+    @Param('noteId', ParseIntPipe) noteId: number,
+    @CurrentPayload() payload: JwtPayloadType,
+  ) {
+    return this.adminReportsService.deleteUserNote(noteId, payload.sub);
+  }
+
+  // ── Publication notes ─────────────────────────────────────────────────────
+
+  @Get('publications/:publicationId/notes')
+  getNotesForPublication(@Param('publicationId', ParseIntPipe) publicationId: number) {
+    return this.adminReportsService.getNotesForPublication(publicationId);
+  }
+
+  @Post('publications/:publicationId/notes')
+  @HttpCode(200)
+  upsertPublicationNote(
+    @Param('publicationId', ParseIntPipe) publicationId: number,
+    @Body('content') content: string,
+    @CurrentPayload() payload: JwtPayloadType,
+  ) {
+    return this.adminReportsService.upsertPublicationNote(publicationId, payload.sub, content);
+  }
+
+  @Delete('publications/:publicationId/notes/:noteId')
+  @HttpCode(200)
+  deletePublicationNote(
+    @Param('noteId', ParseIntPipe) noteId: number,
+    @CurrentPayload() payload: JwtPayloadType,
+  ) {
+    return this.adminReportsService.deletePublicationNote(noteId, payload.sub);
   }
 
   // ── Config ────────────────────────────────────────────────────────────────
