@@ -81,12 +81,20 @@ export class Publication {
   @Column({ type: 'jsonb', nullable: true })
   moderationResult?: {
     isFlagged: boolean;
-    score: number; // 0.0 à 1.0
+    score: number;
     categories: string[];
     reason?: string;
     confidence: number;
     model: string;
     moderatedAt: Date;
+    mediaResults?: Array<{
+      filename: string;
+      type: string;
+      isFlagged: boolean;
+      score: number;
+      reason?: string;
+      categories?: string[];
+    }>;
   };
 
   @Column({ default: false })

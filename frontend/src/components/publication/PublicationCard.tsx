@@ -3,13 +3,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
-import { Heart, MessageCircle, Eye, Share2, Bookmark, MoreHorizontal, Download, Printer, FileText, User, Edit, Trash2, Clock, Flag } from 'lucide-react';
+import { Heart, MessageCircle, Eye, Share2, Bookmark, MoreHorizontal, User, Edit, Trash2, Clock, Flag, Link2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import PublicationDetailModal from '@/components/modals/PublicationDetailModal';
 import CreatePublicationModal from '@/components/modals/CreatePublicationModal';
 import PublicationHistoryModal from '../modals/PublicationHistoryModal';
 import { fetchCurrentUser } from '../../../services/auth.service';
 import Avatar from '@/components/ui/avatar/Avatar';
+import MarkdownPreview from '@/components/markdoun-editor/MarkdownPreview';
 import SharePublicationModal from './SharePublicationModal';
 import ReportPublicationModal from './ReportPublicationModal';
 import { useTranslation } from '@/context/LanguageContext';
@@ -86,7 +87,6 @@ export default function PublicationCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -222,62 +222,6 @@ export default function PublicationCard({
     return t('publication_card.time_few_minutes');
   };
 
-  const exportToPDF = () => {
-    setIsExporting(true);
-    setIsMenuOpen(false);
-    
-    try {
-      // Nettoyer le contenu des images markdown pour l'export
-      const cleanContent = getCleanContentForDisplay(publication.content);
-      
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="UTF-8">
-            <title>${publication.title}</title>
-            <style>
-              body { font-family: 'Segoe UI', sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px; }
-              .title { font-size: 28px; color: #00926B; font-weight: bold; }
-              .meta { color: #6b7280; font-size: 14px; }
-              .content { font-size: 15px; margin-top: 30px; white-space: pre-wrap; line-height: 1.8; }
-              .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 20px; }
-            </style>
-          </head>
-          <body>
-            <h1 class="title">${publication.title}</h1>
-            <p class="meta">${publication.author.name} · ${publication.author.department} · ${getTimeAgo(publication.publishedAt)}</p>
-            <div class="content">${cleanContent.replace(/\n/g, '<br>')}</div>
-            <div class="footer">${t('publication_card.export_footer')} · ${new Date().toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</div>
-          </body>
-        </html>
-      `;
-
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.print();
-          setTimeout(() => {
-            printWindow.close();
-            setIsExporting(false);
-          }, 1000);
-        };
-      } else {
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${publication.title.replace(/[^a-z0-9]/gi, '_')}.html`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setIsExporting(false);
-      }
-    } catch {
-      setIsExporting(false);
-    }
-  };
 
   // Callback pour mettre à jour les stats depuis le modal
   const handleModalLike = (newIsLiked: boolean, newLikesCount: number) => {
@@ -348,68 +292,13 @@ export default function PublicationCard({
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 aria-label="More options"
-                disabled={isExporting}
               >
-                {isExporting ? (
-                  <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                ) : (
-                  <MoreHorizontal size={20} />
-                )}
+                <MoreHorizontal size={20} />
               </button>
 
               {/* Dropdown Menu */}
               {isMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-10">
-                  <button
-                    onClick={exportToPDF}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                    disabled={isExporting}
-                  >
-                    {isExporting ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-[#00926B] border-t-transparent rounded-full animate-spin"></div>
-                        <span>{t('publication_card.menu_exporting')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={16} />
-                        <span>{t('publication_card.menu_export_pdf')}</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      const printWindow = window.open('', '_blank');
-                      if (printWindow) {
-                        const cleanContent = getCleanContentForDisplay(publication.content);
-                        printWindow.document.write(`
-                          <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto;">
-                            <h1 style="color: #00926B;">${publication.title}</h1>
-                            <div style="color: #6b7280; margin: 15px 0;">
-                              <strong>${t('publication_card.print_author')}:</strong> ${publication.author.name}<br/>
-                              <strong>${t('publication_card.print_date')}:</strong> ${new Date(publication.publishedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
-                            </div>
-                            <div style="margin: 20px 0; color: #4b5563;">
-                              ${cleanContent.replace(/\n/g, '<br>')}
-                            </div>
-                          </div>
-                        `);
-                        printWindow.document.close();
-                        printWindow.focus();
-                        setTimeout(() => {
-                          printWindow.print();
-                          setTimeout(() => printWindow.close(), 500);
-                        }, 500);
-                      }
-                      setIsMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
-                  >
-                    <Printer size={16} />
-                    <span>{t('publication_card.menu_print')}</span>
-                  </button>
-
                   <button
                     onClick={() => {
                       const url = `${window.location.origin}/home?publication=${publication.id}`;
@@ -417,9 +306,10 @@ export default function PublicationCard({
                       setIsMenuOpen(false);
                       toast.success(t('publication_card.toast_link_copied'));
                     }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
                   >
-                    {t('publication_card.menu_copy_link')}
+                    <Link2 size={16} />
+                    <span>{t('publication_card.menu_copy_link')}</span>
                   </button>
                   
                   {/* Bouton Signaler — visible uniquement si l'utilisateur n'est pas l'auteur */}
@@ -493,14 +383,18 @@ export default function PublicationCard({
           )}
         </div>
 
-        {/* Title & Description - Clickable */}
-        <div onClick={handleOpenModal} className="block mb-3 cursor-pointer group/link">
+        {/* Title & Content preview - Clickable */}
+        <div onClick={handleOpenModal} className="mb-3 cursor-pointer group/link">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover/link:text-[#00926B] dark:group-hover/link:text-[#00B383] transition-colors line-clamp-2">
             {publication.title}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed">
-            {extractFirstText(publication.description || publication.content)}
-          </p>
+          {/* Markdown preview tronqué — les images sont affichées séparément ci-dessous */}
+          <div className="relative max-h-[120px] overflow-hidden text-sm pointer-events-none select-none">
+            <MarkdownPreview
+              content={publication.content.replace(/!\[.*?\]\([^)]+\)/g, '').trim()}
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white dark:from-gray-900 to-transparent" />
+          </div>
         </div>
 
         {/* Media Display - Show first image if available */}
@@ -623,19 +517,6 @@ export default function PublicationCard({
               <span className="text-sm font-medium">{viewsCount}</span>
             </div>
 
-            {/* Bouton Export rapide */}
-            <button
-              onClick={exportToPDF}
-              className="hidden sm:flex items-center gap-1.5 text-gray-600 dark:text-gray-400 hover:text-[#00926B] dark:hover:text-[#00B383] transition-colors"
-              title={t('publication_card.export_pdf_title')}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <div className="w-4 h-4 border-2 border-[#00926B] border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <Download size={20} />
-              )}
-            </button>
           </div>
 
           {/* Actions */}

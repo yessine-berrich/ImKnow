@@ -362,9 +362,9 @@ function HomePageContent() {
                       onPublicationUpdated={handlePublicationSuccess}
                       showActions={isAuthenticated()}
                       currentUserId={currentUserId}
-                      // Ne pas passer onEdit et onDelete pour les publications qui ne sont pas de l'utilisateur
                       onEdit={currentUserId === publication.author.id ? handleEdit : undefined}
                       onDelete={currentUserId === publication.author.id ? handleDelete : undefined}
+                      showHistory={currentUserId === publication.author.id}
                     />
                   </div>
                     ))}

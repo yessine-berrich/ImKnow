@@ -18,7 +18,7 @@ import { Media } from '../media/entities/media.entity';
 import { SearchService } from '../search/search.service';
 import { PublicationInteractionService } from './publication-interaction.service';
 import { PublicationVersioningService } from './publication-versioning.service';
-import { ContentModerationService } from '../content-moderation/content-moderation.service';
+import { ContentModerationService, MediaModerationInput } from '../content-moderation/content-moderation.service';
 import { NotificationService } from '../notification/notification.service';
 import { PublicationStatus, NotificationType } from 'utils/constants';
 import { Category } from '../category/entities/category.entity';
@@ -102,10 +102,21 @@ export class PublicationService {
       return this.findOne(savedPublication.id);
     }
 
-    // Détection de duplicata
+    // Détection de duplicata — rechargement avec relations pour aligner l'embedding
+    const pubForDupCheck = await this.publicationRepository.findOne({
+      where: { id: savedPublication.id },
+      relations: ['category', 'tags', 'media'],
+    });
+
     try {
       const duplicateCheck = await this.checkDuplicate(
-        { title: savedPublication.title, content: savedPublication.content },
+        {
+          title: savedPublication.title,
+          content: savedPublication.content,
+          categoryName: pubForDupCheck?.category?.name,
+          tagNames: pubForDupCheck?.tags?.map((t) => t.name),
+          mediaFilenames: pubForDupCheck?.media?.map((m) => m.filename),
+        },
         user.id,
       );
 
@@ -149,9 +160,17 @@ export class PublicationService {
 
     if (hasContent) {
       try {
+        const mediaForModeration: MediaModerationInput[] =
+          pubForDupCheck?.media?.map((m) => ({
+            filename: m.filename,
+            mimetype: m.mimetype,
+            type: m.type,
+          })) ?? [];
+
         const moderation = await this.moderationService.moderate(
           savedPublication.title,
           savedPublication.content,
+          mediaForModeration,
         );
 
         savedPublication.moderationResult = moderation;
@@ -235,20 +254,35 @@ export class PublicationService {
       .trim();
   }
 
+  private buildEmbeddingText(
+    title: string,
+    content: string,
+    categoryName?: string,
+    tagNames?: string[],
+    mediaFilenames?: string[],
+  ): string {
+    const parts: string[] = [`Title: ${title}`];
+    if (categoryName) parts.push(`Category: ${categoryName}`);
+    if (tagNames?.length) parts.push(`Tags: ${tagNames.join(', ')}`);
+    if (mediaFilenames?.length) parts.push(`Media: ${mediaFilenames.join(', ')}`);
+    parts.push(`Content:\n${content}`);
+    return parts.join('\n');
+  }
+
   private async generateAndSaveEmbedding(publicationId: number): Promise<void> {
     try {
       const publication = await this.publicationRepository.findOneOrFail({
         where: { id: publicationId },
-        relations: ['category', 'tags'],
+        relations: ['category', 'tags', 'media'],
       });
 
-      const textToEmbed = `
-Title: ${publication.title}
-Category: ${publication.category?.name || 'Uncategorized'}
-Tags: ${publication.tags?.map((t) => t.name).join(', ') || 'none'}
-Content:
-${publication.content}
-      `.trim();
+      const textToEmbed = this.buildEmbeddingText(
+        publication.title,
+        publication.content,
+        publication.category?.name,
+        publication.tags?.map((t) => t.name),
+        publication.media?.map((m) => m.filename),
+      );
 
       const vector = await this.searchService.generateEmbedding(textToEmbed);
 
@@ -420,10 +454,21 @@ ${publication.content}
       return this.findOne(publication.id);
     }
 
-    // Détection de duplicata
+    // Détection de duplicata — rechargement avec relations pour aligner l'embedding
+    const pubForDupCheckUpdate = await this.publicationRepository.findOne({
+      where: { id: publication.id },
+      relations: ['category', 'tags', 'media'],
+    });
+
     try {
       const duplicateCheck = await this.checkDuplicate(
-        { title: publication.title, content: publication.content },
+        {
+          title: publication.title,
+          content: publication.content,
+          categoryName: pubForDupCheckUpdate?.category?.name,
+          tagNames: pubForDupCheckUpdate?.tags?.map((t) => t.name),
+          mediaFilenames: pubForDupCheckUpdate?.media?.map((m) => m.filename),
+        },
         user.id,
         publication.id,
       );
@@ -467,9 +512,17 @@ ${publication.content}
 
     if (hasContent) {
       try {
+        const mediaForModeration: MediaModerationInput[] =
+          pubForDupCheckUpdate?.media?.map((m) => ({
+            filename: m.filename,
+            mimetype: m.mimetype,
+            type: m.type,
+          })) ?? [];
+
         const moderation = await this.moderationService.moderate(
           publication.title,
           publication.content,
+          mediaForModeration,
         );
 
         publication.moderationResult = moderation;
@@ -614,8 +667,12 @@ ${publication.content}
     });
   }
 
-  private readonly DUPLICATE_THRESHOLD = 0.75; // seuil de similarité
-  private readonly DUPLICATE_LIMIT = 5;    // nb max de résultats
+  // Seuil élevé (0.92) pour nomic-embed-text : à 0.75 le modèle retourne
+  // "même sujet" au lieu de "même contenu" → trop de faux positifs.
+  private readonly DUPLICATE_THRESHOLD = 0.92;
+  private readonly DUPLICATE_LIMIT = 5;
+  // Contenu trop court → vecteur peu discriminant → faux positifs
+  private readonly DUPLICATE_MIN_CONTENT_LENGTH = 150;
 
   async checkDuplicate(
     dto: CheckDuplicateDto,
@@ -642,7 +699,20 @@ ${publication.content}
       return empty;
     }
 
+    // Contenu trop court → skip (résultats non fiables)
+    if (content.length < this.DUPLICATE_MIN_CONTENT_LENGTH) {
+      console.info(
+        `[DUPLICATE] Contenu trop court (${content.length} < ${this.DUPLICATE_MIN_CONTENT_LENGTH} chars), détection ignorée`,
+      );
+      return empty;
+    }
+
     // ── 2. Génération de l'embedding ───────────────────────────────────────────
+    // INTENTIONNELLEMENT limité à titre + contenu (pas de catégorie/tags/media).
+    // Raison : catégorie et tags IDENTIQUES entre deux publications du même domaine
+    // gonflent la similarité cosinus et produisent des faux positifs à 0.75.
+    // nomic-embed-text est un modèle sémantique (même sujet ≈ similaire) ;
+    // le seuil 0.92 garantit qu'on détecte uniquement les contenus quasi-identiques.
     const textToEmbed = `Title: ${title}\n\nContent:\n${content}`;
     let vector: number[] | null;
 
@@ -705,10 +775,16 @@ ${publication.content}
       url: `/publications/${r.id}`,
     }));
 
-    console.log(
-      `[DUPLICATE] ${similarPublications.length} doublon(s) trouvé(s) pour "${title}"`,
-      similarPublications.map((a) => `#${a.id} (${(a.similarity * 100).toFixed(1)}%)`),
-    );
+    if (similarPublications.length > 0) {
+      console.log(
+        `[DUPLICATE] ${similarPublications.length} doublon(s) détecté(s) pour "${title}" (seuil ${this.DUPLICATE_THRESHOLD}) :`,
+        similarPublications.map(
+          (a) => `  #${a.id} "${a.title}" → ${(a.similarity * 100).toFixed(2)}%`,
+        ).join('\n'),
+      );
+    } else {
+      console.info(`[DUPLICATE] Aucun doublon pour "${title}" (seuil ${this.DUPLICATE_THRESHOLD})`);
+    }
 
     return {
       hasDuplicates: similarPublications.length > 0,

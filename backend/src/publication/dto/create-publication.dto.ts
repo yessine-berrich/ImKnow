@@ -10,7 +10,6 @@ export class CreatePublicationDto {
 
   @IsString()
   @IsNotEmpty()
-  @Transform(({ value }) => sanitizeContent(value))
   content: string; // Le Markdown avec les URLs des images
 
   @Transform(({ value }) => Number(value))
@@ -20,9 +19,8 @@ export class CreatePublicationDto {
 
   @Transform(({ value }) => {
     if (!value) return undefined;
-    if (Array.isArray(value)) {
-      return value.map((item) => Number(item));
-    }
+    if (Array.isArray(value)) return value.map((item) => Number(item));
+    if (typeof value === 'string') return [Number(value)];
     return value;
   })
   @IsArray()

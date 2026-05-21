@@ -274,7 +274,7 @@ export default function CreatePublicationModal({
     fd.append('content', content);
     fd.append('categoryId', String(category));
     fd.append('status', status);
-    selectedTags.forEach((id) => fd.append('tagIds[]', String(id)));
+    selectedTags.forEach((id) => fd.append('tagIds', String(id)));
     pendingFiles.forEach(({ file }) => fd.append('files', file));
     return fd;
   };
