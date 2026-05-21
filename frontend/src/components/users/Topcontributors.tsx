@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { fetchCurrentUser } from '../../../services/auth.service';
 import Avatar from '../ui/avatar/Avatar';
 import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface TopContributorsResponse {
   period: { from: string; to: string };
@@ -27,7 +28,7 @@ function useTopContributors(limit = 5) {
         const json = await statsService.getTopContributors(limit);
         if (!cancelled) setData(json);
       } catch (err: any) {
-        if (!cancelled) setError(err.message ?? 'Erreur inconnue');
+        if (!cancelled) setError(translateError(err.message, t) || t('errors.generic'));
       } finally {
         if (!cancelled) setLoading(false);
       }

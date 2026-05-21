@@ -10,6 +10,7 @@ import type { UpdatePublicationDto } from '../../../services/publication.service
 import type { Publication } from '../../../services/publication.service';
 import { toast } from '@/components/modals/ToastContainer';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface CreatePublicationModalProps {
   isOpen: boolean;
@@ -179,7 +180,7 @@ export default function CreatePublicationModal({
         setSelectedTags(resolvedIds);
       }
     } catch (error: any) {
-      toast.error(error.message || t('create_pub_modal.toast_pub_load_error'));
+      toast.error(translateError(error.message, t) || t('create_pub_modal.toast_pub_load_error'));
     } finally {
       setIsLoadingPublication(false);
     }
@@ -390,7 +391,7 @@ export default function CreatePublicationModal({
       }
       setTimeout(() => { resetForm(); onSuccess?.(); if (!isEditMode) onClose(); }, 1000);
     } catch (error: any) {
-      toast.error(error.message || t('create_pub_modal.toast_save_error'));
+      toast.error(translateError(error.message, t) || t('create_pub_modal.toast_save_error'));
     } finally {
       setIsSubmittingDraft(false);
     }
@@ -460,7 +461,7 @@ export default function CreatePublicationModal({
         }, 1000);
       }
     } catch (error: any) {
-      toast.error(error.message || t('create_pub_modal.toast_submit_error'));
+      toast.error(translateError(error.message, t) || t('create_pub_modal.toast_submit_error'));
       setTimeout(() => { onClose(); }, 2000);
     } finally {
       setIsSubmittingPending(false);

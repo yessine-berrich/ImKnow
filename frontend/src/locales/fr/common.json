@@ -1,4 +1,88 @@
 {
+  "errors": {
+    "generic": "Une erreur est survenue",
+
+    "invalid_credentials": "Email ou mot de passe incorrect",
+    "user_exists": "Un compte avec cet email existe déjà",
+    "account_locked": "Votre compte est temporairement bloqué suite à plusieurs tentatives échouées",
+    "account_locked_minutes": "Votre compte est bloqué. Réessayez dans {{count}} minute(s)",
+    "too_many_attempts": "Trop de tentatives échouées. Veuillez réessayer plus tard",
+    "attempts_remaining": "{{count}} tentative(s) restante(s) avant le blocage du compte",
+    "account_deactivated": "Votre compte a été désactivé. Veuillez contacter un administrateur",
+    "account_pending": "Votre compte est en attente d'approbation par un administrateur",
+    "session_expired": "Votre session a expiré. Veuillez vous reconnecter",
+    "invalid_token": "Jeton d'authentification invalide ou expiré",
+    "verification_email_sent": "Un email de vérification a été envoyé à votre adresse",
+
+    "email_not_verified": "Veuillez vérifier votre adresse email avant de vous connecter",
+    "email_taken": "Cette adresse email est déjà utilisée",
+    "google_email": "Les comptes Google ne peuvent pas modifier leur email ici. Gérez votre email sur myaccount.google.com",
+    "same_email": "Le nouvel email est identique à votre email actuel",
+    "no_email_change": "Aucun changement d'email en attente",
+    "link_expired": "Ce lien a expiré. Veuillez en demander un nouveau",
+    "google_only": "Cette action est réservée aux comptes Google",
+
+    "password_weak": "Mot de passe trop faible",
+    "wrong_password": "Mot de passe incorrect",
+    "passwords_mismatch": "Les mots de passe ne correspondent pas",
+    "current_password_required": "Le mot de passe actuel est requis",
+    "new_password_required": "Le nouveau mot de passe est requis",
+    "pw_min_length": "Le mot de passe doit contenir au moins 8 caractères",
+    "pw_uppercase": "Le mot de passe doit contenir au moins une lettre majuscule",
+    "pw_lowercase": "Le mot de passe doit contenir au moins une lettre minuscule",
+    "pw_number": "Le mot de passe doit contenir au moins un chiffre",
+    "pw_special": "Le mot de passe doit contenir au moins un caractère spécial",
+
+    "user_not_found": "Utilisateur introuvable",
+    "publication_not_found": "Publication introuvable",
+    "comment_not_found": "Commentaire introuvable",
+    "parent_comment_mismatch": "Le commentaire parent ne correspond pas à cette publication",
+    "category_not_found": "Catégorie introuvable",
+    "tag_not_found": "Tag introuvable",
+    "notification_not_found": "Notification introuvable",
+    "message_not_found": "Message introuvable",
+    "not_found": "Ressource introuvable",
+
+    "unauthorized": "Action non autorisée",
+    "forbidden": "Vous ne pouvez effectuer cette action que sur votre propre profil",
+    "conversation_access_denied": "Accès à cette conversation refusé",
+
+    "cant_follow_self": "Vous ne pouvez pas vous abonner à vous-même",
+    "cant_request_self": "Vous ne pouvez pas vous envoyer une demande à vous-même",
+    "cant_block_self": "Vous ne pouvez pas vous bloquer vous-même",
+    "cant_report_self": "Vous ne pouvez pas signaler votre propre profil ou publication",
+
+    "already_following": "Vous suivez déjà cet utilisateur",
+    "not_following": "Vous ne suivez pas cet utilisateur",
+    "already_friends": "Vous êtes déjà amis",
+    "request_pending": "Une demande de contact est déjà en attente",
+    "request_already_accepted": "Cette demande a déjà été acceptée",
+    "request_not_found": "Demande introuvable ou déjà traitée",
+    "not_friends": "Vous ne pouvez écrire qu'à vos amis. Envoyez d'abord une demande de contact",
+
+    "message_empty": "Le message ne peut pas être vide",
+    "reaction_not_found": "Cette réaction n'existe pas",
+
+    "already_reported": "Vous avez déjà signalé cet élément. Le signalement est en cours de traitement",
+
+    "category_exists": "Cette catégorie existe déjà",
+    "tag_exists": "Ce tag existe déjà",
+    "tag_too_long": "Un tag ne peut pas dépasser 3 mots",
+
+    "invalid_link": "Lien invalide ou expiré",
+
+    "signup_failed": "Erreur lors de la création du compte",
+    "fetch_profile_failed": "Impossible de récupérer le profil",
+    "update_failed": "La mise à jour a échoué",
+    "change_password_failed": "Impossible de changer le mot de passe",
+    "reset_email_failed": "Impossible d'envoyer l'email de réinitialisation",
+    "reset_password_failed": "La réinitialisation du mot de passe a échoué",
+    "export_failed": "L'export a échoué",
+
+    "server_error": "Erreur serveur. Veuillez réessayer",
+    "network_error": "Erreur réseau. Vérifiez votre connexion",
+    "validation_error": "Données invalides. Vérifiez les champs du formulaire"
+  },
   "publication_card": {
     "featured": "À la une",
     "menu": {

@@ -14,6 +14,7 @@ import { confirm } from '@/components/modals/ConfirmModal';
 import UsersFilter, { FilterValues } from '../Filter/UsersFilter';
 import Avatar from '../ui/avatar/Avatar';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 export interface UserTableItem {
   id: string;
@@ -114,7 +115,7 @@ export default function UsersTable({
       setOpenMenuId(null);
       onRefresh();
     } catch (err: any) {
-      toast.error(`❌ ${err.message || t('users_page.toast_error_delete')}`);
+      toast.error(`❌ ${translateError(err.message, t) || t('users_page.toast_error_delete')}`);
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -128,7 +129,7 @@ export default function UsersTable({
       toast.success(t('users_page.toast_activated'));
       setOpenMenuId(null);
     } catch (err: any) {
-      toast.error(`❌ ${err.message || t('users_page.toast_error_activate')}`);
+      toast.error(`❌ ${translateError(err.message, t) || t('users_page.toast_error_activate')}`);
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -142,7 +143,7 @@ export default function UsersTable({
       toast.success(t('users_page.toast_deactivated'));
       setOpenMenuId(null);
     } catch (err: any) {
-      toast.error(`❌ ${err.message || t('users_page.toast_error_deactivate')}`);
+      toast.error(`❌ ${translateError(err.message, t) || t('users_page.toast_error_deactivate')}`);
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }
@@ -159,7 +160,7 @@ export default function UsersTable({
       setOpenRoleMenuId(null);
       setOpenMenuId(null);
     } catch (err: any) {
-      toast.error(`❌ ${err.message || t('users_page.toast_error_role')}`);
+      toast.error(`❌ ${translateError(err.message, t) || t('users_page.toast_error_role')}`);
     } finally {
       setLoading(prev => ({ ...prev, [id]: false }));
     }

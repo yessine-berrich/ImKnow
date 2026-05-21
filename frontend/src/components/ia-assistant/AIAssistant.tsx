@@ -3,6 +3,8 @@
 import { getToken } from '../../../services/auth.service';
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Sparkles, Bot, User, AlertCircle, BookOpen } from 'lucide-react';
+import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface RagSource {
   publicationId: number;
@@ -37,6 +39,7 @@ const initialMessages: Message[] = [
 ];
 
 export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -103,10 +106,10 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
 
       setMessages((prev) => [...prev, aiResponse]);
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Une erreur inattendue est survenue.';
+      const message = translateError(
+        error instanceof Error ? error.message : undefined,
+        t,
+      );
 
       const errorResponse: Message = {
         id: (Date.now() + 1).toString(),

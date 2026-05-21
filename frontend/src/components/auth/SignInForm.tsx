@@ -12,6 +12,7 @@ import { useUser } from '@/context/UserContext';
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 // Variants d'animation
 const containerVariants = {
@@ -214,7 +215,7 @@ export default function SignInForm() {
               />
             )}
           </svg>
-          <span>{error}</span>
+          <span>{translateError(error, t)}</span>
         </motion.div>
       )}
 

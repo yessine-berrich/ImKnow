@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ import {
 } from '../../../../../../services/stats.service';
 import { getToken } from '../../../../../../services/auth.service';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
@@ -201,7 +202,7 @@ export default function StatisticsPage() {
       setEngagement(eng); setCategories(cat); setTags(tag); setReports(rep);
       setLastRefresh(new Date());
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('statistics_page.title'));
+      setError(translateError(err instanceof Error ? err.message : undefined, t) || t('statistics_page.title'));
     } finally {
       setLoading(false);
     }

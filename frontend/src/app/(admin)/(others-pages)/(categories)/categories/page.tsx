@@ -1,4 +1,4 @@
-// app/(admin)/(others-pages)/(categories)/categories/page.tsx
+﻿// app/(admin)/(others-pages)/(categories)/categories/page.tsx
 'use client';
 
 import { getToken } from '../../../../../../services/auth.service';
@@ -12,6 +12,7 @@ import { categoryService, Category as ApiCategory } from '../../../../../../serv
 import { toast } from '@/components/modals/ToastContainer';
 import { publicationService } from '../../../../../../services/publication.service';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface Category {
   id: string;
@@ -126,7 +127,7 @@ export default function CategoriesPage() {
         await loadCategories();
         toast.success(t('categories_page.toast_deleted'));
       } catch (err) {
-        const errMessage = err instanceof Error ? err.message : t('categories_page.toast_delete_error');
+        const errMessage = translateError(err instanceof Error ? err.message : undefined, t) || t('categories_page.toast_delete_error');
         toast.error(errMessage);
       }
     }

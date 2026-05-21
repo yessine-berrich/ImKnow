@@ -8,6 +8,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, FileText, TrendingUp, Clock, Eye } from 'lucide-react';
 import PublicationCard from '@/components/publication/PublicationCard';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface Category {
   id: number;
@@ -161,7 +162,7 @@ export default function CategoryPublicationsPage() {
       setPublications(formatted);
     } catch (err: any) {
       console.error('Error loading category publications:', err);
-      setError(err.message || t('cat_pub.load_error'));
+      setError(translateError(err.message, t) || t('cat_pub.load_error'));
     } finally {
       setLoading(false);
     }

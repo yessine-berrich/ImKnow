@@ -1,4 +1,88 @@
 {
+  "errors": {
+    "generic": "An error occurred",
+
+    "invalid_credentials": "Invalid email or password",
+    "user_exists": "An account with this email already exists",
+    "account_locked": "Your account has been temporarily locked due to multiple failed login attempts",
+    "account_locked_minutes": "Your account is locked. Please try again in {{count}} minute(s)",
+    "too_many_attempts": "Too many failed attempts. Please try again later",
+    "attempts_remaining": "{{count}} attempt(s) remaining before your account is locked",
+    "account_deactivated": "Your account has been deactivated. Please contact an administrator",
+    "account_pending": "Your account is pending approval by an administrator",
+    "session_expired": "Your session has expired. Please sign in again",
+    "invalid_token": "Invalid or expired authentication token",
+    "verification_email_sent": "A verification email has been sent to your address",
+
+    "email_not_verified": "Please verify your email address before signing in",
+    "email_taken": "This email address is already in use",
+    "google_email": "Google accounts cannot change their email here. Manage your email at myaccount.google.com",
+    "same_email": "The new email is the same as your current email",
+    "no_email_change": "No pending email change found",
+    "link_expired": "This link has expired. Please request a new one",
+    "google_only": "This action is only available for Google accounts",
+
+    "password_weak": "Password is too weak",
+    "wrong_password": "Incorrect password",
+    "passwords_mismatch": "Passwords do not match",
+    "current_password_required": "Current password is required",
+    "new_password_required": "New password is required",
+    "pw_min_length": "Password must contain at least 8 characters",
+    "pw_uppercase": "Password must contain at least one uppercase letter",
+    "pw_lowercase": "Password must contain at least one lowercase letter",
+    "pw_number": "Password must contain at least one number",
+    "pw_special": "Password must contain at least one special character",
+
+    "user_not_found": "User not found",
+    "publication_not_found": "Publication not found",
+    "comment_not_found": "Comment not found",
+    "parent_comment_mismatch": "Parent comment does not belong to this publication",
+    "category_not_found": "Category not found",
+    "tag_not_found": "Tag not found",
+    "notification_not_found": "Notification not found",
+    "message_not_found": "Message not found",
+    "not_found": "Resource not found",
+
+    "unauthorized": "Action not authorized",
+    "forbidden": "You can only perform this action on your own profile",
+    "conversation_access_denied": "Access to this conversation was denied",
+
+    "cant_follow_self": "You cannot follow yourself",
+    "cant_request_self": "You cannot send a contact request to yourself",
+    "cant_block_self": "You cannot block yourself",
+    "cant_report_self": "You cannot report your own profile or publication",
+
+    "already_following": "You are already following this user",
+    "not_following": "You are not following this user",
+    "already_friends": "You are already friends",
+    "request_pending": "A contact request is already pending",
+    "request_already_accepted": "This request has already been accepted",
+    "request_not_found": "Request not found or already handled",
+    "not_friends": "You can only message your friends. Send a contact request first",
+
+    "message_empty": "Message cannot be empty",
+    "reaction_not_found": "This reaction does not exist",
+
+    "already_reported": "You have already reported this. The report is being processed",
+
+    "category_exists": "This category already exists",
+    "tag_exists": "This tag already exists",
+    "tag_too_long": "A tag cannot exceed 3 words",
+
+    "invalid_link": "Invalid or expired link",
+
+    "signup_failed": "Failed to create account",
+    "fetch_profile_failed": "Failed to fetch profile",
+    "update_failed": "Update failed",
+    "change_password_failed": "Failed to change password",
+    "reset_email_failed": "Failed to send password reset email",
+    "reset_password_failed": "Failed to reset password",
+    "export_failed": "Export failed",
+
+    "server_error": "Server error. Please try again",
+    "network_error": "Network error. Check your connection",
+    "validation_error": "Invalid data. Please check the form fields"
+  },
   "publication_card": {
     "featured": "Featured",
     "menu": {

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import {
@@ -14,6 +14,7 @@ import { statsService, EmployeeTrendingStats } from '../../../../../../services/
 import { publicationService } from '../../../../../../services/publication.service';
 import { usePublicationModal } from '@/context/PublicationModalContext';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -584,7 +585,7 @@ export default function TrendingPage() {
       const result = await statsService.getEmployeeTrendingStats();
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('trending.error_generic'));
+      setError(translateError(err instanceof Error ? err.message : undefined, t) || t('trending.error_generic'));
     } finally {
       setLoading(false);
     }

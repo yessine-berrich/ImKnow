@@ -1,4 +1,4 @@
-// app/(admin)/(others-pages)/publications/rejected/moderation/page.tsx
+﻿// app/(admin)/(others-pages)/publications/rejected/moderation/page.tsx
 'use client';
 
 import { getToken } from '../../../../../../../services/auth.service';
@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ModerationTable from '@/components/tables/ModerationTable';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 export interface ModerationPublication {
   id: number;
@@ -85,7 +86,7 @@ export default function ModerationRejectedPage() {
       const data = await response.json();
       setPublications(data.publications || []);
     } catch (err: any) {
-      setError(err.message || t('rejected.load_error'));
+      setError(translateError(err.message, t) || t('rejected.load_error'));
     } finally {
       setLoading(false);
     }

@@ -15,6 +15,7 @@ import { ModerationPublication } from '@/app/(admin)/(others-pages)/(rejected)/r
 import Avatar from '@/components/ui/avatar/Avatar';
 import MarkdownPreview from '@/components/markdoun-editor/MarkdownPreview';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface ModerationTableProps {
   publications: ModerationPublication[];
@@ -167,7 +168,7 @@ export default function ModerationTable({ publications: initialPublications, onR
       setPublications(prev => prev.filter(a => a.id !== id));
       toast.success(t('tables.toast_approved'));
     } catch (err: any) {
-      toast.error(t('tables.toast_approve_error', { error: err.message }));
+      toast.error(t('tables.toast_approve_error', { error: translateError(err.message, t) }));
     } finally {
       setLoading(l => ({ ...l, [id]: false }));
     }
@@ -183,7 +184,7 @@ export default function ModerationTable({ publications: initialPublications, onR
       setPublications(prev => prev.filter(a => a.id !== id));
       toast.success(t('tables.toast_deleted'));
     } catch (err: any) {
-      toast.error(t('tables.toast_delete_error', { error: err.message }));
+      toast.error(t('tables.toast_delete_error', { error: translateError(err.message, t) }));
     } finally {
       setLoading(l => ({ ...l, [id]: false }));
     }

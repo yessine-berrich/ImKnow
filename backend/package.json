@@ -22,7 +22,8 @@
     "typeorm:create": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:create",
     "typeorm:run": "npm run typeorm migration:run",
     "typeorm:generate": "npm run typeorm migration:generate",
-    "typeorm:show": "npm run typeorm migration:show"
+    "typeorm:show": "npm run typeorm migration:show",
+    "seed": "ts-node -r tsconfig-paths/register src/seeds/seed-all.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

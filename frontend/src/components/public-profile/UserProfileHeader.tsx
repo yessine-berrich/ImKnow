@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Avatar from '../ui/avatar/Avatar';
 import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import { followService } from '../../../services/follow.service';
 import { userService } from '../../../services/user.service';
 import type { UserReportReason } from '../../../services/user.service';
@@ -133,7 +134,7 @@ export default function UserProfileHeader({
       }
       setFollowersCount((p) => p + 1);
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Erreur', 'error');
+      showToast(translateError(err instanceof Error ? err.message : undefined, t), 'error');
     } finally {
       setLoading(false);
     }
@@ -153,7 +154,7 @@ export default function UserProfileHeader({
       showToast(t('user_header.unfollowed'), 'success');
       setShowOptions(false);
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Erreur', 'error');
+      showToast(translateError(err instanceof Error ? err.message : undefined, t), 'error');
     } finally {
       setLoading(false);
     }
@@ -178,7 +179,7 @@ export default function UserProfileHeader({
       setReportReason('harassment');
       setReportDetails('');
     } catch (err: unknown) {
-      showToast(err instanceof Error ? err.message : 'Erreur lors du signalement', 'error');
+      showToast(translateError(err instanceof Error ? err.message : undefined, t), 'error');
     } finally {
       setReportLoading(false);
     }

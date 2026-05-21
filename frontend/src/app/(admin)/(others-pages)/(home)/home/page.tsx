@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import PublicationCard from '@/components/publication/PublicationCard';
@@ -13,6 +13,7 @@ import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { publicationService } from '../../../../../../services/publication.service';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface Publication {
   id: string;
@@ -150,7 +151,7 @@ function HomePageContent() {
 
       setPublications(transformedPublications);
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('home.error_generic'));
+      setError(translateError(err instanceof Error ? err.message : undefined, t) || t('home.error_generic'));
       console.error('❌ Erreur:', err);
     } finally {
       setLoading(false);
@@ -268,7 +269,7 @@ function HomePageContent() {
       setPublications(prev => prev.filter(publication => publication.id !== id));
     } catch (err) {
       console.error('❌ Erreur:', err);
-      toast.error(err instanceof Error ? err.message : t('home.error_delete'));
+      toast.error(translateError(err instanceof Error ? err.message : undefined, t) || t('home.error_delete'));
     }
   };
 

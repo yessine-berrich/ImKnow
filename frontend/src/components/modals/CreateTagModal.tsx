@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Hash } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface CreateTagModalProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ export default function CreateTagModal({
       setTagName('');
       onClose();
     } catch (err: any) {
-      setError(err.message || t('tags_page.modal_create_error'));
+      setError(translateError(err.message, t) || t('tags_page.modal_create_error'));
     } finally {
       setIsSubmitting(false);
     }

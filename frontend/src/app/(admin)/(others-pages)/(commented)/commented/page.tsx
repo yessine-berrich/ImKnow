@@ -1,4 +1,4 @@
-// /home/pfe2026/Desktop/PfeProject/frontend/src/app/(admin)/(others-pages)/(commented)/commented/page.tsx
+﻿// /home/pfe2026/Desktop/PfeProject/frontend/src/app/(admin)/(others-pages)/(commented)/commented/page.tsx
 
 'use client';
 
@@ -16,6 +16,7 @@ import PublicationCard from '@/components/publication/PublicationCard';
 import { confirm } from '@/components/modals/ConfirmModal';
 import PublicationFilterBar, { FilterOptions } from '@/components/Filter/PublicationFilterBar';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import { commentService } from '../../../../../../services/comment.service';
 import { getToken } from '../../../../../../services/auth.service';
 import { publicationService } from '../../../../../../services/publication.service';
@@ -171,8 +172,7 @@ export default function CommentedPublicationsPage() {
       
     } catch (err) {
       console.error('❌ Erreur fetchCommentedPublications:', err);
-      const message = err instanceof Error ? err.message : 'Erreur inconnue';
-      setError(message);
+      setError(translateError(err instanceof Error ? err.message : undefined, t));
     } finally {
       setIsLoading(false);
     }

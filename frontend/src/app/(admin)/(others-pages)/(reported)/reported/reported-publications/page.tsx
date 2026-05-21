@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ import {
 } from '../../../../../../../services/admin-reports.service';
 import { getToken } from '../../../../../../../services/auth.service';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -264,7 +265,7 @@ function PublicationDetailDrawer({
       setToast({ msg: res.message, ok: true });
       setTimeout(() => { onActionDone(); onClose(); }, 1400);
     } catch (err) {
-      setToast({ msg: err instanceof Error ? err.message : t('reported_page.load_error'), ok: false });
+      setToast({ msg: translateError(err instanceof Error ? err.message : undefined, t) || t('reported_page.load_error'), ok: false });
     } finally {
       setActionLoading(false);
     }
@@ -535,7 +536,7 @@ export default function ReportedPublicationsPage() {
       });
       setData(res);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('reported_page.load_error'), false);
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('reported_page.load_error'), false);
     } finally {
       setLoading(false);
     }

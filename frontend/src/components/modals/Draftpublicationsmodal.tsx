@@ -4,6 +4,8 @@ import { getToken } from '../../../services/auth.service';
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
+import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import { X, FileText, Clock, ChevronRight, Loader2, Trash2, Edit3, AlertCircle } from 'lucide-react';
 import CreatePublicationModal from './CreatePublicationModal';
 
@@ -31,6 +33,7 @@ export default function DraftPublicationsModal({
   onClose,
   onDraftUpdated,
 }: DraftPublicationsModalProps) {
+  const { t } = useTranslation();
   const [drafts, setDrafts] = useState<DraftPublication[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +66,7 @@ export default function DraftPublicationsModal({
       const publications = Array.isArray(data) ? data : [];
       setDrafts(publications);
     } catch (err: any) {
-      setError(err.message || 'Erreur lors du chargement des brouillons');
+      setError(translateError(err.message, t) || t('errors.generic'));
     } finally {
       setIsLoading(false);
     }

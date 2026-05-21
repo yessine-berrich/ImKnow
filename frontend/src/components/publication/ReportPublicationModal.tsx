@@ -4,6 +4,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Flag, AlertTriangle, Check } from 'lucide-react';
 import { publicationService } from '../../../services/publication.service';
+import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 const REPORT_REASONS = [
   {
@@ -54,6 +56,7 @@ export default function ReportPublicationModal({
   publicationId,
   publicationTitle,
 }: ReportPublicationModalProps) {
+  const { t } = useTranslation();
   const [selectedReason, setSelectedReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
   const [status, setStatus] = useState<SubmitStatus>('idle');
@@ -93,7 +96,7 @@ export default function ReportPublicationModal({
     } catch (err: unknown) {
       setStatus('error');
       setErrorMessage(
-        err instanceof Error ? err.message : 'Une erreur est survenue. Veuillez réessayer.',
+        translateError(err instanceof Error ? err.message : undefined, t),
       );
     }
   };

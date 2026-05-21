@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Key, Mail, Eye, EyeOff, CheckCircle2, AlertCircle, Lock, Send, Monitor } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import DeleteAccountButton from './DeleteAccountButton';
 import { userService } from '../../../services/user.service';
 import SessionsTab from './SessionsTab';
@@ -158,7 +159,7 @@ export default function SecurityTab({
 
     } catch (error: any) {
       console.error('Error changing password:', error);
-      setError(error.message || t('security.password_change_error'));
+      setError(translateError(error.message, t) || t('security.password_change_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -200,7 +201,7 @@ export default function SecurityTab({
       
     } catch (error: any) {
       console.error('Error changing email:', error);
-      setEmailError(error.message || t('security.email_change_error'));
+      setEmailError(translateError(error.message, t) || t('security.email_change_error'));
     } finally {
       setIsEmailSubmitting(false);
     }

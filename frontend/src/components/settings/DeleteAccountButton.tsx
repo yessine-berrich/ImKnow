@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Trash2, AlertTriangle, X, Mail, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import { userService } from '../../../services/user.service';
 import { useUser } from '@/context/UserContext';
 
@@ -53,7 +54,7 @@ export default function DeleteAccountButton({ isGoogleAccount = false, userEmail
         window.location.href = '/signin';
       }
     } catch (err: any) {
-      setError(err.message || t('security.delete_account_error'));
+      setError(translateError(err.message, t) || t('security.delete_account_error'));
     } finally {
       setIsDeleting(false);
     }

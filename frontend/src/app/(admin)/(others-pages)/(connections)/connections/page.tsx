@@ -1,4 +1,4 @@
-// app/(admin)/(others-pages)/connections/page.tsx
+﻿// app/(admin)/(others-pages)/connections/page.tsx
 'use client';
 
 import { getToken } from '../../../../../../services/auth.service';
@@ -14,6 +14,7 @@ import SendMessageRequestModal from '@/components/chat/SendMessageRequestModal';
 import { followService, FollowRelationshipDto, FollowStatsDto, FriendSuggestionDto } from '../../../../../../services/follow.service';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 type TabType = 'followers' | 'following' | 'friends' | 'suggestions';
 type ViewType = 'grid' | 'list';
@@ -508,7 +509,7 @@ export default function ConnectionsPage() {
         followService.getFollowStats().then(setStats),
       ]).catch(() => {});
     } catch (err: any) {
-      showToast(err.message || t('connections.follow_error'), 'error');
+      showToast(translateError(err.message, t) || t('connections.follow_error'), 'error');
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -532,7 +533,7 @@ export default function ConnectionsPage() {
       showToast(t('connections.unfollow_success', { name: userName }), 'success');
       loadAllData();
     } catch (err: any) {
-      showToast(err.message || t('common.error'), 'error');
+      showToast(translateError(err.message, t) || t('common.error'), 'error');
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -551,7 +552,7 @@ export default function ConnectionsPage() {
       showToast(t('connections.remove_success', { name: userName }), 'success');
       loadAllData();
     } catch (err: any) {
-      showToast(err.message || t('common.error'), 'error');
+      showToast(translateError(err.message, t) || t('common.error'), 'error');
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);

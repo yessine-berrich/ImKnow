@@ -7,6 +7,8 @@ import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { X, Clock, User, RotateCcw, FileText, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface PublicationHistoryModalProps {
   isOpen: boolean;
@@ -37,6 +39,7 @@ export default function PublicationHistoryModal({
   publicationId,
   publicationTitle 
 }: PublicationHistoryModalProps) {
+  const { t } = useTranslation();
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +86,7 @@ export default function PublicationHistoryModal({
       const data = await response.json();
       setVersions(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      setError(translateError(err instanceof Error ? err.message : undefined, t));
     } finally {
       setLoading(false);
     }
@@ -109,7 +112,7 @@ export default function PublicationHistoryModal({
       // Recharger la page ou rafraîchir les données
       window.location.reload();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de la restauration');
+      toast.error(translateError(err instanceof Error ? err.message : undefined, t));
     } finally {
       setIsReverting(false);
     }

@@ -1,5 +1,7 @@
 // components/chat/MessageInput.tsx
 import React, { useState, useRef, useCallback } from 'react';
+import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface MessageInputProps {
   onSendMessage: (content: string) => void;
@@ -26,6 +28,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
   isLoading,
   placeholder = 'Type a message...',
 }) => {
+  const { t } = useTranslation();
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSendingFile, setIsSendingFile] = useState(false);
@@ -102,7 +105,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
       try {
         await onSendFile(file);
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Error sending file. Please try again.';
+        const msg = translateError(err instanceof Error ? err.message : undefined, t);
         setError(msg);
         scheduleErrorClear();
       } finally {

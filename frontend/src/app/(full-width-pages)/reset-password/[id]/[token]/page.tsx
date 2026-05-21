@@ -7,6 +7,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resetPassword, verifyResetPasswordLink } from '../../../../../../services/auth.service';
+import { useTranslation } from '../../../../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 type LinkStatus = 'loading' | 'valid' | 'invalid';
 type SubmitStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -23,6 +25,7 @@ interface PasswordValidation {
 export default function ResetPasswordPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const userId = params?.id as string;
   const resetPasswordToken = params?.token as string;
@@ -44,7 +47,7 @@ export default function ResetPasswordPage() {
     const hasNumber = /[0-9]/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
     const isValid = hasMinLength && hasUppercase && hasLowercase && hasNumber && hasSpecialChar;
-    
+
     return {
       hasMinLength,
       hasUppercase,
@@ -74,12 +77,12 @@ export default function ResetPasswordPage() {
     setErrorMessage('');
 
     if (!passwordValidation.isValid) {
-      setErrorMessage('Please meet all password requirements.');
+      setErrorMessage(t('reset_password_page.error_requirements'));
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      setErrorMessage(t('reset_password_page.error_mismatch'));
       return;
     }
 
@@ -90,7 +93,7 @@ export default function ResetPasswordPage() {
       setSubmitStatus('success');
     } catch (err: any) {
       setSubmitStatus('error');
-      setErrorMessage(err.message || 'An error occurred. Please try again.');
+      setErrorMessage(translateError(err.message, t) || t('errors.generic'));
     }
   };
 
@@ -127,8 +130,8 @@ export default function ResetPasswordPage() {
               >
                 <Loader2 className="w-10 h-10 animate-spin" style={{ color: '#168F6F' }} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying link…</h2>
-              <p className="text-gray-500 text-sm">Please wait while we verify your reset link.</p>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('reset_password_page.verifying_title')}</h2>
+              <p className="text-gray-500 text-sm">{t('reset_password_page.verifying_desc')}</p>
             </div>
           )}
 
@@ -140,7 +143,7 @@ export default function ResetPasswordPage() {
                 className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors mb-6 group"
               >
                 <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                Back to Sign In
+                {t('reset_password_page.back_to_signin')}
               </Link>
 
               {/* Logo */}
@@ -160,10 +163,9 @@ export default function ResetPasswordPage() {
                 <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-red-50 flex items-center justify-center">
                   <AlertCircle className="w-10 h-10 text-red-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid Link</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('reset_password_page.invalid_title')}</h2>
                 <p className="text-gray-500 text-sm mb-6">
-                  This password reset link is invalid or has expired (valid for 24h).
-                  Please request a new one.
+                  {t('reset_password_page.invalid_desc')}
                 </p>
                 <div className="space-y-3">
                   <button
@@ -171,13 +173,13 @@ export default function ResetPasswordPage() {
                     className="w-full py-3 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-md"
                     style={{ backgroundColor: '#168F6F' }}
                   >
-                    Request New Link
+                    {t('reset_password_page.btn_request_new')}
                   </button>
                   <button
                     onClick={() => router.push('/signin')}
                     className="w-full py-3 font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    Back to Sign In
+                    {t('reset_password_page.back_to_signin')}
                   </button>
                 </div>
               </div>
@@ -192,7 +194,7 @@ export default function ResetPasswordPage() {
                 className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors mb-6 group"
               >
                 <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                Back to Sign In
+                {t('reset_password_page.back_to_signin')}
               </Link>
 
               {/* Logo */}
@@ -215,8 +217,8 @@ export default function ResetPasswordPage() {
                 >
                   <KeyRound className="w-8 h-8" style={{ color: '#168F6F' }} />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Reset Password</h1>
-                <p className="text-gray-500 text-sm">Enter your new password below.</p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('reset_password_page.form_title')}</h1>
+                <p className="text-gray-500 text-sm">{t('reset_password_page.form_desc')}</p>
               </div>
 
               {/* Error banner */}
@@ -231,7 +233,7 @@ export default function ResetPasswordPage() {
                 {/* New password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    New Password <span className="text-red-500">*</span>
+                    {t('reset_password_page.new_password_label')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -240,11 +242,11 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setNewPassword(e.target.value)}
                       onFocus={() => setIsPasswordFocused(true)}
                       onBlur={() => setIsPasswordFocused(false)}
-                      placeholder="Enter your new password"
+                      placeholder={t('reset_password_page.new_password_placeholder')}
                       required
                       disabled={submitStatus === 'loading'}
                       className="w-full px-4 py-3 pr-12 rounded-xl border border-gray-200 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all disabled:bg-gray-50 focus:ring-2 focus:ring-opacity-50"
-                      style={{ 
+                      style={{
                         borderColor: isPasswordFocused ? '#168F6F' : '#e5e7eb',
                         boxShadow: isPasswordFocused ? `0 0 0 2px ${'#168F6F'}20` : 'none'
                       }}
@@ -257,7 +259,7 @@ export default function ResetPasswordPage() {
                       {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
-                  
+
                   {/* Password validation dropdown */}
                   {(isPasswordFocused || (newPassword && !passwordValidation.isValid)) && (
                     <motion.div
@@ -266,26 +268,26 @@ export default function ResetPasswordPage() {
                       exit={{ opacity: 0, y: -10 }}
                       className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs space-y-1.5"
                     >
-                      <p className="text-gray-600 dark:text-gray-400 mb-1 font-medium">Password must contain:</p>
+                      <p className="text-gray-600 dark:text-gray-400 mb-1 font-medium">{t('reset_password_page.pw_must_contain')}</p>
                       <div className={`flex items-center gap-2 ${passwordValidation.hasMinLength ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         <span className="text-sm">{passwordValidation.hasMinLength ? '✓' : '○'}</span>
-                        <span>At least 8 characters</span>
+                        <span>{t('reset_password_page.pw_min_length')}</span>
                       </div>
                       <div className={`flex items-center gap-2 ${passwordValidation.hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         <span className="text-sm">{passwordValidation.hasUppercase ? '✓' : '○'}</span>
-                        <span>One uppercase letter</span>
+                        <span>{t('reset_password_page.pw_uppercase')}</span>
                       </div>
                       <div className={`flex items-center gap-2 ${passwordValidation.hasLowercase ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         <span className="text-sm">{passwordValidation.hasLowercase ? '✓' : '○'}</span>
-                        <span>One lowercase letter</span>
+                        <span>{t('reset_password_page.pw_lowercase')}</span>
                       </div>
                       <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         <span className="text-sm">{passwordValidation.hasNumber ? '✓' : '○'}</span>
-                        <span>One number</span>
+                        <span>{t('reset_password_page.pw_number')}</span>
                       </div>
                       <div className={`flex items-center gap-2 ${passwordValidation.hasSpecialChar ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                         <span className="text-sm">{passwordValidation.hasSpecialChar ? '✓' : '○'}</span>
-                        <span>One special character (!@#$%^&*...)</span>
+                        <span>{t('reset_password_page.pw_special')}</span>
                       </div>
                     </motion.div>
                   )}
@@ -294,18 +296,18 @@ export default function ResetPasswordPage() {
                 {/* Confirm password */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Confirm Password <span className="text-red-500">*</span>
+                    {t('reset_password_page.confirm_password_label')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm your new password"
+                      placeholder={t('reset_password_page.confirm_password_placeholder')}
                       required
                       disabled={submitStatus === 'loading'}
                       className="w-full px-4 py-3 pr-12 rounded-xl border text-sm text-gray-800 placeholder-gray-400 outline-none transition-all disabled:bg-gray-50"
-                      style={{ 
+                      style={{
                         borderColor: passwordsMismatch ? '#ef4444' : (confirmPassword ? '#e5e7eb' : '#e5e7eb'),
                         boxShadow: passwordsMismatch ? '0 0 0 2px #ef444420' : 'none'
                       }}
@@ -320,7 +322,7 @@ export default function ResetPasswordPage() {
                   </div>
                   {confirmPassword && (
                     <p className={`mt-1 text-xs ${passwordsMatch ? 'text-green-500' : 'text-red-500'}`}>
-                      {passwordsMatch ? '✓ Passwords match' : '✗ Passwords do not match'}
+                      {passwordsMatch ? t('reset_password_page.passwords_match') : t('reset_password_page.passwords_no_match')}
                     </p>
                   )}
                 </div>
@@ -334,10 +336,10 @@ export default function ResetPasswordPage() {
                   {submitStatus === 'loading' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Resetting…
+                      {t('reset_password_page.btn_resetting')}
                     </>
                   ) : (
-                    'Reset Password'
+                    t('reset_password_page.btn_reset')
                   )}
                 </button>
               </form>
@@ -366,16 +368,16 @@ export default function ResetPasswordPage() {
               >
                 <CheckCircle2 className="w-10 h-10" style={{ color: '#168F6F' }} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Reset!</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('reset_password_page.success_title')}</h2>
               <p className="text-gray-500 text-sm mb-8">
-                Your password has been reset successfully. You can now sign in with your new password.
+                {t('reset_password_page.success_desc')}
               </p>
               <button
                 onClick={() => router.push('/signin')}
                 className="w-full py-3 text-white font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-md"
                 style={{ backgroundColor: '#168F6F' }}
               >
-                Sign In Now
+                {t('reset_password_page.btn_signin_now')}
               </button>
             </div>
           )}
@@ -384,13 +386,13 @@ export default function ResetPasswordPage() {
         {/* Footer */}
         <div className="px-8 pb-6 text-center">
           <p className="text-xs text-gray-400">
-            Need help?{' '}
+            {t('reset_password_page.footer_help')}{' '}
             <a
               href="mailto:support@imknow.com"
               className="hover:underline"
               style={{ color: '#168F6F' }}
             >
-              Contact support
+              {t('reset_password_page.footer_contact')}
             </a>
           </p>
         </div>

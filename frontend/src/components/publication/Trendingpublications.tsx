@@ -6,6 +6,7 @@ import { statsService, TrendingPublication } from '../../../services/stats.servi
 import { isAuthenticated } from '../../../services/auth.service';
 import { publicationService } from '../../../services/publication.service';
 import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface TrendingPublicationsResponse {
   period: { from: string; to: string };
@@ -17,7 +18,7 @@ interface TrendingPublicationsProps {
   onPublicationClick?: (publication: any) => void;
 }
 
-function useTrendingPublications(limit = 5) {
+function useTrendingPublications(limit = 5, t: (key: string, params?: Record<string, unknown>) => string) {
   const [data, setData] = useState<TrendingPublicationsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ function useTrendingPublications(limit = 5) {
         const json = await statsService.getTrendingPublications(limit);
         if (!cancelled) setData(json);
       } catch (err: any) {
-        if (!cancelled) setError(err.message ?? 'Erreur inconnue');
+        if (!cancelled) setError(translateError(err.message, t) || t('errors.generic'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -106,7 +107,7 @@ function SkeletonRow() {
 
 export default function TrendingPublications({ limit = 5, onPublicationClick }: TrendingPublicationsProps) {
   const { t } = useTranslation();
-  const { data, loading, error } = useTrendingPublications(limit);
+  const { data, loading, error } = useTrendingPublications(limit, t);
   const [publicationsState, setPublicationsState] = useState<Record<number, {
     isLiked: boolean;
     isBookmarked: boolean;

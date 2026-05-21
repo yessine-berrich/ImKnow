@@ -1,4 +1,4 @@
-// /home/pfe2026/Desktop/PfeProject/frontend/src/app/(admin)/(others-pages)/(bookmarked)/bookmarked/page.tsx
+﻿// /home/pfe2026/Desktop/PfeProject/frontend/src/app/(admin)/(others-pages)/(bookmarked)/bookmarked/page.tsx
 
 'use client';
 
@@ -17,6 +17,7 @@ import {
 import PublicationCard from '@/components/publication/PublicationCard';
 import PublicationFilterBar, { FilterOptions } from '@/components/Filter/PublicationFilterBar';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 // ============================================
 // CONFIGURATION
 // ============================================
@@ -202,9 +203,8 @@ export default function BookmarkedPublicationsPage() {
         console.log('🏷️ Tags disponibles:', Array.from(tagsSet).sort());
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur inconnue';
       console.error('❌ Erreur fetchBookmarkedPublications:', err);
-      setError(message);
+      setError(translateError(err instanceof Error ? err.message : undefined, t));
     } finally {
       setIsLoading(false);
     }

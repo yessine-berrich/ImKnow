@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Hash } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface EditTagModalProps {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export default function EditTagModal({ isOpen, onClose, tag, onUpdateTag }: Edit
     try {
       await onUpdateTag(tag.id, tagName.trim());
     } catch (err: any) {
-      setError(err.message || t('tags_page.modal_edit_error'));
+      setError(translateError(err.message, t) || t('tags_page.modal_edit_error'));
     } finally {
       setIsLoading(false);
     }

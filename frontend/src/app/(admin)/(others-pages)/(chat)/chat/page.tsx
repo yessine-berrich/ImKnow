@@ -1,4 +1,4 @@
-// app/chat/page.tsx
+﻿// app/chat/page.tsx
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
@@ -12,6 +12,7 @@ import SearchBar from '@/components/chat/SearchBar';
 import SearchResults from '@/components/chat/SearchResults';
 import { useChatContext } from '@/context/ChatContext';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import { chatService, Conversation, ChatMessage, MessageType, MessageRequestStatus } from '../../../../../../services/chat.service';
 import { chatSocketService, NewChatMessagePayload } from '../../../../../../services/chat-socket.service';
 
@@ -335,7 +336,7 @@ export default function ChatPage() {
       refreshConversations().catch(() => {});
       showToast(t('chat.conv_deleted'), 'warning');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_delete_conv'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_delete_conv'));
     }
   }, [activeConversation, loadConversations, refreshConversations, showToast]);
 
@@ -354,7 +355,7 @@ export default function ChatPage() {
       await loadConversations();
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_delete_req'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_delete_req'));
     }
   }, [activeConversation, messages, loadConversations, refreshConversations, showToast]);
 
@@ -372,7 +373,7 @@ export default function ChatPage() {
       }
       await refreshBlockedIds();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.action_failed'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.action_failed'));
     }
   }, [activeConversation, blockedIds, showToast, refreshBlockedIds]);
 
@@ -393,7 +394,7 @@ export default function ChatPage() {
       );
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.action_failed'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.action_failed'));
     }
   }, [activeConversation, refreshConversations, showToast]);
 
@@ -409,7 +410,7 @@ export default function ChatPage() {
       );
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.action_failed'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.action_failed'));
     }
   }, [activeConversation, refreshConversations, showToast]);
 
@@ -435,7 +436,7 @@ export default function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_send_msg'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_send_msg'));
     } finally {
       setIsSending(false);
     }
@@ -458,7 +459,7 @@ export default function ChatPage() {
       loadConversations().catch(() => {});
       refreshConversations().catch(() => {});
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_send_file'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_send_file'));
     } finally {
       setIsSending(false);
     }
@@ -469,7 +470,7 @@ export default function ChatPage() {
       await chatService.deleteMessage(id);
       setMessages(prev => prev.filter(m => m.id !== id));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_delete_msg'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_delete_msg'));
     }
   }, []);
 
@@ -484,7 +485,7 @@ export default function ChatPage() {
         )
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_edit_msg'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_edit_msg'));
     }
   }, []);
 
@@ -495,7 +496,7 @@ export default function ChatPage() {
         prev.map(m => (m.id === id ? { ...m, reactions: message.reactions } : m))
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_add_reaction'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_add_reaction'));
     }
   }, []);
 
@@ -506,7 +507,7 @@ export default function ChatPage() {
         prev.map(m => (m.id === id ? { ...m, reactions: message.reactions } : m))
       );
     } catch (err) {
-      showToast(err instanceof Error ? err.message : t('chat.err_remove_reaction'));
+      showToast(translateError(err instanceof Error ? err.message : undefined, t) || t('chat.err_remove_reaction'));
     }
   }, []);
 

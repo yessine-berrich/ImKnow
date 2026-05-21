@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
 import { userService, type Session } from '../../../services/user.service';
+import { translateError } from '@/utils/errorTranslation';
 import { confirm } from '@/components/modals/ConfirmModal';
 
 // Custom browser icons
@@ -79,7 +80,7 @@ export default function SessionsTab() {
       setSessions(data);
     } catch (err: any) {
       console.error('Error loading sessions:', err);
-      setError(err.message || t('sessions.load_error'));
+      setError(translateError(err.message, t) || t('sessions.load_error'));
     } finally {
       setLoading(false);
     }
@@ -100,7 +101,7 @@ export default function SessionsTab() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Error revoking session:', err);
-      setError(err.message || t('sessions.revoke_error'));
+      setError(translateError(err.message, t) || t('sessions.revoke_error'));
     } finally {
       setRevokingId(null);
     }
@@ -119,7 +120,7 @@ export default function SessionsTab() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       console.error('Error revoking all sessions:', err);
-      setError(err.message || t('sessions.revoke_all_error'));
+      setError(translateError(err.message, t) || t('sessions.revoke_all_error'));
     } finally {
       setRevokingAll(false);
     }

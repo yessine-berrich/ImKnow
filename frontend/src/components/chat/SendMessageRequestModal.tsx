@@ -6,6 +6,8 @@ import { X, Send, MessageSquare } from 'lucide-react';
 import { chatService } from '../../../services/chat.service';
 import { getFullName, getInitials } from '../../utils/chat.utils';
 import Avatar from '../ui/avatar/Avatar';
+import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface SendMessageRequestModalProps {
   user: {
@@ -32,6 +34,7 @@ export default function SendMessageRequestModal({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
+  const { t } = useTranslation();
   const displayName = getFullName(user);
   const initials = getInitials(user);
 
@@ -81,7 +84,7 @@ export default function SendMessageRequestModal({
     } catch (err: unknown) {
       setStatus('error');
       setErrorMsg(
-        err instanceof Error ? err.message : 'Impossible d\'envoyer la demande.',
+        translateError(err instanceof Error ? err.message : undefined, t),
       );
     }
   };

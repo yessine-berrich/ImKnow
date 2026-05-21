@@ -1,4 +1,4 @@
-// app/(admin)/(others-pages)/(users)/users/page.tsx
+﻿// app/(admin)/(others-pages)/(users)/users/page.tsx
 'use client';
 
 import { getToken } from '../../../../../../services/auth.service';
@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import UsersTable from '@/components/tables/UsersTable';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface User {
   id: number;
@@ -134,7 +135,7 @@ export default function UsersPage() {
 
       setUsers(transformed);
     } catch (err: any) {
-      setError(err.message || t('users_page.error_title'));
+      setError(translateError(err.message, t) || t('users_page.error_title'));
     } finally {
       setLoading(false);
     }

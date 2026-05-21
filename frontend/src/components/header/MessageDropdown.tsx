@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { enUS } from 'date-fns/locale';
 import { useTranslation } from '../../context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 import UserAvatar from '../chat/UserAvatar';
 import { useChatContext } from '../../context/ChatContext';
 
@@ -68,7 +69,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
       setConversations(sorted);
       setUnreadCount(sorted.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0));
     } catch (err: any) {
-      setError(err.message || t('messages_dropdown.err_load_conversations'));
+      setError(translateError(err.message, t) || t('messages_dropdown.err_load_conversations'));
     }
   }, [currentUserId]);
 

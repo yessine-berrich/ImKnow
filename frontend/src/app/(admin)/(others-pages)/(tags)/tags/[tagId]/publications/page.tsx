@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, FileText, TrendingUp, Clock, Eye, Tag } from 'lucide-react';
 import PublicationCard from '@/components/publication/PublicationCard';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface TagData {
   id: number;
@@ -204,7 +205,7 @@ export default function TagPublicationsPage() {
       setPublications(formatted);
     } catch (err: any) {
       console.error('Error loading tag publications:', err);
-      setError(err.message || t('cat_pub.load_error'));
+      setError(translateError(err.message, t) || t('cat_pub.load_error'));
     } finally {
       setLoading(false);
     }

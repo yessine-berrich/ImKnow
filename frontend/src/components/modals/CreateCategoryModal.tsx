@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Folder, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/context/LanguageContext';
+import { translateError } from '@/utils/errorTranslation';
 
 interface CreateCategoryModalProps {
   isOpen: boolean;
@@ -132,7 +133,7 @@ export default function CreateCategoryModal({
 
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('categories_page.modal_error_generic'));
+      setError(translateError(err instanceof Error ? err.message : undefined, t) || t('categories_page.modal_error_generic'));
     } finally {
       setIsSubmitting(false);
     }
