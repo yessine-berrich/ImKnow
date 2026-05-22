@@ -8,6 +8,7 @@ import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { usePublicationModal } from '@/context/PublicationModalContext';
 import { useTranslation } from '@/context/LanguageContext';
+import { resolveAvatarUrl } from '@/utils/profile-image';
 
 const enum NotificationType {
   MENTION = 'mention',
@@ -426,11 +427,7 @@ export default function NotificationsPage() {
   };
 
   const getProfileImageUrl = (userData: any) => {
-    if (!userData?.id) return '/images/user/profile.jpg';
-    if (userData?.profileImage || userData?.avatar) {
-      return `http://localhost:3000/api/users/profile-image/${userData.id}?t=${new Date().getTime()}`;
-    }
-    return '/images/user/profile.jpg';
+    return resolveAvatarUrl(userData?.avatar ?? userData?.profileImage);
   };
 
   const filteredNotifications = filter === 'unread' 

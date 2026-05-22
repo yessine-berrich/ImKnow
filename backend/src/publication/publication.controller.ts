@@ -532,6 +532,7 @@ export class PublicationController {
           id: publication.id,
           title: publication.title,
           description: publication.content?.substring(0, 150) + '...' || '',
+          content: publication.content || '',
           author: publication.author ? {
             id: publication.author.id,
             name: `${publication.author.firstName} ${publication.author.lastName}`,
@@ -576,6 +577,7 @@ export class PublicationController {
           id: publication.id,
           title: publication.title,
           description: publication.content?.substring(0, 150) + '...' || '',
+          content: publication.content || '',
           author: publication.author ? {
             id: publication.author.id,
             name: `${publication.author.firstName} ${publication.author.lastName}`,

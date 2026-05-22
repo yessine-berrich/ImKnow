@@ -353,7 +353,7 @@ export default function UsersTable({
                           'text-red-500 dark:text-red-400'
                         }`}>
                           {user.status === 'active'           ? <UserCheck size={16} /> :
-                           user.status === 'pending'          ? <Mail size={16} /> :
+                           user.status === 'pending'          ? <LoaderIcon size={16} /> :
                            user.status === 'email_unverified' ? <Mail size={16} /> :
                            <UserX size={16} />}
                           <span className="text-sm">
