@@ -1,13 +1,13 @@
-﻿'use client';
+'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Flag, Search, ChevronLeft, ChevronRight,
   AlertTriangle, CheckCircle, XCircle,
   RefreshCw, X, Shield, Users,
   TrendingUp, TrendingDown, Minus, Clock,
-  MessageSquare, Ban, Mail, Building, Download, UserCheck,
+  MessageSquare, Ban, Mail, Building, UserCheck, Sparkles, ExternalLink,
 } from 'lucide-react';
 
 type TabType = 'analysis' | 'reports' | 'notes';
@@ -15,10 +15,12 @@ import {
   adminReportsService,
   ReportedUserItem, UserReportDetail,
   UserReportListResponse, RiskLevel, UserAction, AdminNote,
+  AiAnalysis,
 } from '../../../../../../../services/admin-reports.service';
 import { getToken } from '../../../../../../../services/auth.service';
 import { useTranslation } from '@/context/LanguageContext';
 import { translateError } from '@/utils/errorTranslation';
+import { AiAnalysisCell, ConfirmActionModal } from '../report-shared';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,14 @@ const SEVERITY_COLORS: Record<string, string> = {
   danger:  'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
   warning: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
   info:    'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+};
+
+const AI_ACTION_CONFIG: Record<string, { label: string; cls: string }> = {
+  dismiss: { label: 'Rejeter',   cls: 'text-gray-500 bg-gray-100 dark:bg-gray-800' },
+  review:  { label: 'Examiner',  cls: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
+  warn:    { label: 'Avertir',   cls: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
+  hide:    { label: 'Masquer',   cls: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' },
+  ban:     { label: 'Suspendre', cls: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -97,37 +107,45 @@ function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg ${className}`} />;
 }
 
-// ─── Confirmation Modal ───────────────────────────────────────────────────────
-
-function ConfirmModal({
-  title, description, confirmLabel, confirmCls, onConfirm, onCancel,
-}: {
-  title: string; description: string; confirmLabel: string; confirmCls: string;
-  onConfirm: () => void; onCancel: () => void;
-}) {
-  const { t } = useTranslation();
+function AiInsightPanel({ ai }: { ai: AiAnalysis | null | undefined }) {
+  if (!ai || !ai.analyzedAt) return null;
+  const lvl = ai.riskLevel ?? 'low';
+  const rc  = RISK_CONFIG[lvl as RiskLevel] ?? RISK_CONFIG.low;
+  const act = ai.recommendedAction ? (AI_ACTION_CONFIG[ai.recommendedAction] ?? AI_ACTION_CONFIG.review) : null;
+  const pct = Math.round((ai.confidence ?? 0) * 100);
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 max-w-sm w-full mx-4">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle size={16} className="text-red-500" />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm">{title}</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            {t('reported_page.cancel')}
-          </button>
-          <button onClick={onConfirm} className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors ${confirmCls}`}>
-            {confirmLabel}
-          </button>
-        </div>
+    <div className="mt-4 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Sparkles size={13} className="text-purple-500 flex-shrink-0" />
+        <span className="text-xs font-bold text-purple-700 dark:text-purple-300">Analyse IA</span>
+        <span className="ml-auto text-xs text-gray-400">Confiance : {pct}%</span>
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${rc.bg} ${rc.text} ${rc.border}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${rc.dot}`} />
+          Risque : {lvl}
+        </span>
+        {act && (
+          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${act.cls}`}>
+            Action suggérée : {act.label}
+          </span>
+        )}
+        {typeof ai.riskScore === 'number' && (
+          <span className="text-xs text-gray-500">Score : {(ai.riskScore * 100).toFixed(0)}%</span>
+        )}
+      </div>
+      {ai.summary && (
+        <p className="text-xs text-gray-700 dark:text-gray-300 italic leading-relaxed">{ai.summary}</p>
+      )}
+      {ai.categories && ai.categories.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {ai.categories.map((cat) => (
+            <span key={cat} className="px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded">
+              {cat}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -176,11 +194,7 @@ function AdminNotesSection({
     finally { setDeleting(null); }
   };
 
-  const startEdit = (note: AdminNote) => {
-    setEditingId(note.id);
-    setInput(note.content);
-  };
-
+  const startEdit = (note: AdminNote) => { setEditingId(note.id); setInput(note.content); };
   const cancelEdit = () => { setEditingId(null); setInput(''); };
 
   return (
@@ -188,8 +202,6 @@ function AdminNotesSection({
       <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
         <MessageSquare size={12} /> {t('reported_page.note_section_title')}
       </h4>
-
-      {/* Other admins' notes */}
       {notes.filter((n) => n.adminId !== currentAdminId).map((n) => (
         <div key={n.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 space-y-1">
           <div className="flex items-center justify-between">
@@ -199,8 +211,6 @@ function AdminNotesSection({
           <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{n.content}</p>
         </div>
       ))}
-
-      {/* Current admin's note */}
       {myNote && editingId !== myNote.id ? (
         <div className="p-3 rounded-xl border border-[#00926B]/30 bg-emerald-50/50 dark:bg-emerald-900/10 space-y-1">
           <div className="flex items-center justify-between">
@@ -208,11 +218,7 @@ function AdminNotesSection({
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400">{new Date(myNote.updatedAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}</span>
               <button onClick={() => startEdit(myNote)} className="text-xs text-gray-400 hover:text-[#00926B] transition-colors">{t('reported_page.note_edit')}</button>
-              <button
-                onClick={() => handleDelete(myNote.id)}
-                disabled={deleting === myNote.id}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-              >{t('reported_page.note_delete')}</button>
+              <button onClick={() => handleDelete(myNote.id)} disabled={deleting === myNote.id} className="text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50">{t('reported_page.note_delete')}</button>
             </div>
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{myNote.content}</p>
@@ -227,11 +233,9 @@ function AdminNotesSection({
             className="w-full px-3 py-2 text-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30 resize-none"
           />
           <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              disabled={saving || !input.trim()}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-[#00926B] hover:bg-[#007a59] rounded-lg disabled:opacity-50 transition-colors"
-            >{saving ? '…' : t('reported_page.note_save')}</button>
+            <button onClick={handleSave} disabled={saving || !input.trim()} className="px-3 py-1.5 text-xs font-semibold text-white bg-[#00926B] hover:bg-[#007a59] rounded-lg disabled:opacity-50 transition-colors">
+              {saving ? '…' : t('reported_page.note_save')}
+            </button>
             {editingId && (
               <button onClick={cancelEdit} className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
                 {t('reported_page.cancel')}
@@ -240,8 +244,6 @@ function AdminNotesSection({
           </div>
         </div>
       )}
-
-      {/* No notes yet */}
       {notes.length === 0 && !myNote && (
         <p className="text-xs text-gray-400 italic">{t('reported_page.note_empty')}</p>
       )}
@@ -257,12 +259,12 @@ function UserDetailDrawer({
   userId: number; onClose: () => void; onActionDone: () => void; initialTab: TabType;
 }) {
   const { t, language } = useTranslation();
-  const [detail, setDetail]         = useState<UserReportDetail | null>(null);
-  const [loading, setLoading]       = useState(true);
+  const [detail, setDetail]             = useState<UserReportDetail | null>(null);
+  const [loading, setLoading]           = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [toast, setToast]           = useState<{ msg: string; ok: boolean } | null>(null);
-  const [confirm, setConfirm]       = useState<{ action: UserAction; label: string } | null>(null);
-  const [activeTab, setActiveTab]   = useState<TabType>(initialTab);
+  const [toast, setToast]               = useState<{ msg: string; ok: boolean } | null>(null);
+  const [confirm, setConfirm]           = useState<{ action: UserAction; label: string } | null>(null);
+  const [activeTab, setActiveTab]       = useState<TabType>(initialTab);
 
   const currentAdminId = (() => {
     try { const token = getToken(); return JSON.parse(atob(token!.split('.')[1])).sub as number; }
@@ -277,11 +279,11 @@ function UserDetailDrawer({
       .finally(() => setLoading(false));
   }, [userId]);
 
-  const handleAction = async (action: UserAction) => {
+  const handleAction = async (action: UserAction, note?: string) => {
     setActionLoading(true);
     setConfirm(null);
     try {
-      const res = await adminReportsService.takeUserAction(userId, action, undefined);
+      const res = await adminReportsService.takeUserAction(userId, action, note);
       setToast({ msg: res.message, ok: true });
       setTimeout(() => { onActionDone(); onClose(); }, 1400);
     } catch (err) {
@@ -306,14 +308,15 @@ function UserDetailDrawer({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {confirm && (
-        <ConfirmModal
+        <ConfirmActionModal
           title={confirm.action === 'ban' ? t('reported_page.confirm_ban_title') : t('reported_page.confirm_unban_title')}
           description={confirm.action === 'ban' ? t('reported_page.confirm_ban_desc') : t('reported_page.confirm_unban_desc')}
           confirmLabel={confirm.label}
           confirmCls={confirm.action === 'ban'
             ? 'text-white bg-red-500 hover:bg-red-600'
             : 'text-white bg-emerald-500 hover:bg-emerald-600'}
-          onConfirm={() => handleAction(confirm.action)}
+          withNote
+          onConfirm={(note) => handleAction(confirm.action, note)}
           onCancel={() => setConfirm(null)}
         />
       )}
@@ -369,8 +372,10 @@ function UserDetailDrawer({
             <div>
               <AlertTriangle size={32} className="mx-auto text-gray-300 mb-3" />
               <p className="text-sm text-gray-400">{t('reported_page.load_detail_error')}</p>
-              <button onClick={() => { setLoading(true); adminReportsService.getUserReportDetail(userId).then(setDetail).catch(() => {}).finally(() => setLoading(false)); }}
-                className="mt-3 text-xs text-[#00926B] hover:underline">{t('reported_page.retry')}</button>
+              <button
+                onClick={() => { setLoading(true); adminReportsService.getUserReportDetail(userId).then(setDetail).catch(() => {}).finally(() => setLoading(false)); }}
+                className="mt-3 text-xs text-[#00926B] hover:underline"
+              >{t('reported_page.retry')}</button>
             </div>
           </div>
         ) : (
@@ -456,6 +461,9 @@ function UserDetailDrawer({
                       <p className="text-xs mt-0.5">{detail.intelligence.recommendation.label}</p>
                     </div>
                   </div>
+
+                  <AiInsightPanel ai={(detail.intelligence as any).ai} />
+
                   <div className="space-y-2">
                     <p className="text-xs text-gray-400 font-medium">{t('reported_page.top_reasons_title')}</p>
                     {detail.intelligence.topReasons.map(({ reason, count, severity }) => (
@@ -547,30 +555,25 @@ function UserDetailDrawer({
 
 export default function ReportedUsersPage() {
   const { t, language } = useTranslation();
+  const T = t as (k: string, p?: Record<string, unknown>) => string;
   const router = useRouter();
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [data, setData]                 = useState<UserReportListResponse | null>(null);
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState('');
-  const [searchInput, setSearchInput]   = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [riskFilter, setRiskFilter]     = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [page, setPage]                 = useState(1);
-  const [selected, setSelected]         = useState<{ id: number; tab: TabType } | null>(null);
-  const [toast, setToast]               = useState<{ msg: string; ok: boolean } | null>(null);
-  const [exportOpen, setExportOpen]     = useState(false);
+  const [isCheckingRole, setIsCheckingRole]   = useState(true);
+  const [data, setData]                       = useState<UserReportListResponse | null>(null);
+  const [loading, setLoading]                 = useState(true);
+  const [search, setSearch]                   = useState('');
+  const [searchInput, setSearchInput]         = useState('');
+  const [statusFilter, setStatusFilter]       = useState('all');
+  const [riskFilter, setRiskFilter]           = useState('all');
+  const [priorityFilter, setPriorityFilter]   = useState('all');
+  const [page, setPage]                       = useState(1);
+  const [selected, setSelected]               = useState<{ id: number; tab: TabType } | null>(null);
+  const [toast, setToast]                     = useState<{ msg: string; ok: boolean } | null>(null);
+  // AI frontend filters
+  const [aiRiskFilter, setAiRiskFilter]           = useState('all');
+  const [aiActionFilter, setAiActionFilter]       = useState('all');
+  const [aiConflictFilter, setAiConflictFilter]   = useState('all');
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const exportRef   = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -591,6 +594,19 @@ export default function ReportedUsersPage() {
       setLoading(false);
     }
   }, [statusFilter, riskFilter, priorityFilter, search, page]);
+
+  // Client-side AI filter on top of server data
+  const displayedItems = useMemo(() => {
+    if (!data?.items) return [];
+    return data.items.filter((item) => {
+      if (aiRiskFilter !== 'all' && item.ai?.riskLevel !== aiRiskFilter) return false;
+      if (aiActionFilter !== 'all' && item.ai?.recommendedAction !== aiActionFilter) return false;
+      if (aiConflictFilter === 'conflict'   && !(item.ai?.riskLevel && item.ai.riskLevel !== item.riskLevel)) return false;
+      if (aiConflictFilter === 'aligned'    && !(item.ai?.riskLevel && item.ai.riskLevel === item.riskLevel)) return false;
+      if (aiConflictFilter === 'unanalyzed' && item.ai?.analyzedAt) return false;
+      return true;
+    });
+  }, [data, aiRiskFilter, aiActionFilter, aiConflictFilter]);
 
   useEffect(() => {
     try {
@@ -613,53 +629,10 @@ export default function ReportedUsersPage() {
   const resetFilters = () => {
     setStatusFilter('all'); setRiskFilter('all'); setPriorityFilter('all');
     setSearch(''); setSearchInput(''); setPage(1);
+    setAiRiskFilter('all'); setAiActionFilter('all'); setAiConflictFilter('all');
   };
 
-  const handleExport = (format: 'csv' | 'json' | 'pdf') => {
-    if (format === 'pdf') { window.print(); return; }
-
-    const items = data?.items ?? [];
-    const RISK_LABELS: Record<string, string>  = { critical: t('reported_page.export_risk_critical'), high: t('reported_page.export_risk_high'), medium: t('reported_page.export_risk_medium'), low: t('reported_page.export_risk_low') };
-    const TREND_LABELS: Record<string, string> = { up: t('reported_page.export_trend_up'), down: t('reported_page.export_trend_down'), stable: t('reported_page.export_trend_stable') };
-
-    let content: string;
-    let filename: string;
-
-    if (format === 'json') {
-      content  = JSON.stringify({ exportedAt: new Date().toISOString(), total: data?.total ?? 0, summary: data?.summary, items }, null, 2);
-      filename = 'reported-users.json';
-    } else {
-      const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
-      const header = [
-        t('reported_page.export_col_id'), t('reported_page.export_col_name'), t('reported_page.export_col_email'),
-        t('reported_page.export_col_department'), t('reported_page.export_col_active'), t('reported_page.export_col_risk_level'),
-        t('reported_page.export_col_score'), t('reported_page.export_col_reports'), t('reported_page.export_col_pending'),
-        t('reported_page.export_col_top_reason'), t('reported_page.export_col_trend'), t('reported_page.export_col_last_report'),
-      ];
-      const rows = items.map(item => [
-        String(item.userId),
-        esc(item.userName),
-        esc(item.userEmail),
-        esc(item.department),
-        item.isActive ? t('reported_page.export_yes') : t('reported_page.export_no'),
-        RISK_LABELS[item.riskLevel]  ?? item.riskLevel,
-        String(item.riskScore),
-        String(item.reportCount),
-        String(item.pendingCount),
-        item.topReason ? esc(REASON_LABEL_KEYS[item.topReason] ? t(REASON_LABEL_KEYS[item.topReason]) : item.topReason) : '',
-        TREND_LABELS[item.trend]     ?? item.trend,
-        item.lastReportAt ? new Date(item.lastReportAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '',
-      ]);
-      content  = [header, ...rows].map(r => r.join(',')).join('\n');
-      filename = 'reported-users.csv';
-    }
-
-    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  };
+  const hasActiveFilters = priorityFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || search || aiRiskFilter !== 'all' || aiActionFilter !== 'all' || aiConflictFilter !== 'all';
 
   const summary = data?.summary;
 
@@ -682,30 +655,16 @@ export default function ReportedUsersPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reported_page.user_title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {t('reported_page.user_subtitle', { count: data?.total ?? 0, banned: summary?.bannedUsers ?? 0 })}
+              {T('reported_page.user_subtitle', { count: data?.total ?? 0, banned: summary?.bannedUsers ?? 0 })}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setExportOpen(o => !o)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <Download size={13} /> {t('reported_page.export')}
-              </button>
-              {exportOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 z-20 min-w-[100px]">
-                  <button onClick={() => { handleExport('csv');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">CSV</button>
-                  <button onClick={() => { handleExport('json'); setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">JSON</button>
-                  <button onClick={() => { handleExport('pdf');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">PDF</button>
-                </div>
-              )}
-            </div>
             <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> {t('reported_page.refresh')}
             </button>
           </div>
         </div>
+
         {toast && (
           <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.ok ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
             {toast.ok ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
@@ -748,7 +707,6 @@ export default function ReportedUsersPage() {
               className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30 focus:border-[#00926B]"
             />
           </div>
-
           <select value={priorityFilter} onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
             className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30">
             <option value="all">{t('reported_page.all_priorities')}</option>
@@ -757,7 +715,6 @@ export default function ReportedUsersPage() {
             <option value="normal">{t('reported_page.priority_normal')}</option>
             <option value="low">{t('reported_page.priority_low')}</option>
           </select>
-
           <select value={riskFilter} onChange={(e) => { setRiskFilter(e.target.value); setPage(1); }}
             className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30">
             <option value="all">{t('reported_page.all_levels_short')}</option>
@@ -766,7 +723,6 @@ export default function ReportedUsersPage() {
             <option value="medium">{t('reported_page.risk_medium')}</option>
             <option value="low">{t('reported_page.risk_low')}</option>
           </select>
-
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
             className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30">
             <option value="all">{t('reported_page.all_statuses')}</option>
@@ -774,8 +730,32 @@ export default function ReportedUsersPage() {
             <option value="reviewed">{t('reported_page.reviewed_filter')}</option>
             <option value="dismissed">{t('reported_page.dismissed_filter')}</option>
           </select>
-
-          {(priorityFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || search) && (
+          {/* AI-only filters (client-side) */}
+          <select value={aiRiskFilter} onChange={(e) => setAiRiskFilter(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400/30">
+            <option value="all">{T('reported_page.all_ai_risks')}</option>
+            <option value="critical">{t('reported_page.risk_critical')}</option>
+            <option value="high">{t('reported_page.risk_high')}</option>
+            <option value="medium">{t('reported_page.risk_medium')}</option>
+            <option value="low">{t('reported_page.risk_low')}</option>
+          </select>
+          <select value={aiActionFilter} onChange={(e) => setAiActionFilter(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400/30">
+            <option value="all">{T('reported_page.all_ai_actions')}</option>
+            <option value="dismiss">Rejeter</option>
+            <option value="review">Examiner</option>
+            <option value="warn">Avertir</option>
+            <option value="hide">Masquer</option>
+            <option value="ban">Suspendre</option>
+          </select>
+          <select value={aiConflictFilter} onChange={(e) => setAiConflictFilter(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400/30">
+            <option value="all">{T('reported_page.all_conflicts')}</option>
+            <option value="conflict">{T('reported_page.ai_conflict_only')}</option>
+            <option value="aligned">{T('reported_page.ai_aligned_only')}</option>
+            <option value="unanalyzed">{T('reported_page.ai_unanalyzed')}</option>
+          </select>
+          {hasActiveFilters && (
             <button onClick={resetFilters} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl transition-colors">
               <X size={12} /> {t('reported_page.reset_filters')}
             </button>
@@ -790,6 +770,12 @@ export default function ReportedUsersPage() {
                 <tr className="text-left text-xs text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/40">
                   <th className="px-6 py-3 font-medium">{t('reported_page.col_user')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_risk')}</th>
+                  <th className="px-4 py-3 font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      <Sparkles size={10} className="text-purple-500" />
+                      {T('reported_page.col_ai_analysis')}
+                    </span>
+                  </th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_score')}</th>
                   <th className="px-4 py-3 font-medium text-center">{t('reported_page.col_reports')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_top_reason')}</th>
@@ -803,23 +789,23 @@ export default function ReportedUsersPage() {
                 {loading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j} className="px-4 py-3"><Skeleton className="h-5" /></td>
                       ))}
                     </tr>
                   ))
-                ) : !data?.items.length ? (
+                ) : !displayedItems.length ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center">
+                    <td colSpan={10} className="px-6 py-12 text-center">
                       <Users size={32} className="mx-auto text-gray-200 dark:text-gray-700 mb-3" />
                       <p className="text-sm text-gray-400">{t('reported_page.empty_user')}</p>
-                      {(priorityFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || search) && (
+                      {hasActiveFilters && (
                         <button onClick={resetFilters} className="mt-2 text-xs text-[#00926B] hover:underline">{t('reported_page.reset_filters')}</button>
                       )}
                     </td>
                   </tr>
                 ) : (
-                  data.items.map((item) => (
+                  displayedItems.map((item) => (
                     <tr
                       key={item.userId}
                       className={`hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors ${item.riskLevel === 'critical' ? 'border-l-2 border-l-red-500' : item.priority === 'urgent' ? 'border-l-2 border-l-red-400' : ''}`}
@@ -831,13 +817,18 @@ export default function ReportedUsersPage() {
                           <p className="text-xs text-gray-400 mt-0.5">{item.department}</p>
                         )}
                       </td>
-                      <td className="px-4 py-3"><RiskBadge level={item.riskLevel} /></td>
+                      <td className="px-4 py-3">
+                        <RiskBadge level={item.riskLevel} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <AiAnalysisCell ai={item.ai} sysRiskLevel={item.riskLevel} />
+                      </td>
                       <td className="px-4 py-3 w-28"><ScoreBar score={item.riskScore} /></td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex flex-col items-center">
                           <span className="font-bold text-gray-900 dark:text-white">{item.reportCount}</span>
                           {item.pendingCount > 0 && (
-                            <span className="text-xs text-amber-500">({t('reported_page.pending_short', { count: item.pendingCount })})</span>
+                            <span className="text-xs text-amber-500">({T('reported_page.pending_short', { count: item.pendingCount })})</span>
                           )}
                         </div>
                       </td>
@@ -859,20 +850,16 @@ export default function ReportedUsersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => window.open(`/profile/${item.userId}`, '_blank')}
+                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-lg transition-colors">
+                            <ExternalLink size={11} />
+                            Profil
+                          </button>
                           <button onClick={() => setSelected({ id: item.userId, tab: 'analysis' })}
                             className="inline-flex items-center gap-1 px-2 py-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg transition-colors"
                             title={t('reported_page.tab_analysis')}>
                             <Shield size={11} /> {t('reported_page.tab_analysis')}
-                          </button>
-                          <button onClick={() => setSelected({ id: item.userId, tab: 'reports' })}
-                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 text-xs font-medium rounded-lg transition-colors"
-                            title={t('reported_page.tab_reports')}>
-                            <Flag size={11} /> {t('reported_page.tab_reports')}
-                          </button>
-                          <button onClick={() => setSelected({ id: item.userId, tab: 'notes' })}
-                            className="inline-flex items-center gap-1 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg transition-colors"
-                            title={t('reported_page.tab_notes')}>
-                            <MessageSquare size={11} /> {t('reported_page.tab_notes')}
                           </button>
                         </div>
                       </td>
@@ -886,7 +873,7 @@ export default function ReportedUsersPage() {
           {/* Pagination */}
           {data && data.totalPages > 1 && (
             <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <p className="text-xs text-gray-400">{t('reported_page.pagination', { total: data.total, page: data.page, pages: data.totalPages })}</p>
+              <p className="text-xs text-gray-400">{T('reported_page.pagination', { total: data.total, page: data.page, pages: data.totalPages })}</p>
               <div className="flex gap-1">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 disabled:opacity-30 transition-colors">
                   <ChevronLeft size={16} />
@@ -899,6 +886,7 @@ export default function ReportedUsersPage() {
           )}
         </div>
       </div>
+
     </div>
   );
 }

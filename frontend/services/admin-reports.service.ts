@@ -6,6 +6,18 @@ export type ReportStatus = 'pending' | 'reviewed' | 'dismissed' | 'all';
 export type PublicationAction = 'dismiss_all' | 'review_all' | 'unpublish' | 'republish' | 'warn_author';
 export type UserAction    = 'dismiss_all' | 'review_all' | 'warn' | 'ban' | 'unban';
 export type PriorityLevel = 'urgent' | 'high' | 'normal' | 'low';
+export type AiRecommendedAction = 'dismiss' | 'review' | 'warn' | 'hide' | 'ban';
+
+export interface AiAnalysis {
+  riskScore:         number | null;
+  riskLevel:         RiskLevel | null;
+  categories:        string[] | null;
+  summary:           string | null;
+  recommendedAction: AiRecommendedAction | null;
+  confidence:        number | null;
+  model:             string | null;
+  analyzedAt:        string | null;
+}
 
 export interface ReasonCount { reason: string; count: number; severity: number; }
 
@@ -29,6 +41,7 @@ export interface ReportedPublicationItem {
   lastReportAt:   string | null;
   uniqueReporters:number;
   trend:          'up' | 'down' | 'stable';
+  ai:             AiAnalysis | null;
 }
 
 export interface ReportedUserItem {
@@ -51,6 +64,7 @@ export interface ReportedUserItem {
   lastReportAt:   string | null;
   uniqueReporters:number;
   trend:          'up' | 'down' | 'stable';
+  ai:             AiAnalysis | null;
 }
 
 export interface ListSummary {
@@ -86,6 +100,7 @@ export interface IndividualReport {
   status:    string;
   createdAt: string;
   reporter:  { id: number; name: string };
+  ai:        AiAnalysis | null;
 }
 
 export interface PublicationReportDetail {
@@ -107,6 +122,7 @@ export interface PublicationReportDetail {
     recommendation:  { label: string; action: string; severity: 'danger' | 'warning' | 'info' };
     autoDecision:    'auto_ban' | 'auto_warn' | 'auto_dismiss' | 'human_review';
     confidence:      number;
+    ai:              AiAnalysis | null;
   };
   reports: IndividualReport[];
 }
@@ -131,6 +147,7 @@ export interface UserReportDetail {
     recommendation:  { label: string; action: string; severity: 'danger' | 'warning' | 'info' };
     autoDecision:    'auto_ban' | 'auto_warn' | 'auto_dismiss' | 'human_review';
     confidence:      number;
+    ai:              AiAnalysis | null;
   };
   reports: IndividualReport[];
 }

@@ -18,6 +18,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateNotificationPreferencesDto } from './dto/update-notification-preferences.dto';
 import { ReportUserDto } from './dto/report-user.dto';
 import { AuthService } from './auth.service';
+import { ReportAIService } from 'src/report-ai/report-ai.service';
 import { userRole } from 'utils/constants';
 import { MailService } from 'src/mail/mail.service';
 import { ConfigService } from '@nestjs/config';
@@ -34,6 +35,7 @@ export class UsersService {
     private readonly sessionService: SessionService,
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly reportAIService: ReportAIService,
   ) {}
 
   async getCurrentUser(id: number): Promise<User | null> {
@@ -279,6 +281,10 @@ export class UsersService {
     });
 
     const savedReport = await this.userReportRepository.save(report);
+
+    this.reportAIService.analyzeUserReport(savedReport.id).catch((err) =>
+      console.error(`[ReportAI] Analyse échouée pour UserReport ${savedReport.id}:`, err?.message),
+    );
 
     return {
       message: 'Signalement envoyé. Merci de nous aider à garder la plateforme sûre.',

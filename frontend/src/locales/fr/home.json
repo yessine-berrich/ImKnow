@@ -15,7 +15,8 @@
     "toast_link_copied": "Lien copié dans le presse-papier !",
     "confirm_delete": "Êtes-vous sûr de vouloir supprimer cette publication ?",
     "error_delete": "Erreur lors de la suppression",
-    "error_generic": "Une erreur est survenue"
+    "error_generic": "Une erreur est survenue",
+    "end_of_feed": "Vous avez tout vu !"
   },
   "trending": {
     "error_load": "Impossible de charger les tendances",

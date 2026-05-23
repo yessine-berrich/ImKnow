@@ -26,6 +26,7 @@ import { Tag } from '../tag/entities/tag.entity';
 import { PublicationReport } from './entities/publication-report.entity';
 import { ReportPublicationDto } from './dto/report-publication.dto';
 import { PublicationChunkService } from './publication-chunk.service';
+import { ReportAIService } from 'src/report-ai/report-ai.service';
 
 @Injectable()
 export class PublicationService {
@@ -43,6 +44,7 @@ export class PublicationService {
     private readonly notificationService: NotificationService,
     private readonly publicationVersioningService: PublicationVersioningService,
     private readonly publicationChunkService: PublicationChunkService,
+    private readonly reportAIService: ReportAIService,
   ) { }
 
   async create(
@@ -919,6 +921,10 @@ export class PublicationService {
     });
 
     const saved = await this.publicationReportRepository.save(report);
+
+    this.reportAIService.analyzePublicationReport(saved.id).catch((err) =>
+      console.error(`[ReportAI] Analyse échouée pour PublicationReport ${saved.id}:`, err?.message),
+    );
 
     return {
       message: 'Signalement envoyé. Merci de nous aider à maintenir la qualité de la plateforme.',

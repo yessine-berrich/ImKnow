@@ -14,6 +14,7 @@ import { PublicationReport } from './entities/publication-report.entity';
 import { User } from 'src/users/entities/user.entity';
 import { PublicationInteractionService } from './publication-interaction.service';
 import { ContentModerationModule } from 'src/content-moderation/content-moderation.module';
+import { ReportAIModule } from 'src/report-ai/report-ai.module';
 import { NotificationModule } from 'src/notification/notification.module';
 import { PublicationVersioningService } from './publication-versioning.service';
 import { PublicationChunk } from './entities/publication-chunk.entity';
@@ -36,6 +37,7 @@ import { PublicationChunkService } from './publication-chunk.service';
     SearchModule,
     ContentModerationModule,
     NotificationModule,
+    ReportAIModule,
   ],
   controllers: [PublicationController],
   providers: [PublicationService, PublicationInteractionService, PublicationVersioningService, PublicationChunkService],

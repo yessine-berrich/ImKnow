@@ -1,13 +1,13 @@
-﻿'use client';
+'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Flag, Search, ChevronLeft, ChevronRight,
   AlertTriangle, CheckCircle, XCircle, EyeOff,
   Clock, User, RefreshCw, X, Shield,
   TrendingUp, TrendingDown, Minus,
-  MessageSquare, RotateCcw, Download,
+  MessageSquare, RotateCcw, Sparkles, Eye,
 } from 'lucide-react';
 
 type TabType = 'analysis' | 'reports' | 'notes';
@@ -15,10 +15,14 @@ import {
   adminReportsService,
   ReportedPublicationItem, PublicationReportDetail,
   PublicationReportListResponse, RiskLevel, PublicationAction, AdminNote,
+  AiAnalysis,
 } from '../../../../../../../services/admin-reports.service';
 import { getToken } from '../../../../../../../services/auth.service';
+import { publicationService } from '../../../../../../../services/publication.service';
 import { useTranslation } from '@/context/LanguageContext';
+import { usePublicationModal } from '@/context/PublicationModalContext';
 import { translateError } from '@/utils/errorTranslation';
+import { AiAnalysisCell, ConfirmActionModal } from '../report-shared';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -51,6 +55,14 @@ const SEVERITY_COLORS: Record<string, string> = {
   danger:  'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
   warning: 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
   info:    'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+};
+
+const AI_ACTION_CONFIG: Record<string, { label: string; cls: string }> = {
+  dismiss: { label: 'Rejeter',   cls: 'text-gray-500 bg-gray-100 dark:bg-gray-800' },
+  review:  { label: 'Examiner',  cls: 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' },
+  warn:    { label: 'Avertir',   cls: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20' },
+  hide:    { label: 'Masquer',   cls: 'text-orange-600 bg-orange-50 dark:bg-orange-900/20' },
+  ban:     { label: 'Suspendre', cls: 'text-red-600 bg-red-50 dark:bg-red-900/20' },
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -90,37 +102,45 @@ function Skeleton({ className = '' }: { className?: string }) {
   return <div className={`animate-pulse bg-gray-100 dark:bg-gray-800 rounded-lg ${className}`} />;
 }
 
-// ─── Confirmation Modal ───────────────────────────────────────────────────────
-
-function ConfirmModal({
-  title, description, confirmLabel, confirmCls, onConfirm, onCancel,
-}: {
-  title: string; description: string; confirmLabel: string; confirmCls: string;
-  onConfirm: () => void; onCancel: () => void;
-}) {
-  const { t } = useTranslation();
+function AiInsightPanel({ ai }: { ai: AiAnalysis | null | undefined }) {
+  if (!ai || !ai.analyzedAt) return null;
+  const lvl = ai.riskLevel ?? 'low';
+  const rc  = RISK_CONFIG[lvl as RiskLevel] ?? RISK_CONFIG.low;
+  const act = ai.recommendedAction ? (AI_ACTION_CONFIG[ai.recommendedAction] ?? AI_ACTION_CONFIG.review) : null;
+  const pct = Math.round((ai.confidence ?? 0) * 100);
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-6 max-w-sm w-full mx-4">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle size={16} className="text-red-500" />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900 dark:text-white text-sm">{title}</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{description}</p>
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <button onClick={onCancel} className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            {t('reported_page.cancel')}
-          </button>
-          <button onClick={onConfirm} className={`px-4 py-2 text-xs font-semibold rounded-xl transition-colors ${confirmCls}`}>
-            {confirmLabel}
-          </button>
-        </div>
+    <div className="mt-4 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <Sparkles size={13} className="text-purple-500 flex-shrink-0" />
+        <span className="text-xs font-bold text-purple-700 dark:text-purple-300">Analyse IA</span>
+        <span className="ml-auto text-xs text-gray-400">Confiance : {pct}%</span>
       </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-semibold border ${rc.bg} ${rc.text} ${rc.border}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${rc.dot}`} />
+          Risque : {lvl}
+        </span>
+        {act && (
+          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${act.cls}`}>
+            Action suggérée : {act.label}
+          </span>
+        )}
+        {typeof ai.riskScore === 'number' && (
+          <span className="text-xs text-gray-500">Score : {(ai.riskScore * 100).toFixed(0)}%</span>
+        )}
+      </div>
+      {ai.summary && (
+        <p className="text-xs text-gray-700 dark:text-gray-300 italic leading-relaxed">{ai.summary}</p>
+      )}
+      {ai.categories && ai.categories.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {ai.categories.map((cat) => (
+            <span key={cat} className="px-1.5 py-0.5 text-[10px] font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 rounded">
+              {cat}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -177,7 +197,6 @@ function AdminNotesSection({
       <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
         <MessageSquare size={12} /> {t('reported_page.note_section_title')}
       </h4>
-
       {notes.filter((n) => n.adminId !== currentAdminId).map((n) => (
         <div key={n.id} className="p-3 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 space-y-1">
           <div className="flex items-center justify-between">
@@ -187,7 +206,6 @@ function AdminNotesSection({
           <p className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{n.content}</p>
         </div>
       ))}
-
       {myNote && editingId !== myNote.id ? (
         <div className="p-3 rounded-xl border border-[#00926B]/30 bg-emerald-50/50 dark:bg-emerald-900/10 space-y-1">
           <div className="flex items-center justify-between">
@@ -221,7 +239,6 @@ function AdminNotesSection({
           </div>
         </div>
       )}
-
       {notes.length === 0 && !myNote && (
         <p className="text-xs text-gray-400 italic">{t('reported_page.note_empty')}</p>
       )}
@@ -237,12 +254,12 @@ function PublicationDetailDrawer({
   publicationId: number; onClose: () => void; onActionDone: () => void; initialTab: TabType;
 }) {
   const { t, language } = useTranslation();
-  const [detail, setDetail] = useState<PublicationReportDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [detail, setDetail]             = useState<PublicationReportDetail | null>(null);
+  const [loading, setLoading]           = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  const [confirm, setConfirm] = useState<{ action: PublicationAction; label: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  const [toast, setToast]               = useState<{ msg: string; ok: boolean } | null>(null);
+  const [confirm, setConfirm]           = useState<{ action: PublicationAction; label: string } | null>(null);
+  const [activeTab, setActiveTab]       = useState<TabType>(initialTab);
 
   const currentAdminId = (() => {
     try { const token = getToken(); return JSON.parse(atob(token!.split('.')[1])).sub as number; }
@@ -257,11 +274,11 @@ function PublicationDetailDrawer({
       .finally(() => setLoading(false));
   }, [publicationId]);
 
-  const handleAction = async (action: PublicationAction) => {
+  const handleAction = async (action: PublicationAction, note?: string) => {
     setActionLoading(true);
     setConfirm(null);
     try {
-      const res = await adminReportsService.takePublicationAction(publicationId, action, undefined);
+      const res = await adminReportsService.takePublicationAction(publicationId, action, note);
       setToast({ msg: res.message, ok: true });
       setTimeout(() => { onActionDone(); onClose(); }, 1400);
     } catch (err) {
@@ -286,14 +303,15 @@ function PublicationDetailDrawer({
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {confirm && (
-        <ConfirmModal
+        <ConfirmActionModal
           title={confirm.action === 'unpublish' ? t('reported_page.confirm_unpublish_title') : t('reported_page.confirm_republish_title')}
           description={confirm.action === 'unpublish' ? t('reported_page.confirm_unpublish_desc') : t('reported_page.confirm_republish_desc')}
           confirmLabel={confirm.label}
           confirmCls={confirm.action === 'unpublish'
             ? 'text-white bg-red-500 hover:bg-red-600'
             : 'text-white bg-emerald-500 hover:bg-emerald-600'}
-          onConfirm={() => handleAction(confirm.action)}
+          withNote
+          onConfirm={(note) => handleAction(confirm.action, note)}
           onCancel={() => setConfirm(null)}
         />
       )}
@@ -349,8 +367,10 @@ function PublicationDetailDrawer({
             <div>
               <AlertTriangle size={32} className="mx-auto text-gray-300 mb-3" />
               <p className="text-sm text-gray-400">{t('reported_page.load_detail_error')}</p>
-              <button onClick={() => { setLoading(true); adminReportsService.getPublicationReportDetail(publicationId).then(setDetail).catch(() => {}).finally(() => setLoading(false)); }}
-                className="mt-3 text-xs text-[#00926B] hover:underline">{t('reported_page.retry')}</button>
+              <button
+                onClick={() => { setLoading(true); adminReportsService.getPublicationReportDetail(publicationId).then(setDetail).catch(() => {}).finally(() => setLoading(false)); }}
+                className="mt-3 text-xs text-[#00926B] hover:underline"
+              >{t('reported_page.retry')}</button>
             </div>
           </div>
         ) : (
@@ -408,6 +428,9 @@ function PublicationDetailDrawer({
                       <p className="text-xs mt-0.5">{detail.intelligence.recommendation.label}</p>
                     </div>
                   </div>
+
+                  <AiInsightPanel ai={(detail.intelligence as any).ai} />
+
                   <div className="space-y-2">
                     <p className="text-xs text-gray-400 font-medium">{t('reported_page.top_reasons_title')}</p>
                     {detail.intelligence.topReasons.map(({ reason, count, severity }) => (
@@ -495,32 +518,28 @@ function PublicationDetailDrawer({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-
 export default function ReportedPublicationsPage() {
   const { t, language } = useTranslation();
+  const T = t as (k: string, p?: Record<string, unknown>) => string;
   const router = useRouter();
+  const { openPublicationModal } = usePublicationModal();
   const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [data, setData] = useState<PublicationReportListResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [riskFilter, setRiskFilter] = useState('all');
-  const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<{ id: number; tab: TabType } | null>(null);
-  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
-  const [exportOpen, setExportOpen] = useState(false);
+  const [data, setData]                   = useState<PublicationReportListResponse | null>(null);
+  const [loading, setLoading]             = useState(true);
+  const [search, setSearch]               = useState('');
+  const [searchInput, setSearchInput]     = useState('');
+  const [statusFilter, setStatusFilter]   = useState('all');
+  const [riskFilter, setRiskFilter]       = useState('all');
+  const [page, setPage]                   = useState(1);
+  const [selected, setSelected]           = useState<{ id: number; tab: TabType } | null>(null);
+  const [toast, setToast]                 = useState<{ msg: string; ok: boolean } | null>(null);
+  const [viewLoading, setViewLoading]     = useState<number | null>(null);
+  // AI frontend filters
+  const [aiRiskFilter, setAiRiskFilter]           = useState('all');
+  const [aiActionFilter, setAiActionFilter]       = useState('all');
+  const [aiConflictFilter, setAiConflictFilter]   = useState('all');
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toastTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const exportRef   = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok });
@@ -542,6 +561,19 @@ export default function ReportedPublicationsPage() {
     }
   }, [statusFilter, riskFilter, search, page]);
 
+  // Client-side AI filter on top of server data
+  const displayedItems = useMemo(() => {
+    if (!data?.items) return [];
+    return data.items.filter((item) => {
+      if (aiRiskFilter !== 'all' && item.ai?.riskLevel !== aiRiskFilter) return false;
+      if (aiActionFilter !== 'all' && item.ai?.recommendedAction !== aiActionFilter) return false;
+      if (aiConflictFilter === 'conflict'   && !(item.ai?.riskLevel && item.ai.riskLevel !== item.riskLevel)) return false;
+      if (aiConflictFilter === 'aligned'    && !(item.ai?.riskLevel && item.ai.riskLevel === item.riskLevel)) return false;
+      if (aiConflictFilter === 'unanalyzed' && item.ai?.analyzedAt) return false;
+      return true;
+    });
+  }, [data, aiRiskFilter, aiActionFilter, aiConflictFilter]);
+
   useEffect(() => {
     try {
       const token = getToken();
@@ -560,53 +592,46 @@ export default function ReportedPublicationsPage() {
     searchTimer.current = setTimeout(() => { setSearch(val); setPage(1); }, 400);
   };
 
-  const resetFilters = () => { setStatusFilter('all'); setRiskFilter('all'); setSearch(''); setSearchInput(''); setPage(1); };
-
-  const handleExport = (format: 'csv' | 'json' | 'pdf') => {
-    if (format === 'pdf') { window.print(); return; }
-
-    const items = data?.items ?? [];
-    const RISK_LABELS: Record<string, string>   = { critical: t('reported_page.export_risk_critical'), high: t('reported_page.export_risk_high'), medium: t('reported_page.export_risk_medium'), low: t('reported_page.export_risk_low') };
-    const STATUS_LABELS: Record<string, string> = { published: t('reported_page.export_status_published'), pending: t('reported_page.export_status_pending'), rejected: t('reported_page.export_status_rejected'), draft: t('reported_page.export_status_draft') };
-    const TREND_LABELS: Record<string, string>  = { up: t('reported_page.export_trend_up'), down: t('reported_page.export_trend_down'), stable: t('reported_page.export_trend_stable') };
-
-    let content: string;
-    let filename: string;
-
-    if (format === 'json') {
-      content  = JSON.stringify({ exportedAt: new Date().toISOString(), total: data?.total ?? 0, summary: data?.summary, items }, null, 2);
-      filename = 'reported-publications.json';
-    } else {
-      const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
-      const header = [
-        t('reported_page.export_col_id'), t('reported_page.export_col_title'), t('reported_page.export_col_author'),
-        t('reported_page.export_col_risk_level'), t('reported_page.export_col_score'), t('reported_page.export_col_reports'),
-        t('reported_page.export_col_pending'), t('reported_page.export_col_top_reason'), t('reported_page.export_col_status'),
-        t('reported_page.export_col_trend'), t('reported_page.export_col_last_report'),
-      ];
-      const rows = items.map(item => [
-        String(item.publicationId),
-        esc(item.title),
-        esc(item.authorName),
-        RISK_LABELS[item.riskLevel]     ?? item.riskLevel,
-        String(item.riskScore),
-        String(item.reportCount),
-        String(item.pendingCount),
-        item.topReason ? esc(REASON_LABEL_KEYS[item.topReason] ? t(REASON_LABEL_KEYS[item.topReason]) : item.topReason) : '',
-        STATUS_LABELS[item.publicationStatus] ?? item.publicationStatus,
-        TREND_LABELS[item.trend]        ?? item.trend,
-        item.lastReportAt ? new Date(item.lastReportAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '',
-      ]);
-      content  = [header, ...rows].map(r => r.join(',')).join('\n');
-      filename = 'reported-publications.csv';
+  const handleViewPublication = async (publicationId: number) => {
+    setViewLoading(publicationId);
+    try {
+      const full = await publicationService.findOne(publicationId);
+      const initials = full.author?.name
+        ? full.author.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+        : '??';
+      openPublicationModal({
+        id: String(full.id),
+        title: full.title,
+        content: full.content ?? '',
+        description: full.description ?? '',
+        author: {
+          id: full.author?.id,
+          name: full.author?.name ?? '',
+          initials: full.author?.initials ?? initials,
+          department: full.author?.department ?? '',
+          avatar: full.author?.profileImage ?? full.author?.avatar ?? null,
+        },
+        category: { name: full.category?.name ?? '', slug: full.category?.slug ?? '' },
+        tags: full.tags ?? [],
+        publishedAt: full.publishedAt ?? full.createdAt ?? new Date().toISOString(),
+        status: full.status ?? 'published',
+        stats: { likes: full.stats?.likes ?? 0, comments: full.stats?.comments ?? 0, views: full.stats?.views ?? 0 },
+        isLiked: full.isLiked ?? false,
+        isBookmarked: full.isBookmarked ?? false,
+      });
+    } catch {
+      showToast(t('reported_page.load_error'), false);
+    } finally {
+      setViewLoading(null);
     }
-
-    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
   };
+
+  const resetFilters = () => {
+    setStatusFilter('all'); setRiskFilter('all'); setSearch(''); setSearchInput(''); setPage(1);
+    setAiRiskFilter('all'); setAiActionFilter('all'); setAiConflictFilter('all');
+  };
+
+  const hasActiveFilters = riskFilter !== 'all' || statusFilter !== 'all' || search || aiRiskFilter !== 'all' || aiActionFilter !== 'all' || aiConflictFilter !== 'all';
 
   const summary = data?.summary;
 
@@ -630,31 +655,17 @@ export default function ReportedPublicationsPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('reported_page.pub_title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {(data?.total ?? 0) <= 1
-                ? t('reported_page.pub_subtitle_one',    { count: data?.total ?? 0 })
-                : t('reported_page.pub_subtitle_plural', { count: data?.total ?? 0 })}
+                ? T('reported_page.pub_subtitle_one',    { count: data?.total ?? 0 })
+                : T('reported_page.pub_subtitle_plural', { count: data?.total ?? 0 })}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setExportOpen(o => !o)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <Download size={13} /> {t('reported_page.export')}
-              </button>
-              {exportOpen && (
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg py-1 z-20 min-w-[100px]">
-                  <button onClick={() => { handleExport('csv');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">CSV</button>
-                  <button onClick={() => { handleExport('json'); setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">JSON</button>
-                  <button onClick={() => { handleExport('pdf');  setExportOpen(false); }} className="w-full text-left px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">PDF</button>
-                </div>
-              )}
-            </div>
             <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
               <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> {t('reported_page.refresh')}
             </button>
           </div>
         </div>
+
         {toast && (
           <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm ${toast.ok ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300' : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300'}`}>
             {toast.ok ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
@@ -697,31 +708,47 @@ export default function ReportedPublicationsPage() {
               className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30 focus:border-[#00926B]"
             />
           </div>
-
-          <select
-            value={riskFilter}
-            onChange={(e) => { setRiskFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30"
-          >
+          <select value={riskFilter} onChange={(e) => { setRiskFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30">
             <option value="all">{t('reported_page.all_levels')}</option>
             <option value="critical">{t('reported_page.risk_critical')}</option>
             <option value="high">{t('reported_page.risk_high')}</option>
             <option value="medium">{t('reported_page.risk_medium')}</option>
             <option value="low">{t('reported_page.risk_low')}</option>
           </select>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30"
-          >
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#00926B]/30">
             <option value="all">{t('reported_page.all_statuses')}</option>
             <option value="pending">{t('reported_page.status_pending')}</option>
             <option value="reviewed">{t('reported_page.reviewed_filter')}</option>
             <option value="dismissed">{t('reported_page.dismissed_filter')}</option>
           </select>
-
-          {(riskFilter !== 'all' || statusFilter !== 'all' || search) && (
+          {/* AI-only filters (client-side) */}
+          <select value={aiRiskFilter} onChange={(e) => setAiRiskFilter(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400/30">
+            <option value="all">{T('reported_page.all_ai_risks')}</option>
+            <option value="critical">{t('reported_page.risk_critical')}</option>
+            <option value="high">{t('reported_page.risk_high')}</option>
+            <option value="medium">{t('reported_page.risk_medium')}</option>
+            <option value="low">{t('reported_page.risk_low')}</option>
+          </select>
+          <select value={aiActionFilter} onChange={(e) => setAiActionFilter(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400/30">
+            <option value="all">{T('reported_page.all_ai_actions')}</option>
+            <option value="dismiss">Rejeter</option>
+            <option value="review">Examiner</option>
+            <option value="warn">Avertir</option>
+            <option value="hide">Masquer</option>
+            <option value="ban">Suspendre</option>
+          </select>
+          <select value={aiConflictFilter} onChange={(e) => setAiConflictFilter(e.target.value)}
+            className="px-3 py-2 text-sm rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/60 dark:bg-purple-900/10 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400/30">
+            <option value="all">{T('reported_page.all_conflicts')}</option>
+            <option value="conflict">{T('reported_page.ai_conflict_only')}</option>
+            <option value="aligned">{T('reported_page.ai_aligned_only')}</option>
+            <option value="unanalyzed">{T('reported_page.ai_unanalyzed')}</option>
+          </select>
+          {hasActiveFilters && (
             <button onClick={resetFilters} className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl transition-colors">
               <X size={12} /> {t('reported_page.reset_filters')}
             </button>
@@ -736,6 +763,12 @@ export default function ReportedPublicationsPage() {
                 <tr className="text-left text-xs text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/40">
                   <th className="px-6 py-3 font-medium">{t('reported_page.col_publication')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_risk')}</th>
+                  <th className="px-4 py-3 font-medium">
+                    <span className="inline-flex items-center gap-1">
+                      <Sparkles size={10} className="text-purple-500" />
+                      {T('reported_page.col_ai_analysis')}
+                    </span>
+                  </th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_score')}</th>
                   <th className="px-4 py-3 font-medium text-center">{t('reported_page.col_reports')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_top_reason')}</th>
@@ -749,24 +782,23 @@ export default function ReportedPublicationsPage() {
                 {loading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 9 }).map((_, j) => (
+                      {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j} className="px-4 py-3"><Skeleton className="h-5" /></td>
                       ))}
                     </tr>
                   ))
-                ) : !data?.items.length ? (
+                ) : !displayedItems.length ? (
                   <tr>
-                    <td colSpan={9} className="px-6 py-12 text-center">
+                    <td colSpan={10} className="px-6 py-12 text-center">
                       <Flag size={32} className="mx-auto text-gray-200 dark:text-gray-700 mb-3" />
                       <p className="text-sm text-gray-400">{t('reported_page.empty_pub')}</p>
-                      {(riskFilter !== 'all' || statusFilter !== 'all' || search) && (
+                      {hasActiveFilters && (
                         <button onClick={resetFilters} className="mt-2 text-xs text-[#00926B] hover:underline">{t('reported_page.reset_filters')}</button>
                       )}
                     </td>
                   </tr>
                 ) : (
-                  data.items.map((item) => {
-                    const rc = RISK_CONFIG[item.riskLevel];
+                  displayedItems.map((item) => {
                     const sc = PUBLICATION_STATUS_LABEL_KEYS[item.publicationStatus];
                     return (
                       <tr
@@ -777,13 +809,18 @@ export default function ReportedPublicationsPage() {
                           <p className="font-medium text-gray-900 dark:text-white truncate">{item.title}</p>
                           <p className="text-xs text-gray-400 truncate">{item.authorName}</p>
                         </td>
-                        <td className="px-4 py-3"><RiskBadge level={item.riskLevel} /></td>
+                        <td className="px-4 py-3">
+                          <RiskBadge level={item.riskLevel} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <AiAnalysisCell ai={item.ai} sysRiskLevel={item.riskLevel} />
+                        </td>
                         <td className="px-4 py-3 w-28"><ScoreBar score={item.riskScore} /></td>
                         <td className="px-4 py-3 text-center">
                           <span className="inline-flex flex-col items-center">
                             <span className="font-bold text-gray-900 dark:text-white">{item.reportCount}</span>
                             {item.pendingCount > 0 && (
-                              <span className="text-xs text-amber-500">({t('reported_page.pending_short', { count: item.pendingCount })})</span>
+                              <span className="text-xs text-amber-500">({T('reported_page.pending_short', { count: item.pendingCount })})</span>
                             )}
                           </span>
                         </td>
@@ -807,17 +844,16 @@ export default function ReportedPublicationsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleViewPublication(item.publicationId)}
+                              disabled={viewLoading === item.publicationId}
+                              className="inline-flex items-center gap-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium rounded-lg transition-colors disabled:opacity-50">
+                              <Eye size={11} className={viewLoading === item.publicationId ? 'animate-pulse' : ''} />
+                              Voir
+                            </button>
                             <button onClick={() => setSelected({ id: item.publicationId, tab: 'analysis' })}
                               className="inline-flex items-center gap-1 px-2 py-1.5 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-lg transition-colors">
                               <Shield size={11} /> {t('reported_page.tab_analysis')}
-                            </button>
-                            <button onClick={() => setSelected({ id: item.publicationId, tab: 'reports' })}
-                              className="inline-flex items-center gap-1 px-2 py-1.5 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 text-xs font-medium rounded-lg transition-colors">
-                              <Flag size={11} /> {t('reported_page.tab_reports')}
-                            </button>
-                            <button onClick={() => setSelected({ id: item.publicationId, tab: 'notes' })}
-                              className="inline-flex items-center gap-1 px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-medium rounded-lg transition-colors">
-                              <MessageSquare size={11} /> {t('reported_page.tab_notes')}
                             </button>
                           </div>
                         </td>
@@ -832,7 +868,7 @@ export default function ReportedPublicationsPage() {
           {/* Pagination */}
           {data && data.totalPages > 1 && (
             <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
-              <p className="text-xs text-gray-400">{t('reported_page.pagination', { total: data.total, page: data.page, pages: data.totalPages })}</p>
+              <p className="text-xs text-gray-400">{T('reported_page.pagination', { total: data.total, page: data.page, pages: data.totalPages })}</p>
               <div className="flex gap-1">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 disabled:opacity-30 transition-colors">
                   <ChevronLeft size={16} />
@@ -845,6 +881,7 @@ export default function ReportedPublicationsPage() {
           )}
         </div>
       </div>
+
     </div>
   );
 }

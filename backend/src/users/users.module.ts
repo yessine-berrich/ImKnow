@@ -15,6 +15,7 @@ import { SessionModule } from 'src/session/session.module';
 import { Session } from 'src/session/entities/session.entity';
 import { UserReport } from './entities/user-report.entity';
 import { AvatarUploadService } from './avatar-upload.service';
+import { ReportAIModule } from 'src/report-ai/report-ai.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AvatarUploadService } from './avatar-upload.service';
     NotificationModule,
     MailModule,
     forwardRef(() => SessionModule),
+    ReportAIModule,
   ],
   providers: [
     UsersService,

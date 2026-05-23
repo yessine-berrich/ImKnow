@@ -5,7 +5,7 @@ import PublicationCard from '@/components/publication/PublicationCard';
 import TrendingPublications from '@/components/publication/Trendingpublications';
 import TopContributors from '@/components/users/Topcontributors';
 import PublicationDetailModal from '@/components/modals/PublicationDetailModal';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, CheckCircle2 } from 'lucide-react';
 import CreatePublicationModal from '@/components/modals/CreatePublicationModal';
 import { useSearchParams } from 'next/navigation';
 import { fetchCurrentUser, isAuthenticated } from '../../../../../../services/auth.service';
@@ -14,6 +14,8 @@ import { confirm } from '@/components/modals/ConfirmModal';
 import { publicationService } from '../../../../../../services/publication.service';
 import { useTranslation } from '@/context/LanguageContext';
 import { translateError } from '@/utils/errorTranslation';
+
+const PAGE_SIZE = 10;
 
 interface Publication {
   id: string;
@@ -71,6 +73,9 @@ export default function HomePage() {
 function HomePageContent() {
   const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | undefined>();
   const [isCreateModalOpen, setCreateModalOpen] = useState(false);
@@ -83,6 +88,13 @@ function HomePageContent() {
   const searchParams = useSearchParams();
   const publicationIdFromUrl = searchParams.get('publication');
   const publicationRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef(false);
+  // Refs mirror — keep observer callback always up to date without recreating it
+  const hasMoreRef = useRef(true);
+  const currentPageRef = useRef(1);
+  hasMoreRef.current = hasMore;
+  currentPageRef.current = currentPage;
 
   useEffect(() => {
     if (!loading && publications.length > 0 && publicationIdFromUrl) {
@@ -105,7 +117,7 @@ function HomePageContent() {
         const user = await fetchCurrentUser();
         const userId = user?.id;
         if (userId) setCurrentUserId(userId);
-        await fetchPublications();
+        await fetchPublications(1, false);
       } catch (error) {
         console.error('Error loading user or publications:', error);
       }
@@ -113,49 +125,102 @@ function HomePageContent() {
     loadUserAndPublications();
   }, []);
 
-  const fetchPublications = async () => {
+  // Infinite scroll — attach observer once the sentinel is in the DOM (after initial load)
+  useEffect(() => {
+    if (loading) return; // sentinel not rendered yet while initial spinner is showing
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        if (!hasMoreRef.current || isFetchingRef.current) return;
+        const nextPage = currentPageRef.current + 1;
+        currentPageRef.current = nextPage;
+        setCurrentPage(nextPage);
+        fetchPublications(nextPage, true);
+      },
+      { rootMargin: '200px' }, // start loading 200px before the sentinel is visible
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loading]); // re-run when loading changes so the observer attaches after render
+
+  const transformPublications = (data: any[]): Publication[] =>
+    data.map((publication: any) => ({
+      id: publication.id.toString(),
+      title: publication.title,
+      description: publication.description || publication.content?.substring(0, 200) || '',
+      content: publication.content,
+      author: {
+        id: publication.author?.id,
+        name: publication.author?.name?.trim() || 'Unknown',
+        initials: publication.author?.initials?.toUpperCase() || 'U',
+        department: publication.author?.department || publication.author?.role || 'Membre',
+        avatar: publication.author?.avatar || publication.author?.profileImage,
+      },
+      category: {
+        id: publication.category?.id,
+        name: publication.category?.name || 'Uncategorized',
+        slug: publication.category?.slug || 'uncategorized',
+      },
+      tags: publication.tags || [],
+      publishedAt: publication.createdAt,
+      updatedAt: publication.updatedAt,
+      status: publication.status,
+      stats: {
+        likes: publication.stats?.likes || 0,
+        comments: publication.stats?.comments || 0,
+        views: publication.stats?.views || 0,
+      },
+      isLiked: publication.isLiked || false,
+      isBookmarked: publication.isBookmarked || false,
+      media: publication.media || [],
+    }));
+
+  const fetchPublications = async (page: number, append: boolean) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
-      setLoading(true);
-      const response = await publicationService.getFeeds();
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+        setError(null);
+      }
 
-      const transformedPublications: Publication[] = response.data.map((publication: any) => ({
-        id: publication.id.toString(),
-        title: publication.title,
-        description: publication.description || publication.content?.substring(0, 200) || '',
-        content: publication.content,
-        author: {
-          id: publication.author?.id,
-          name: publication.author?.name?.trim() || 'Unknown',
-          initials: publication.author?.initials?.toUpperCase() || 'U',
-          department: publication.author?.department || publication.author?.role || 'Membre',
-          avatar: publication.author?.avatar || publication.author?.profileImage,
-        },
-        category: {
-          id: publication.category?.id,
-          name: publication.category?.name || 'Uncategorized',
-          slug: publication.category?.slug || 'uncategorized',
-        },
-        tags: publication.tags || [],
-        publishedAt: publication.createdAt,
-        updatedAt: publication.updatedAt,
-        status: publication.status,
-        stats: {
-          likes: publication.stats?.likes || 0,
-          comments: publication.stats?.comments || 0,
-          views: publication.stats?.views || 0,
-        },
-        isLiked: publication.isLiked || false,
-        isBookmarked: publication.isBookmarked || false,
-        media: publication.media || [],
-      }));
+      const response = await publicationService.getFeeds(page, PAGE_SIZE);
+      const transformed = transformPublications(response.data);
 
-      setPublications(transformedPublications);
+      if (append) {
+        setPublications((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const unique = transformed.filter((p) => !existingIds.has(p.id));
+          return [...prev, ...unique];
+        });
+      } else {
+        setPublications(transformed);
+      }
+
+      setHasMore(response.meta?.hasMore ?? false);
     } catch (err) {
-      setError(translateError(err instanceof Error ? err.message : undefined, t) || t('home.error_generic'));
+      if (!append) {
+        setError(translateError(err instanceof Error ? err.message : undefined, t) || t('home.error_generic'));
+      }
       console.error('❌ Erreur:', err);
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    currentPageRef.current = 1;
+    setCurrentPage(1);
+    setHasMore(true);
+    await fetchPublications(1, false);
   };
 
   const handleOpenPublicationModal = (publication: any) => {
@@ -211,7 +276,7 @@ function HomePageContent() {
     setEditingPublicationId(undefined);
   };
 
-  const handlePublicationSuccess = () => fetchPublications();
+  const handlePublicationSuccess = () => handleRefresh();
 
   const handleLike = async (id: string) => {
     try {
@@ -292,7 +357,7 @@ function HomePageContent() {
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('home.error_title')}</h3>
           <p className="text-gray-600 dark:text-gray-400">{error}</p>
           <button
-            onClick={fetchPublications}
+            onClick={handleRefresh}
             className="mt-4 px-4 py-2 bg-[#168F6F] text-white rounded-lg hover:bg-[#0F6B54] transition-colors"
           >
             {t('home.error_retry')}
@@ -350,34 +415,61 @@ function HomePageContent() {
                 ) : (
                   <>
                     {publications.map((publication) => (
-                  <div
-                    key={publication.id}
-                    ref={(el) => { publicationRefs.current[publication.id] = el; }}
-                    className="transition-all duration-300"
-                  >
-                    <PublicationCard
-                      publication={publication}
-                      onLike={handleLike}
-                      onBookmark={handleBookmark}
-                      onShare={handleShare}
-                      onPublicationUpdated={handlePublicationSuccess}
-                      showActions={isAuthenticated()}
-                      currentUserId={currentUserId}
-                      onEdit={currentUserId === publication.author.id ? handleEdit : undefined}
-                      onDelete={currentUserId === publication.author.id ? handleDelete : undefined}
-                      showHistory={currentUserId === publication.author.id}
-                    />
-                  </div>
+                      <div
+                        key={publication.id}
+                        ref={(el) => { publicationRefs.current[publication.id] = el; }}
+                        className="transition-all duration-300"
+                      >
+                        <PublicationCard
+                          publication={publication}
+                          onLike={handleLike}
+                          onBookmark={handleBookmark}
+                          onShare={handleShare}
+                          onPublicationUpdated={handlePublicationSuccess}
+                          showActions={isAuthenticated()}
+                          currentUserId={currentUserId}
+                          onEdit={currentUserId === publication.author.id ? handleEdit : undefined}
+                          onDelete={currentUserId === publication.author.id ? handleDelete : undefined}
+                          showHistory={currentUserId === publication.author.id}
+                        />
+                      </div>
                     ))}
 
-                    <div className="text-center pt-4">
-                      <button
-                        onClick={fetchPublications}
-                        className="px-6 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-                      >
-                        {t('home.refresh')}
-                      </button>
-                    </div>
+                    {/* Sentinel — déclenche le chargement de la page suivante */}
+                    <div ref={sentinelRef} className="h-4" />
+
+                    {/* Spinner pendant le chargement des pages suivantes */}
+                    {loadingMore && (
+                      <div className="flex flex-col items-center gap-3 py-6">
+                        {[0, 1].map((i) => (
+                          <div
+                            key={i}
+                            className="w-full bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 animate-pulse"
+                          >
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700" />
+                              <div className="flex-1 space-y-1.5">
+                                <div className="h-3 w-1/3 rounded bg-gray-200 dark:bg-gray-700" />
+                                <div className="h-2.5 w-1/4 rounded bg-gray-200 dark:bg-gray-700" />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="h-3 w-full rounded bg-gray-200 dark:bg-gray-700" />
+                              <div className="h-3 w-5/6 rounded bg-gray-200 dark:bg-gray-700" />
+                              <div className="h-3 w-4/6 rounded bg-gray-200 dark:bg-gray-700" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Fin du feed */}
+                    {!hasMore && !loadingMore && (
+                      <div className="flex flex-col items-center gap-2 py-8 text-gray-400 dark:text-gray-600">
+                        <CheckCircle2 className="h-6 w-6" />
+                        <p className="text-sm">{t('home.end_of_feed')}</p>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

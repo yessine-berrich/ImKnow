@@ -467,7 +467,15 @@
     "export_status_draft": "Draft",
     "export_trend_up": "Rising",
     "export_trend_down": "Falling",
-    "export_trend_stable": "Stable"
+    "export_trend_stable": "Stable",
+    "col_ai_analysis": "AI Analysis",
+    "ai_not_analyzed": "Not analyzed",
+    "all_ai_risks": "AI risk: All",
+    "all_ai_actions": "AI action: All",
+    "all_conflicts": "AI conflict: All",
+    "ai_conflict_only": "Conflicts only",
+    "ai_aligned_only": "Aligned only",
+    "ai_unanalyzed": "Unanalyzed"
   },
   "statistics_page": {
     "title": "Statistics",

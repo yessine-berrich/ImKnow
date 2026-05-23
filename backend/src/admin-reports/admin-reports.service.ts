@@ -270,6 +270,8 @@ export class AdminReportsService {
         .map(([reason, data]) => ({ reason, count: data.count, severity: data.severity }))
         .sort((a, b) => b.severity - a.severity);
 
+      const latestAiReport = reports.find((r) => r.aiAnalyzedAt !== null) ?? null;
+
       return {
         publicationId,
         title:          publication.title,
@@ -290,6 +292,16 @@ export class AdminReportsService {
         lastReportAt:   reports[0]?.createdAt ?? null,
         uniqueReporters: new Set(reports.map((r) => r.reporter?.id)).size,
         trend,
+        ai: latestAiReport ? {
+          riskScore:          latestAiReport.aiRiskScore,
+          riskLevel:          latestAiReport.aiRiskLevel,
+          categories:         latestAiReport.aiCategories,
+          summary:            latestAiReport.aiSummary,
+          recommendedAction:  latestAiReport.aiRecommendedAction,
+          confidence:         latestAiReport.aiConfidence,
+          model:              latestAiReport.aiModel,
+          analyzedAt:         latestAiReport.aiAnalyzedAt,
+        } : null,
       };
     });
 
@@ -392,6 +404,20 @@ export class AdminReportsService {
         autoDecision:   autoDecision.decision,
         confidence:     autoDecision.confidence,
         trend,
+        ai: (() => {
+          const r = reports.find((rep) => rep.aiAnalyzedAt !== null) ?? null;
+          if (!r) return null;
+          return {
+            riskScore:         r.aiRiskScore,
+            riskLevel:         r.aiRiskLevel,
+            categories:        r.aiCategories,
+            summary:           r.aiSummary,
+            recommendedAction: r.aiRecommendedAction,
+            confidence:        r.aiConfidence,
+            model:             r.aiModel,
+            analyzedAt:        r.aiAnalyzedAt,
+          };
+        })(),
       },
       reports: reports.map((r) => ({
         id:        r.id,
@@ -403,6 +429,16 @@ export class AdminReportsService {
           id:   r.reporter?.id,
           name: r.reporter ? `${r.reporter.firstName} ${r.reporter.lastName}`.trim() : 'Inconnu',
         },
+        ai: r.aiAnalyzedAt ? {
+          riskScore:         r.aiRiskScore,
+          riskLevel:         r.aiRiskLevel,
+          categories:        r.aiCategories,
+          summary:           r.aiSummary,
+          recommendedAction: r.aiRecommendedAction,
+          confidence:        r.aiConfidence,
+          model:             r.aiModel,
+          analyzedAt:        r.aiAnalyzedAt,
+        } : null,
       })),
     };
   }
@@ -560,6 +596,8 @@ export class AdminReportsService {
         .map(([reason, data]) => ({ reason, count: data.count, severity: data.severity }))
         .sort((a, b) => b.severity - a.severity);
 
+      const latestAiReport = reports.find((r) => r.aiAnalyzedAt !== null) ?? null;
+
       return {
         userId,
         userName:       `${user.firstName} ${user.lastName}`.trim(),
@@ -580,6 +618,16 @@ export class AdminReportsService {
         lastReportAt:   reports[0]?.createdAt ?? null,
         uniqueReporters: new Set(reports.map((r) => r.reporter?.id)).size,
         trend,
+        ai: latestAiReport ? {
+          riskScore:         latestAiReport.aiRiskScore,
+          riskLevel:         latestAiReport.aiRiskLevel,
+          categories:        latestAiReport.aiCategories,
+          summary:           latestAiReport.aiSummary,
+          recommendedAction: latestAiReport.aiRecommendedAction,
+          confidence:        latestAiReport.aiConfidence,
+          model:             latestAiReport.aiModel,
+          analyzedAt:        latestAiReport.aiAnalyzedAt,
+        } : null,
       };
     });
 
@@ -681,6 +729,20 @@ export class AdminReportsService {
         autoDecision:   autoDecision.decision,
         confidence:     autoDecision.confidence,
         trend,
+        ai: (() => {
+          const r = reports.find((rep) => rep.aiAnalyzedAt !== null) ?? null;
+          if (!r) return null;
+          return {
+            riskScore:         r.aiRiskScore,
+            riskLevel:         r.aiRiskLevel,
+            categories:        r.aiCategories,
+            summary:           r.aiSummary,
+            recommendedAction: r.aiRecommendedAction,
+            confidence:        r.aiConfidence,
+            model:             r.aiModel,
+            analyzedAt:        r.aiAnalyzedAt,
+          };
+        })(),
       },
       reports: reports.map((r) => ({
         id:        r.id,
@@ -692,6 +754,16 @@ export class AdminReportsService {
           id:   r.reporter?.id,
           name: r.reporter ? `${r.reporter.firstName} ${r.reporter.lastName}`.trim() : 'Inconnu',
         },
+        ai: r.aiAnalyzedAt ? {
+          riskScore:         r.aiRiskScore,
+          riskLevel:         r.aiRiskLevel,
+          categories:        r.aiCategories,
+          summary:           r.aiSummary,
+          recommendedAction: r.aiRecommendedAction,
+          confidence:        r.aiConfidence,
+          model:             r.aiModel,
+          analyzedAt:        r.aiAnalyzedAt,
+        } : null,
       })),
     };
   }

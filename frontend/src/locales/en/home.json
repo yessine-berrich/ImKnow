@@ -15,7 +15,8 @@
     "toast_link_copied": "Link copied to clipboard!",
     "confirm_delete": "Are you sure you want to delete this publication?",
     "error_delete": "Error deleting publication",
-    "error_generic": "An error occurred"
+    "error_generic": "An error occurred",
+    "end_of_feed": "You've seen all publications"
   },
   "trending": {
     "error_load": "Unable to load trends",
