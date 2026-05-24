@@ -242,7 +242,7 @@ export default function SharePublicationModal({ isOpen, onClose, publication }: 
 
           {/* ── Share with friends ───────────────────────────────────────────── */}
           <div className="px-5 pb-5 border-t border-gray-100 dark:border-gray-800 pt-4">
-            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Envoyer à des amis</p>
+            <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Envoyer à des collègues</p>
 
             {/* Search */}
             <div className="relative mb-3">
@@ -252,7 +252,7 @@ export default function SharePublicationModal({ isOpen, onClose, publication }: 
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher un ami…"
+                placeholder="Rechercher un collègue…"
                 className="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00926B] transition-all"
               />
             </div>
@@ -264,7 +264,7 @@ export default function SharePublicationModal({ isOpen, onClose, publication }: 
               </div>
             ) : filteredFriends.length === 0 ? (
               <p className="text-center text-sm text-gray-400 dark:text-gray-500 py-5">
-                {searchQuery ? 'Aucun ami trouvé' : 'Vous n\'avez pas encore d\'amis'}
+                {searchQuery ? 'Aucun collègue trouvé' : 'Vous n\'avez pas encore de collègues'}
               </p>
             ) : (
               <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
@@ -339,8 +339,8 @@ export default function SharePublicationModal({ isOpen, onClose, publication }: 
                   : sendStatus === 'sending'
                   ? 'Envoi…'
                   : selectedIds.size === 1
-                  ? 'Envoyer à 1 ami'
-                  : `Envoyer à ${selectedIds.size} amis`}
+                  ? 'Envoyer à 1 collègue'
+                  : `Envoyer à ${selectedIds.size} collègues`}
               </span>
             </button>
           </div>

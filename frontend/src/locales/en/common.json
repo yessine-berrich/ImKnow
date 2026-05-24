@@ -54,11 +54,11 @@
 
     "already_following": "You are already following this user",
     "not_following": "You are not following this user",
-    "already_friends": "You are already friends",
+    "already_friends": "You are already colleagues",
     "request_pending": "A contact request is already pending",
     "request_already_accepted": "This request has already been accepted",
     "request_not_found": "Request not found or already handled",
-    "not_friends": "You can only message your friends. Send a contact request first",
+    "not_friends": "You can only message your colleagues. Send a contact request first",
 
     "message_empty": "Message cannot be empty",
     "reaction_not_found": "This reaction does not exist",

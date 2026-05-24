@@ -804,6 +804,47 @@
     "invalid_image_link": "Invalid image link",
     "file_label": "file"
   },
+  "error_403": {
+    "title_403": "403",
+    "heading": "Access Denied",
+    "description": "You don't have the necessary permissions to access this page.",
+    "description_help": "If you think this is a mistake, contact your administrator.",
+    "btn_previous": "Previous Page",
+    "btn_home": "Back to Home"
+  },
+  "error_404": {
+    "meta_title": "Page Not Found | ImKnow",
+    "meta_description": "The page you are looking for does not exist or has been moved.",
+    "title_404": "404",
+    "heading": "Page Not Found",
+    "message": "Oops! The page you are looking for does not exist or has been moved.",
+    "btn_home": "Back to Home"
+  },
+  "verify_email_page": {
+    "loading_title": "Verifying…",
+    "loading_desc": "Please wait while we activate your account.",
+    "success_title": "Email Verified!",
+    "success_desc": "Your email address has been successfully confirmed. You can now sign in.",
+    "redirect_label": "Redirecting in",
+    "btn_signin": "Sign In Now",
+    "error_title": "Verification Failed",
+    "error_default": "The link is invalid or has expired (valid for 24h).",
+    "error_network": "A network error occurred. Please try again.",
+    "btn_new_account": "Create a New Account",
+    "btn_back_signin": "Back to Sign In",
+    "footer_help": "Need help?",
+    "footer_contact": "Contact support"
+  },
+  "delete_account_page": {
+    "loading_title": "Processing…",
+    "loading_desc": "Please wait while we confirm your account deletion.",
+    "error_title": "Confirmation Failed",
+    "error_default": "The link is invalid or has expired.",
+    "error_network": "A network error occurred. Please try again.",
+    "btn_back_signin": "Back to Sign In",
+    "footer_help": "Need help?",
+    "footer_contact": "Contact support"
+  },
   "landing_page": {
     "badge": "Intelligent Knowledge Management Platform",
     "title_line1": "Your knowledge,",

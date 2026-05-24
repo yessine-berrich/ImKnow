@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Users, UserPlus, UserCheck, UserX, Heart,
+  Users, UserPlus, UserCheck, UserX, Handshake,
   Loader2, Sparkles, UserMinus, ChevronRight,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -290,12 +290,12 @@ export default function FollowTabs({
               </span>
               {isFriend && activeTab !== 'friends' && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 text-[#168F6F]">
-                  <Heart size={9} className="fill-[#168F6F]" /> {t('connections.friend')}
+                  <Handshake size={9} /> {t('connections.friend')}
                 </span>
               )}
               {activeTab === 'friends' && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#168F6F]/10 text-[#168F6F]">
-                  <Heart size={9} className="fill-[#168F6F]" /> {t('connections.friend_badge')}
+                  <Handshake size={9} /> {t('connections.friend_badge')}
                 </span>
               )}
             </div>
@@ -341,7 +341,7 @@ export default function FollowTabs({
                   )}
                   {isFriend && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-[#168F6F]/10 text-[#168F6F] border border-[#168F6F]/20">
-                      <Heart size={13} className="fill-[#168F6F]" /> {t('connections.friend')}
+                      <Handshake size={13} /> {t('connections.friend')}
                     </span>
                   )}
                   <ActionBtn loading={busy} onClick={() => handleRemoveFollower(uid)} variant="danger">
@@ -374,7 +374,7 @@ export default function FollowTabs({
               )}
               {isFriend && (
                 <ActionBtn loading={busy} onClick={() => handleUnfollow(uid)} variant="secondary">
-                  <Heart size={13} className="fill-[#168F6F]" /><span>{t('connections.friend')}</span>
+                  <Handshake size={13} /><span>{t('connections.friend')}</span>
                 </ActionBtn>
               )}
               {!isFollowing && (
@@ -402,7 +402,7 @@ export default function FollowTabs({
   const tabs: { key: TabType; label: string; icon: React.ReactNode; show: boolean }[] = [
     { key: 'followers',   label: t('connections.followers'),   icon: <Users size={15} />,     show: true },
     { key: 'following',   label: t('connections.following'),   icon: <UserCheck size={15} />, show: true },
-    { key: 'friends',     label: t('connections.friends'),     icon: <Heart size={15} />,     show: true },
+    { key: 'friends',     label: t('connections.friends'),     icon: <Handshake size={15} />, show: true },
     { key: 'suggestions', label: t('connections.suggestions'), icon: <Sparkles size={15} />,  show: isCurrentUser },
   ];
 

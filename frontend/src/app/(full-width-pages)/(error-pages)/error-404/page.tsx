@@ -1,15 +1,13 @@
+'use client';
+
 import GridShape from "@/components/common/GridShape";
-import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-
-export const metadata: Metadata = {
-  title: "Page Non Trouvée | ImKnow",
-  description: "La page que vous recherchez n'existe pas ou a été déplacée.",
-};
+import { useTranslation } from "../../../../context/LanguageContext";
 
 export default function Error404() {
+  const { t } = useTranslation();
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen p-6 overflow-hidden z-1 bg-gradient-to-br from-[#e8f3f0] to-[#d4ebe5]">
       <GridShape />
@@ -28,11 +26,11 @@ export default function Error404() {
         </div>
 
         <h1 className="mb-4 font-bold text-[#168F6F] text-title-md xl:text-title-2xl">
-          404
+          {t('error_404.title_404')}
         </h1>
         
         <h2 className="mb-4 text-2xl font-semibold text-gray-800 dark:text-white">
-          Page Non Trouvée
+          {t('error_404.heading')}
         </h2>
 
         <div className="relative w-full h-32 mb-6">
@@ -53,7 +51,7 @@ export default function Error404() {
         </div>
 
         <p className="mb-8 text-base text-gray-600 dark:text-gray-400 sm:text-lg">
-          Oups ! La page que vous recherchez n'existe pas ou a été déplacée.
+          {t('error_404.message')}
         </p>
 
         <Link
@@ -63,7 +61,7 @@ export default function Error404() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-          Retour à l'Accueil
+          {t('error_404.btn_home')}
         </Link>
       </div>
     </div>

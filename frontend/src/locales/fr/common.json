@@ -54,11 +54,11 @@
 
     "already_following": "Vous suivez déjà cet utilisateur",
     "not_following": "Vous ne suivez pas cet utilisateur",
-    "already_friends": "Vous êtes déjà amis",
+    "already_friends": "Vous êtes déjà collègues",
     "request_pending": "Une demande de contact est déjà en attente",
     "request_already_accepted": "Cette demande a déjà été acceptée",
     "request_not_found": "Demande introuvable ou déjà traitée",
-    "not_friends": "Vous ne pouvez écrire qu'à vos amis. Envoyez d'abord une demande de contact",
+    "not_friends": "Vous ne pouvez écrire qu'à vos collègues. Envoyez d'abord une demande de contact",
 
     "message_empty": "Le message ne peut pas être vide",
     "reaction_not_found": "Cette réaction n'existe pas",

@@ -155,7 +155,7 @@ export default function SendMessageRequestModal({
               <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl mb-4">
                 <MessageSquare size={14} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-                  Vous n'êtes pas encore amis avec {user.firstName}. Envoyez-lui une demande pour pouvoir communiquer.
+                  Vous n'êtes pas encore collègues avec {user.firstName}. Envoyez-lui une demande pour pouvoir communiquer.
                 </p>
               </div>
 

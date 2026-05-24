@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslation } from '../../../../../../context/LanguageContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -12,6 +13,7 @@ type Status = 'loading' | 'error';
 export default function ConfirmAccountDeletionPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const [status, setStatus] = useState<Status>('loading');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -22,7 +24,7 @@ export default function ConfirmAccountDeletionPage() {
 
       if (!userId || !token) {
         setStatus('error');
-        setErrorMessage('Invalid confirmation link.');
+        setErrorMessage(t('delete_account_page.error_default'));
         return;
       }
 
@@ -36,7 +38,7 @@ export default function ConfirmAccountDeletionPage() {
 
         if (!response.ok) {
           setStatus('error');
-          setErrorMessage(data?.message || 'Invalid or expired confirmation link.');
+          setErrorMessage(data?.message || t('delete_account_page.error_default'));
           return;
         }
 
@@ -52,7 +54,7 @@ export default function ConfirmAccountDeletionPage() {
         router.replace('/signin?deleted=true');
       } catch {
         setStatus('error');
-        setErrorMessage('A network error occurred. Please try again.');
+        setErrorMessage(t('delete_account_page.error_network'));
       }
     };
 
@@ -92,9 +94,9 @@ export default function ConfirmAccountDeletionPage() {
               >
                 <Loader2 className="w-10 h-10 animate-spin" style={{ color: '#168F6F' }} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing…</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('delete_account_page.loading_title')}</h2>
               <p className="text-gray-500 text-sm">
-                Please wait while we confirm your account deletion.
+                {t('delete_account_page.loading_desc')}
               </p>
             </div>
           )}
@@ -105,15 +107,15 @@ export default function ConfirmAccountDeletionPage() {
               <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-red-50 flex items-center justify-center">
                 <AlertCircle className="w-10 h-10 text-red-500" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Confirmation Failed</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('delete_account_page.error_title')}</h2>
               <p className="text-gray-500 text-sm mb-6">
-                {errorMessage || 'The link is invalid or has expired.'}
+                {errorMessage || t('delete_account_page.error_default')}
               </p>
               <button
                 onClick={() => router.push('/signin')}
                 className="w-full py-3 font-semibold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                Back to Sign In
+                {t('delete_account_page.btn_back_signin')}
               </button>
             </div>
           )}
@@ -122,13 +124,13 @@ export default function ConfirmAccountDeletionPage() {
         {/* Footer */}
         <div className="px-8 pb-6 text-center">
           <p className="text-xs text-gray-400">
-            Need help?{' '}
+            {t('delete_account_page.footer_help')}{' '}
             <a
               href="mailto:support@imknow.com"
               className="hover:underline"
               style={{ color: '#168F6F' }}
             >
-              Contact support
+              {t('delete_account_page.footer_contact')}
             </a>
           </p>
         </div>

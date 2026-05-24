@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, UserCheck, UserPlus, Search, X, Loader2,
-  ChevronLeft, UserMinus, Heart, Grid, List,
+  ChevronLeft, UserMinus, Handshake, Grid, List,
   RefreshCw, Eye, Sparkles, Send, MessageSquare
 } from 'lucide-react';
 import Avatar from '@/components/ui/avatar/Avatar';
@@ -142,8 +142,8 @@ function UserCard({
                   {fullName}
                 </h3>
                 {isFriend && (
-                  <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs font-medium rounded-full inline-flex items-center gap-1">
-                    <Heart size={10} /> {t('connections.friend')}
+                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-full inline-flex items-center gap-1">
+                    <Handshake size={10} /> {t('connections.friend')}
                   </span>
                 )}
                 {user.isOnline && (
@@ -339,8 +339,8 @@ function UserListItem({
               {fullName}
             </p>
             {isFriend && (
-              <span className="px-2 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 text-xs font-medium rounded-full">
-                {t('connections.friend')}
+              <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-full inline-flex items-center gap-1">
+                <Handshake size={10} /> {t('connections.friend')}
               </span>
             )}
             {user.isOnline && (
@@ -623,7 +623,7 @@ export default function ConnectionsPage() {
   const tabs = [
     { id: 'followers' as TabType, label: t('connections.followers'), icon: Users, count: stats?.followersCount || 0 },
     { id: 'following' as TabType, label: t('connections.following'), icon: UserCheck, count: stats?.followingCount || 0 },
-    { id: 'friends' as TabType, label: t('connections.friends'), icon: Heart, count: stats?.friendsCount || 0 },
+    { id: 'friends' as TabType, label: t('connections.friends'), icon: Handshake, count: stats?.friendsCount || 0 },
     { id: 'suggestions' as TabType, label: t('connections.suggestions'), icon: Sparkles, count: Math.max(0, suggestions.length - dismissedSuggestionIds.size) },
   ];
 

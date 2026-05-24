@@ -266,7 +266,7 @@ export default function NotificationsPage() {
       case NotificationType.PUBLICATION_PUBLISHED:
         return t('notifications.type_publication_published');
       case NotificationType.PUBLICATION_PENDING_MODERATION:
-        return t('notifications.type_publication_pending');
+        return t('notifications.type_pending_moderation');
       case NotificationType.PUBLICATION_REJECTED:
         return t('notifications.type_publication_rejected');
       case NotificationType.PUBLICATION_LIKED:
@@ -275,13 +275,13 @@ export default function NotificationsPage() {
       case NotificationType.COMMENT_LIKED:
         return t('notifications.type_comment_liked');
       case NotificationType.PUBLICATION_BOOKMARKED:
-        return t('notifications.type_publication_bookmarked');
+        return t('notifications.type_bookmarked');
       case NotificationType.SYSTEM_INFO:
         return t('notifications.type_system_info');
       case NotificationType.SYSTEM_ERROR:
         return t('notifications.type_system_error');
       case NotificationType.USER_ROLE_CHANGED:
-        return t('notifications.type_user_role_changed');
+        return t('notifications.type_role_changed');
       case NotificationType.NEWSLETTER:
         return t('notifications.type_newsletter');
       case NotificationType.PLATFORM_UPDATE:
@@ -295,24 +295,24 @@ export default function NotificationsPage() {
     switch (type) {
       case NotificationType.NEW_COMMENT:
       case NotificationType.COMMENT_ON_PUBLICATION:
-        return t('notifications.msg_commented', { name: senderName });
+        return t('notifications.msg_new_comment', { name: senderName });
       case NotificationType.REPLY:
-        return t('notifications.msg_replied', { name: senderName });
+        return t('notifications.msg_reply', { name: senderName });
       case NotificationType.MENTION:
-        return t('notifications.msg_mentioned', { name: senderName });
+        return t('notifications.msg_mention', { name: senderName });
       case NotificationType.NEW_FOLLOWER:
-        return t('notifications.msg_followed', { name: senderName });
+        return t('notifications.msg_new_follower', { name: senderName });
       case NotificationType.PUBLICATION_LIKED:
       case NotificationType.LIKE_ON_PUBLICATION:
-        return t('notifications.msg_liked_pub', { name: senderName });
+        return t('notifications.msg_publication_liked', { name: senderName });
       case NotificationType.COMMENT_LIKED:
-        return t('notifications.msg_liked_comment', { name: senderName });
+        return t('notifications.msg_comment_liked', { name: senderName });
       case NotificationType.PUBLICATION_BOOKMARKED:
         return t('notifications.msg_bookmarked', { name: senderName });
       case NotificationType.PUBLICATION_PUBLISHED:
-        return t('notifications.msg_pub_published');
+        return t('notifications.msg_publication_published');
       case NotificationType.PUBLICATION_REJECTED:
-        return t('notifications.msg_pub_rejected');
+        return t('notifications.msg_publication_rejected');
       case NotificationType.ACCOUNT_ACTIVATED:
         return t('notifications_page.msg_account_activated');
       case NotificationType.ACCOUNT_DEACTIVATED:
