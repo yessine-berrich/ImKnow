@@ -12,4 +12,5 @@ export interface RagResponse {
   answer?: string;
   sources?: RagSource[];
   error?: string;
+  conversationId?: number;
 }

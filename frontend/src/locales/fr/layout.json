@@ -5,6 +5,7 @@
     "no_items": "Aucun élément disponible",
     "nav_home": "Accueil",
     "nav_chat": "Chat",
+    "nav_assistant": "Assistant IA",
     "nav_activities": "Activités",
     "nav_likes": "Likes",
     "nav_comments": "Commentaires",
@@ -40,6 +41,7 @@
     "publication_count_one": "{{count}} publication",
     "publication_count_plural": "{{count}} publications",
     "ai_assistant": "Assistant IA",
+    "ai_assistant_subtitle": "Explorez les publications par l'intelligence artificielle",
     "my_drafts": "Mes brouillons",
     "add_publication": "Ajouter une publication"
   },

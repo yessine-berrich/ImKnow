@@ -5,11 +5,14 @@ import { PublicationChunk } from './entities/publication-chunk.entity';
 import { Publication } from './entities/publication.entity';
 import { SearchService } from '../search/search.service';
 
-const CHUNK_TARGET_SIZE = 1000;
-const CHUNK_OVERLAP = 200;
+const CHUNK_TARGET_SIZE = 500;
+const CHUNK_OVERLAP = 100;
 
 @Injectable()
 export class PublicationChunkService {
+  // Tracks in-progress generation per publicationId to prevent concurrent duplicate runs.
+  private readonly inProgress = new Set<number>();
+
   constructor(
     @InjectRepository(PublicationChunk)
     private readonly chunkRepository: Repository<PublicationChunk>,
@@ -19,9 +22,15 @@ export class PublicationChunkService {
   ) {}
 
   private buildSourceText(publication: Publication): string {
+    // Returns only the content to embed — metadata header is added by Groq context, not here,
+    // to avoid diluting semantic vectors with structural boilerplate shared across all publications.
+    return publication.content.trim();
+  }
+
+  private buildMetadataPrefix(publication: Publication): string {
     const category = publication.category?.name || 'Uncategorized';
     const tags = publication.tags?.map((t) => t.name).join(', ') || 'none';
-    return `Title: ${publication.title}\nCategory: ${category}\nTags: ${tags}\nContent:\n${publication.content}`.trim();
+    return `Title: ${publication.title}\nCategory: ${category}\nTags: ${tags}\n`;
   }
 
   private splitIntoChunks(text: string): string[] {
@@ -50,17 +59,22 @@ export class PublicationChunkService {
         chunks.push(chunk);
       }
 
-      // Advance by chunk size minus overlap, clamped to avoid infinite loop
       const advance = Math.max(end - start - CHUNK_OVERLAP, 1);
       start += advance;
 
-      if (start >= text.length) break;
+      // end already reached text.length — all content is covered, stop here
+      if (end >= text.length) break;
     }
 
     return chunks;
   }
 
   async generateChunks(publicationId: number): Promise<void> {
+    if (this.inProgress.has(publicationId)) {
+      console.log(`[CHUNKS] Already in progress for publication ${publicationId}, skipping`);
+      return;
+    }
+    this.inProgress.add(publicationId);
     try {
       const publication = await this.publicationRepository.findOneOrFail({
         where: { id: publicationId },
@@ -68,6 +82,7 @@ export class PublicationChunkService {
       });
 
       const sourceText = this.buildSourceText(publication);
+      const metadataPrefix = this.buildMetadataPrefix(publication);
       const chunkTexts = this.splitIntoChunks(sourceText);
 
       // Delete old chunks before recreating
@@ -79,7 +94,10 @@ export class PublicationChunkService {
         .execute();
 
       for (let i = 0; i < chunkTexts.length; i++) {
-        const content = chunkTexts[i];
+        // Store metadata prefix only on the first chunk for Groq context display.
+        // Embeddings are generated from pure content so vectors reflect semantics, not structure.
+        const content = i === 0 ? `${metadataPrefix}${chunkTexts[i]}` : chunkTexts[i];
+        const embedText = chunkTexts[i];
 
         const chunk = this.chunkRepository.create({
           publication: { id: publicationId } as Publication,
@@ -90,7 +108,7 @@ export class PublicationChunkService {
 
         const saved = await this.chunkRepository.save(chunk);
 
-        const vector = await this.searchService.generateEmbedding(content);
+        const vector = await this.searchService.generateEmbedding(embedText);
         if (vector && Array.isArray(vector) && vector.length === 768) {
           const vectorString =
             '[' + vector.map((v) => Number(v).toFixed(8)).join(', ') + ']';
@@ -106,6 +124,8 @@ export class PublicationChunkService {
       console.log(`[CHUNKS] Generated ${chunkTexts.length} chunks for publication ${publicationId}`);
     } catch (err: any) {
       console.error(`[CHUNKS] Failed to generate chunks for publication ${publicationId}:`, err.message);
+    } finally {
+      this.inProgress.delete(publicationId);
     }
   }
 }

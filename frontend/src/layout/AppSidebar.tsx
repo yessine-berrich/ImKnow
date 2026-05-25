@@ -40,7 +40,8 @@ import {
   TrendingUp,
   ChevronDown,
   Heart,
-  Flag
+  Flag,
+  Sparkles
 } from 'lucide-react';
 import SidebarWidget from "./SidebarWidget";
 import { statsService, EmployeeTrendingTag } from "../../services/stats.service";
@@ -79,6 +80,12 @@ const navItems: NavItem[] = [
     icon: <MessageCircle className="w-5 h-5" />,
     name: "sidebar.nav_chat",
     path: "/chat",
+    adminOnly: false,
+  },
+  {
+    icon: <Sparkles className="w-5 h-5" />,
+    name: "sidebar.nav_assistant",
+    path: "/assistant",
     adminOnly: false,
   },
   {

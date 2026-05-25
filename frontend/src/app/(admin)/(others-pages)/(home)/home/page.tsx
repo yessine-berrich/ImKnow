@@ -96,20 +96,19 @@ function HomePageContent() {
   hasMoreRef.current = hasMore;
   currentPageRef.current = currentPage;
 
+  // When a publication ID is in the URL, fetch it directly and open the modal.
+  // Avoids depending on pagination — the publication may not be on the first loaded page.
   useEffect(() => {
-    if (!loading && publications.length > 0 && publicationIdFromUrl) {
-      setTimeout(() => {
-        const publicationElement = publicationRefs.current[publicationIdFromUrl];
-        if (publicationElement) {
-          publicationElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          publicationElement.classList.add('highlight-publication');
-          setTimeout(() => {
-            publicationElement.classList.remove('highlight-publication');
-          }, 2000);
-        }
-      }, 500);
-    }
-  }, [loading, publications, publicationIdFromUrl]);
+    if (!publicationIdFromUrl) return;
+    const id = parseInt(publicationIdFromUrl);
+    if (isNaN(id)) return;
+
+    publicationService.findOne(id).then((pub) => {
+      if (!pub) return;
+      setSelectedPublication(pub);
+      setIsPublicationModalOpen(true);
+    }).catch(console.error);
+  }, [publicationIdFromUrl]);
 
   useEffect(() => {
     const loadUserAndPublications = async () => {

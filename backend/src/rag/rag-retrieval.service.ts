@@ -25,7 +25,7 @@ export class RagRetrievalService {
   ): Promise<ChunkSearchResult[]> {
     if (!query?.trim()) return [];
 
-    const queryVector = await this.searchService.generateEmbedding(query.trim());
+    const queryVector = await this.searchService.generateEmbedding(query.trim(), 'query');
     if (!queryVector || !Array.isArray(queryVector) || queryVector.length !== 768) {
       console.warn('[RAG RETRIEVAL] Invalid query vector, returning empty results');
       return [];

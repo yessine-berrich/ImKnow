@@ -314,14 +314,19 @@ export class SearchService {
     return this.searchUsers(query.trim(), limit);
   }
 
-  async generateEmbedding(text: string): Promise<number[] | null> {
+  async generateEmbedding(text: string, type: 'query' | 'document' = 'document'): Promise<number[] | null> {
     if (!text?.trim()) return null;
+
+    // nomic-embed-text requires task-specific prefixes for asymmetric semantic search.
+    // Without them the model falls back to keyword-level matching.
+    const prefix = type === 'query' ? 'search_query: ' : 'search_document: ';
+    const input = `${prefix}${text.trim()}`;
 
     try {
       const response = await firstValueFrom(
         this.httpService.post(`${this.ollamaHost}/api/embed`, {
           model: this.embedModel,
-          input: text,
+          input,
         }),
       );
 

@@ -20,6 +20,7 @@ import { SearchModule } from './search/search.module';
 import { ChatModule } from './chat/chat.module';
 import { SessionModule } from './session/session.module';
 import { AdminReportsModule } from './admin-reports/admin-reports.module';
+import { AiConversationModule } from './ai-conversation/ai-conversation.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { AdminReportsModule } from './admin-reports/admin-reports.module';
     ChatModule,
     SessionModule,
     AdminReportsModule,
+    AiConversationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

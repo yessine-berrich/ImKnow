@@ -1,0 +1,12 @@
+import { IsString, IsBoolean, IsOptional, MaxLength } from 'class-validator';
+
+export class UpdateConversationDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  title?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  pinned?: boolean;
+}

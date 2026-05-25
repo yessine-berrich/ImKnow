@@ -11,6 +11,8 @@ describe('RagController', () => {
     ragSearch: jest.fn(),
   };
 
+  const mockReq = { user: { id: 1 } };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RagController],
@@ -43,10 +45,10 @@ describe('RagController', () => {
       };
       mockRagService.ragSearch.mockResolvedValue(mockResult);
 
-      const result = await controller.ragSearch(dto as any);
+      const result = await controller.ragSearch(dto as any, mockReq as any);
 
       expect(result).toEqual(mockResult);
-      expect(service.ragSearch).toHaveBeenCalledWith(dto);
+      expect(service.ragSearch).toHaveBeenCalledWith(dto, 1);
     });
   });
 });

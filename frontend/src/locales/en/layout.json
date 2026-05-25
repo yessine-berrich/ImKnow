@@ -5,6 +5,7 @@
     "no_items": "No items available",
     "nav_home": "Home",
     "nav_chat": "Chat",
+    "nav_assistant": "AI Assistant",
     "nav_activities": "Activities",
     "nav_likes": "Likes",
     "nav_comments": "Comments",
@@ -40,6 +41,7 @@
     "publication_count_one": "{{count}} publication",
     "publication_count_plural": "{{count}} publications",
     "ai_assistant": "AI Assistant",
+    "ai_assistant_subtitle": "Explore publications through artificial intelligence",
     "my_drafts": "My Drafts",
     "add_publication": "Add Publication"
   },

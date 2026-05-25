@@ -7,12 +7,16 @@ export class RagQueryDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
-  @Max(10)
-  limit?: number = 4;
+  @Max(20)
+  limit?: number = 12;
 
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(1)
   minSimilarity?: number = 0.25;
+
+  @IsOptional()
+  @IsNumber()
+  conversationId?: number;
 }
