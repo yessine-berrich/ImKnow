@@ -26,6 +26,7 @@ import { seedChat } from './seed-chat';
 import { seedBlocks } from './seed-blocks';
 import { seedNotifications } from './seed-notifications';
 import { seedReports } from './seed-reports';
+import { seedAiConversations } from './seed-ai-conversations';
 
 const logger = new Logger('Seed');
 
@@ -105,6 +106,11 @@ async function seed() {
     logger.log('🚩 Signalements...');
     await seedReports(context, emailToUser, titleToPub);
 
+    // ── 13. AI CONVERSATIONS ───────────────────────────────────────────────
+    logger.log('🤖 Conversations IA...');
+    const { total: aiConvTotal } = await seedAiConversations(context, emailToUser);
+    logger.log(`   📊 ${aiConvTotal} conversations IA`);
+
     // ── SUMMARY ───────────────────────────────────────────────────────────
     const counts = {
       users: totalUsers,
@@ -119,6 +125,8 @@ async function seed() {
       commentsLikes: await dataSource.query('SELECT COUNT(*) as cnt FROM comment_likes').then(r => parseInt(r[0].cnt)),
       commentsMentions: await dataSource.query('SELECT COUNT(*) as cnt FROM comment_mentions').then(r => parseInt(r[0].cnt)),
       chatMessages: await dataSource.getRepository(ChatMessage).count(),
+      aiConversations: await dataSource.query('SELECT COUNT(*) as cnt FROM ai_conversations').then(r => parseInt(r[0].cnt)),
+      aiMessages: await dataSource.query('SELECT COUNT(*) as cnt FROM ai_conversation_messages').then(r => parseInt(r[0].cnt)),
       userBlocks: await dataSource.getRepository(UserBlock).count(),
       publicationReports: await publicationReportRepo.count(),
       userReports: await userReportRepo.count(),

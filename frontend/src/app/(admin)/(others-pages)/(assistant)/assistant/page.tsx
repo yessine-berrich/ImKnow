@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { getToken } from '../../../../../../services/auth.service';
+import MarkdownMessage from '../../../../../components/ia-assistant/MarkdownMessage';
 import {
   aiConversationService,
   AiConversation,
@@ -525,14 +526,17 @@ export default function AssistantPage() {
                   style={{ maxWidth: 'calc(100% - 44px)' }}>
 
                   {/* Bubble */}
-                  <div className={`px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words ${
+                  <div className={`px-4 py-3 text-sm break-words ${
                     message.role === 'user'
                       ? 'bg-[#168F6F] text-white rounded-2xl rounded-tr-sm'
                       : message.error
                         ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-2xl rounded-tl-sm'
                         : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700'
                   }`}>
-                    {message.content}
+                    {message.error
+                      ? message.content
+                      : <MarkdownMessage content={message.content} isUser={message.role === 'user'} />
+                    }
                   </div>
 
                   {/* Sources */}

@@ -44,6 +44,8 @@
     "react-dropzone": "^14.3.8",
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^16.5.8",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "socket.io-client": "^4.8.3",
     "swiper": "^11.2.10",
     "tailwind-merge": "^2.6.0",

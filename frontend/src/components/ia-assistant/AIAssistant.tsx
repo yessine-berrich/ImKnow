@@ -3,6 +3,7 @@
 import { getToken } from '../../../services/auth.service';
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Bot, User, AlertCircle, BookOpen, ExternalLink } from 'lucide-react';
+import MarkdownMessage from './MarkdownMessage';
 import Link from 'next/link';
 import { useTranslation } from '../../context/LanguageContext';
 import { translateError } from '@/utils/errorTranslation';
@@ -181,14 +182,17 @@ export default function AIAssistant({ isOpen, onClose }: AIAssistantProps) {
                 className={`flex flex-col gap-1.5 min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'}`}
                 style={{ maxWidth: 'calc(100% - 36px)' }}
               >
-                <div className={`px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words w-full ${
+                <div className={`px-3 py-2.5 text-sm break-words w-full ${
                   message.role === 'assistant'
                     ? message.error
                       ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-2xl rounded-tl-none'
                       : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl rounded-tl-none shadow-sm'
                     : 'bg-[#168F6F] text-white rounded-2xl rounded-tr-none'
                 }`}>
-                  {message.content}
+                  {message.error
+                    ? message.content
+                    : <MarkdownMessage content={message.content} isUser={message.role === 'user'} />
+                  }
                 </div>
 
                 {/* Sources */}

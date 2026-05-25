@@ -7,6 +7,7 @@ import { User } from '../users/entities/user.entity';
 import { Publication } from '../publication/entities/publication.entity';
 import { PublicationReport } from '../publication/entities/publication-report.entity';
 import { UserReport } from '../users/entities/user-report.entity';
+import { ReportAdminNote } from '../admin-reports/entities/report-admin-note.entity';
 import { ReportAIService } from '../report-ai/report-ai.service';
 import { seedUsers } from './seed-users';
 import { seedPublications } from './seed-publications';
@@ -74,8 +75,9 @@ export async function seedReports(
   }
 
   const publicationReportRepo = context.get<Repository<PublicationReport>>(getRepositoryToken(PublicationReport));
-  const userReportRepo = context.get<Repository<UserReport>>(getRepositoryToken(UserReport));
-  const reportAiService = context.get(ReportAIService);
+  const userReportRepo        = context.get<Repository<UserReport>>(getRepositoryToken(UserReport));
+  const reportNoteRepo        = context.get<Repository<ReportAdminNote>>(getRepositoryToken(ReportAdminNote));
+  const reportAiService       = context.get(ReportAIService);
 
   try {
     // ── Publication Reports ──────────────────────────────────────────────
@@ -160,6 +162,77 @@ export async function seedReports(
         await new Promise((r) => setTimeout(r, 500));
       }
       logger.log(`  ✅ Analyse IA terminée (${done}/${total} réussis)`);
+    }
+
+    // ── Admin Notes ────────────────────────────────────────────────────
+    const admin = emailToUser['admin@imknow.com'];
+    if (admin) {
+      // Publication notes: keyed by publication title → note content
+      const PUB_NOTES: { title: string; content: string }[] = [
+        {
+          title: "Architecture microservices : retour d'expérience après 2 ans",
+          content: "Trois signalements distincts reçus en moins de 48h sur cette publication. Le signalement de plagiat envers Martin Fowler mérite vérification — l'auteur a été contacté par message pour fournir ses sources. En attente de réponse. Si pas de retour sous 72h, dépublication temporaire envisagée.",
+        },
+        {
+          title: 'Stratégie content marketing B2B : guide complet 2024',
+          content: "Statistiques non sourcées confirmées après vérification interne. L'auteur a reconnu l'erreur et s'est engagé à corriger l'article. À remettre en révision une fois la mise à jour publiée. Pas de suspension prévue pour l'instant.",
+        },
+        {
+          title: 'RGPD en 2024 : guide pratique pour les équipes techniques',
+          content: "Signalement pour désinformation sur les sanctions RGPD. Après relecture, les montants cités sont corrects (source : CNIL). Signalement classé sans suite — publication conforme.",
+        },
+        {
+          title: 'Guide complet React 18 : nouveautés et bonnes pratiques',
+          content: "Plagiat présumé du blog officiel React. Comparaison effectuée : le contenu est une reformulation personnelle, non un copier-coller. Signalement rejeté. Aucune action nécessaire.",
+        },
+      ];
+
+      // User notes: keyed by reported user email → note content
+      const USER_NOTES: { email: string; content: string }[] = [
+        {
+          email: 'alexandre.petit@imknow.com',
+          content: "Trois signalements convergents : harcèlement en réunion et propos inappropriés. RH informés le 15/01. Entretien prévu le 20/01. Compte maintenu actif pour l'instant, surveillance renforcée. Si un nouvel incident est signalé d'ici l'entretien, suspension immédiate.",
+        },
+        {
+          email: 'lea.dubois@imknow.com',
+          content: "Deux signalements pour spam email et comportement inapproprié. Premier avertissement envoyé le 12/01. L'utilisatrice a accusé réception et s'est engagée à modifier son comportement. Dossier mis en observation pendant 30 jours.",
+        },
+        {
+          email: 'thomas.martin@imknow.com',
+          content: "Signalement unique pour propos sexistes en réunion. Cas isolé selon les témoignages recueillis. Rappel des règles de conduite envoyé par email. Pas de sanction formelle pour le moment.",
+        },
+        {
+          email: 'camille.rousseau@imknow.com',
+          content: "Signalement pour spam sur le canal général. L'utilisateur a été averti verbalement par son manager. Comportement non récidiviste à ce jour. Clôture du dossier sous réserve.",
+        },
+      ];
+
+      let noteCount = 0;
+      for (const { title, content } of PUB_NOTES) {
+        const pub = titleToPub[title];
+        if (!pub) continue;
+        const existing = await reportNoteRepo.findOne({
+          where: { reportedPublicationId: pub.id, admin: { id: admin.id } },
+        });
+        if (existing) continue;
+        await reportNoteRepo.save(
+          reportNoteRepo.create({ content, reportedPublicationId: pub.id, reportedUserId: null, admin }),
+        );
+        noteCount++;
+      }
+      for (const { email, content } of USER_NOTES) {
+        const user = emailToUser[email];
+        if (!user) continue;
+        const existing = await reportNoteRepo.findOne({
+          where: { reportedUserId: user.id, admin: { id: admin.id } },
+        });
+        if (existing) continue;
+        await reportNoteRepo.save(
+          reportNoteRepo.create({ content, reportedUserId: user.id, reportedPublicationId: null, admin }),
+        );
+        noteCount++;
+      }
+      logger.log(`  ✅ ${noteCount} notes administrateur`);
     }
   } finally {
     if (ownContext) await context.close();
