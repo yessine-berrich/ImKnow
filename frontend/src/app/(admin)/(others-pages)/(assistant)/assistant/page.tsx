@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send, Bot, User, AlertCircle, BookOpen, ExternalLink, Sparkles,
-  Plus, Trash2, Pin, PinOff, Pencil, Check, X, Download,
+  Plus, Trash2, Pin, PinOff, Pencil, Check, X,
   MessageSquare, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -67,29 +67,6 @@ function formatDate(dateStr: string) {
   if (diffDays === 1) return 'Hier';
   if (diffDays < 7) return `Il y a ${diffDays} jours`;
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
-}
-
-function exportConversation(title: string, messages: Message[]) {
-  const lines = [`# ${title}`, `Exporté le ${new Date().toLocaleDateString('fr-FR')}`, ''];
-  for (const m of messages) {
-    lines.push(`## ${m.role === 'user' ? 'Vous' : 'Assistant IA'}`);
-    lines.push(m.content);
-    if (m.sources?.length) {
-      lines.push('');
-      lines.push('**Sources :**');
-      for (const s of m.sources) {
-        lines.push(`- ${s.title} (${Math.round(s.similarity * 100)}%)`);
-      }
-    }
-    lines.push('');
-  }
-  const blob = new Blob([lines.join('\n')], { type: 'text/markdown;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${title.replace(/[^a-z0-9]/gi, '_').slice(0, 50)}.md`;
-  a.click();
-  URL.revokeObjectURL(url);
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -293,19 +270,6 @@ export default function AssistantPage() {
 
   const cancelEdit = () => setEditingId(null);
 
-  /* ─────────── Export ─────────── */
-  const handleExport = (e: React.MouseEvent, conv: AiConversation) => {
-    e.stopPropagation();
-    if (activeId === conv.id && messages.length > 0) {
-      exportConversation(conv.title, messages);
-    } else {
-      // Load and export
-      aiConversationService.get(conv.id).then((detail) => {
-        exportConversation(detail.title, detail.messages.map(aiMessageToMessage));
-      });
-    }
-  };
-
   /* ─────────── Grouped conversations ─────────── */
   const pinned = conversations.filter((c) => c.pinned);
   const recent = conversations.filter((c) => !c.pinned);
@@ -365,7 +329,6 @@ export default function AssistantPage() {
                       onStartEdit={startEdit}
                       onConfirmEdit={confirmEdit}
                       onCancelEdit={cancelEdit}
-                      onExport={handleExport}
                       setEditingTitle={setEditingTitle}
                     />
                   ))}
@@ -394,7 +357,6 @@ export default function AssistantPage() {
                       onStartEdit={startEdit}
                       onConfirmEdit={confirmEdit}
                       onCancelEdit={cancelEdit}
-                      onExport={handleExport}
                       setEditingTitle={setEditingTitle}
                     />
                   ))}
@@ -431,30 +393,6 @@ export default function AssistantPage() {
             <p className="text-[11px] text-gray-500 dark:text-gray-400">Explorez les publications par l'intelligence artificielle</p>
           </div>
 
-          {/* Export current */}
-          {activeId && messages.length > 0 && (
-            <button
-              onClick={() => {
-                const conv = conversations.find((c) => c.id === activeId);
-                if (conv) exportConversation(conv.title, messages);
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#168F6F] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-              title="Exporter la conversation"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Exporter
-            </button>
-          )}
-
-          {/* New conversation shortcut */}
-          <button
-            onClick={handleNewConversation}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#168F6F] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
-            title="Nouvelle conversation"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Nouveau
-          </button>
         </div>
 
         {/* ── Messages ── */}
@@ -657,14 +595,13 @@ interface ConvItemProps {
   onStartEdit: (e: React.MouseEvent, conv: AiConversation) => void;
   onConfirmEdit: () => void;
   onCancelEdit: () => void;
-  onExport: (e: React.MouseEvent, conv: AiConversation) => void;
   setEditingTitle: (v: string) => void;
 }
 
 function ConvItem({
   conv, active, editingId, editingTitle, editInputRef,
   onSelect, onTogglePin, onDelete, onStartEdit, onConfirmEdit, onCancelEdit,
-  onExport, setEditingTitle,
+  setEditingTitle,
 }: ConvItemProps) {
   const isEditing = editingId === conv.id;
 
@@ -727,14 +664,6 @@ function ConvItem({
             title="Renommer"
           >
             <Pencil className="h-3 w-3" />
-          </button>
-          {/* Export */}
-          <button
-            onClick={(e) => onExport(e, conv)}
-            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-purple-500 transition-colors"
-            title="Exporter"
-          >
-            <Download className="h-3 w-3" />
           </button>
           {/* Delete */}
           <button

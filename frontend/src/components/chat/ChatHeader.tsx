@@ -130,7 +130,6 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
               <p className="text-xs text-red-500">{t('chat.user_blocked_label')}</p>
             ) : canChat && isUserOnline ? (
               <p className="text-xs text-green-500 flex items-center gap-1">
-                <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 {t('chat.online')}
               </p>
             ) : canChat ? (

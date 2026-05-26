@@ -103,11 +103,50 @@ function HomePageContent() {
     const id = parseInt(publicationIdFromUrl);
     if (isNaN(id)) return;
 
-    publicationService.findOne(id).then((pub) => {
-      if (!pub) return;
+    publicationService.findOne(id).then((raw: any) => {
+      if (!raw) return;
+
+      // Build author name & initials from whichever fields the API returns
+      const firstName = raw.author?.firstName || '';
+      const lastName  = raw.author?.lastName  || '';
+      const fullName  = (raw.author?.name || `${firstName} ${lastName}`.trim() || 'Unknown');
+      const initials  = (raw.author?.initials || `${firstName[0] || ''}${lastName[0] || ''}`).toUpperCase() || 'U';
+
+      const pub = {
+        id:          String(raw.id),
+        title:       raw.title       || '',
+        content:     raw.content     || '',
+        description: raw.description || raw.content?.substring(0, 200) || '',
+        author: {
+          id:         raw.author?.id,
+          name:       fullName,
+          initials,
+          department: raw.author?.department || raw.author?.role || 'Membre',
+          avatar:     raw.author?.avatar || raw.author?.profileImage || null,
+        },
+        category: {
+          name: raw.category?.name || 'Uncategorized',
+          slug: raw.category?.slug || 'uncategorized',
+        },
+        tags:        (raw.tags || []).map((tg: any) => (typeof tg === 'string' ? tg : tg.name)),
+        publishedAt:  raw.publishedAt || raw.createdAt || new Date().toISOString(),
+        updatedAt:    raw.updatedAt,
+        status:       raw.status || 'published',
+        stats: {
+          likes:    raw.stats?.likes    ?? raw.likes?.length    ?? 0,
+          comments: raw.stats?.comments ?? raw.comments?.length ?? 0,
+          views:    raw.stats?.views    ?? raw.viewsCount       ?? 0,
+        },
+        isLiked:      raw.isLiked      || false,
+        isBookmarked: raw.isBookmarked || false,
+        media:        raw.media        || [],
+      };
+
       setSelectedPublication(pub);
       setIsPublicationModalOpen(true);
-    }).catch(console.error);
+    }).catch((err) => {
+      console.error('Erreur chargement publication depuis URL :', err);
+    });
   }, [publicationIdFromUrl]);
 
   useEffect(() => {

@@ -471,7 +471,129 @@ export default function StatisticsPage() {
   }), [reports, dark, language]);
 
   const handleExport = (format: 'csv' | 'json' | 'pdf') => {
-    if (format === 'pdf') { window.print(); return; }
+    if (format === 'pdf') {
+      const sectionLabels: Record<Section, string> = {
+        users:        'Utilisateurs',
+        publications: 'Publications',
+        moderation:   'Modération',
+        tags:         'Tags & Catégories',
+        reports:      'Signalements',
+      };
+
+      const table = (headers: string[], rows: (string | number)[][]): string => `
+        <table>
+          <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c ?? '—'}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
+
+      let body = '';
+
+      if (activeSection === 'users') {
+        body += `<div class="kpi-grid">
+          <div class="kpi"><div class="kpi-value">${dashboard?.totalUsers ?? '—'}</div><div class="kpi-label">Total utilisateurs</div></div>
+          <div class="kpi"><div class="kpi-value">${dashboard?.newUsersThisMonth ?? '—'}</div><div class="kpi-label">Nouveaux ce mois</div></div>
+          <div class="kpi"><div class="kpi-value">${userActivity?.currentMonth.activeUsers ?? '—'}</div><div class="kpi-label">Actifs ce mois</div></div>
+          <div class="kpi"><div class="kpi-value">${userActivity?.currentMonth.publicationsPublished ?? '—'}</div><div class="kpi-label">Publications ce mois</div></div>
+        </div>
+        <h3>Historique mensuel</h3>
+        ${table(
+          ['Mois', 'Nouveaux utilisateurs', 'Utilisateurs actifs', 'Publications publiées'],
+          (userActivity?.history ?? []).map(m => [m.month, m.newUsers, m.activeUsers, m.publicationsPublished])
+        )}`;
+
+      } else if (activeSection === 'publications') {
+        body += `<div class="kpi-grid">
+          <div class="kpi"><div class="kpi-value">${dashboard?.totalPublications ?? '—'}</div><div class="kpi-label">Total publications</div></div>
+          <div class="kpi"><div class="kpi-value">${engagement?.totalLikes ?? '—'}</div><div class="kpi-label">Total likes</div></div>
+          <div class="kpi"><div class="kpi-value">${engagement?.totalBookmarks ?? '—'}</div><div class="kpi-label">Total favoris</div></div>
+          <div class="kpi"><div class="kpi-value">${dashboard?.totalComments ?? '—'}</div><div class="kpi-label">Total commentaires</div></div>
+        </div>
+        <h3>Publications les plus aimées</h3>
+        ${table(['Titre', 'Likes'], (engagement?.mostLikedPublications ?? []).map(a => [a.title, a.likesCount]))}
+        <h3>Publications les plus mises en favori</h3>
+        ${table(['Titre', 'Favoris'], (engagement?.mostBookmarkedPublications ?? []).map(a => [a.title, a.bookmarksCount]))}`;
+
+      } else if (activeSection === 'moderation') {
+        body += `<div class="kpi-grid">
+          <div class="kpi"><div class="kpi-value">${moderation?.rejectionRate != null ? moderation.rejectionRate + '%' : '—'}</div><div class="kpi-label">Taux de rejet</div></div>
+          <div class="kpi"><div class="kpi-value">${moderation?.autoModerationRate != null ? moderation.autoModerationRate + '%' : '—'}</div><div class="kpi-label">Taux auto-modération</div></div>
+        </div>
+        <h3>Répartition par statut</h3>
+        ${table(['Statut', 'Nombre', 'Pourcentage'], (moderation?.statusBreakdown ?? []).map(s => [s.status, s.count, s.percentage + '%']))}
+        <h3>Tendance quotidienne (30 derniers jours)</h3>
+        ${table(['Date', 'Approuvés', 'Rejetés', 'En attente'], (moderation?.dailyTrend ?? []).map(d => [d.date, d.approved, d.rejected, d.pending]))}`;
+
+      } else if (activeSection === 'tags') {
+        body += `
+        <h3>Tags les plus utilisés</h3>
+        ${table(['Tag', 'Publications'], (tags?.mostUsed ?? []).map(tg => [tg.name, tg.publicationCount]))}
+        <h3>Catégories</h3>
+        ${table(['Catégorie', 'Publications', 'Vues'], (categories?.categories ?? []).map(c => [c.name, c.publicationCount, c.totalViews]))}`;
+
+      } else {
+        body += `
+        <h3>Résumé des signalements</h3>
+        ${table(['Type', 'Total', 'En attente', 'Examinés', 'Clos'], [
+          ['Publications', reports?.publications.total ?? 0, reports?.publications.pending ?? 0, reports?.publications.reviewed ?? 0, reports?.publications.dismissed ?? 0],
+          ['Utilisateurs',  reports?.users.total ?? 0,        reports?.users.pending ?? 0,        reports?.users.reviewed ?? 0,        reports?.users.dismissed ?? 0],
+        ])}
+        <h3>Motifs — Publications</h3>
+        ${table(['Motif', 'Nombre'], (reports?.publications.byReason ?? []).map(r => [r.reason, r.count]))}
+        <h3>Motifs — Utilisateurs</h3>
+        ${table(['Motif', 'Nombre'], (reports?.users.byReason ?? []).map(r => [r.reason, r.count]))}`;
+      }
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+      const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+      const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+        <title>Statistiques ImKnow — ${sectionLabels[activeSection]}</title>
+        <style>
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; color: #111; background: #fff; padding: 32px; font-size: 13px; }
+          .header { border-bottom: 3px solid #00926B; padding-bottom: 16px; margin-bottom: 24px; }
+          .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+          .logo-dot { width: 36px; height: 36px; background: #00926B; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 18px; flex-shrink: 0; }
+          h1 { font-size: 22px; font-weight: 800; color: #00926B; }
+          h2 { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 4px; }
+          .meta { font-size: 11px; color: #6b7280; }
+          h3 { font-size: 13px; font-weight: 700; color: #374151; margin: 20px 0 8px; border-left: 3px solid #00926B; padding-left: 8px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+          thead tr { background: #00926B; color: #fff; }
+          th { padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; }
+          td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; font-size: 12px; color: #374151; }
+          tbody tr:nth-child(even) { background: #f9fafb; }
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+          .kpi { background: #f0fdf7; border: 1px solid #d1fae5; border-radius: 10px; padding: 12px 14px; }
+          .kpi-value { font-size: 22px; font-weight: 800; color: #00926B; }
+          .kpi-label { font-size: 10px; color: #6b7280; margin-top: 2px; }
+          .footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; text-align: center; }
+          @media print { body { padding: 16px; } }
+        </style>
+      </head><body>
+        <div class="header">
+          <div class="header-top">
+            <div class="logo-dot">I</div>
+            <div>
+              <h1>ImKnow — Statistiques</h1>
+              <h2>${sectionLabels[activeSection]}</h2>
+            </div>
+          </div>
+          <div class="meta">Exporté le ${dateStr} à ${timeStr}</div>
+        </div>
+        ${body}
+        <div class="footer">ImKnow — Rapport généré automatiquement le ${dateStr}</div>
+      </body></html>`;
+
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.onload = () => { win.print(); setTimeout(() => win.close(), 800); };
+      }
+      return;
+    }
 
     const esc  = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
     const rows: string[][] = [];
