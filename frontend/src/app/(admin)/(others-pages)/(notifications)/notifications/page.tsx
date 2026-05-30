@@ -430,9 +430,23 @@ export default function NotificationsPage() {
     return resolveAvatarUrl(userData?.avatar ?? userData?.profileImage);
   };
 
-  const filteredNotifications = filter === 'unread' 
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const filteredNotifications = filter === 'unread'
     ? notifications.filter(n => !n.isRead)
     : notifications;
+
+  const totalPages = Math.max(1, Math.ceil(filteredNotifications.length / PAGE_SIZE));
+  const paginatedNotifications = filteredNotifications.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  const handleFilterChange = (f: 'all' | 'unread') => {
+    setFilter(f);
+    setCurrentPage(1);
+  };
 
   const handleNotificationClick = async (notif: Notification) => {
     // Traiter selon le type de notification
@@ -486,7 +500,7 @@ export default function NotificationsPage() {
           {/* Filters */}
           <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-800">
             <button
-              onClick={() => setFilter('all')}
+              onClick={() => handleFilterChange('all')}
               className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 filter === 'all'
                   ? 'bg-blue-600 text-white'
@@ -497,7 +511,7 @@ export default function NotificationsPage() {
               {t('notifications_page.filter_all', { count: notifications.length })}
             </button>
             <button
-              onClick={() => setFilter('unread')}
+              onClick={() => handleFilterChange('unread')}
               className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                 filter === 'unread'
                   ? 'bg-blue-600 text-white'
@@ -647,7 +661,7 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredNotifications.map((notif) => {
+            {paginatedNotifications.map((notif) => {
               const senderName = notif.sender?.firstName && notif.sender?.lastName
                 ? `${notif.sender.firstName} ${notif.sender.lastName}`
                 : notif.sender?.name || t('notifications.default_sender');
@@ -777,6 +791,55 @@ export default function NotificationsPage() {
                 </div>
               );
             })}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredNotifications.length)} / {filteredNotifications.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ←
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, idx) =>
+                      p === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setCurrentPage(p as number)}
+                          className={`w-8 h-8 text-sm rounded-lg border transition-colors ${
+                            currentPage === p
+                              ? 'bg-blue-600 border-blue-600 text-white'
+                              : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

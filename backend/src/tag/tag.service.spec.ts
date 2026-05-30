@@ -21,12 +21,19 @@ describe('TagService', () => {
     publications: [],
   };
 
+  const mockQueryBuilder = {
+    loadRelationCountAndMap: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    getMany: jest.fn(),
+  };
+
   const mockTagRepo = {
     find: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     remove: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockQueryBuilder),
   };
 
   beforeEach(async () => {
@@ -51,15 +58,15 @@ describe('TagService', () => {
 
   describe('findAll', () => {
     it('should return all tags ordered by name', async () => {
-      mockTagRepo.find.mockResolvedValue([mockTag]);
+      mockQueryBuilder.getMany.mockResolvedValue([{ ...mockTag, count: 2 }]);
 
       const result = await service.findAll();
 
       expect(result).toHaveLength(1);
-      expect(mockTagRepo.find).toHaveBeenCalledWith({
-        relations: ['publications'],
-        order: { name: 'ASC' },
-      });
+      expect(result[0]).toEqual({ id: 1, name: 'nestjs', count: 2 });
+      expect(mockTagRepo.createQueryBuilder).toHaveBeenCalledWith('tag');
+      expect(mockQueryBuilder.loadRelationCountAndMap).toHaveBeenCalledWith('tag.count', 'tag.publications');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('tag.name', 'ASC');
     });
   });
 
@@ -96,8 +103,10 @@ describe('TagService', () => {
   describe('update', () => {
     it('should update a tag', async () => {
       const dto = { name: 'updated-tag' };
-      mockTagRepo.findOne.mockResolvedValue(mockTag);
-      mockTagRepo.save.mockResolvedValue({ ...mockTag, ...dto } as any);
+      mockTagRepo.findOne
+        .mockResolvedValueOnce(mockTag)   // findOne(id) inside findOne()
+        .mockResolvedValueOnce(null);     // conflict check returns no duplicate
+      mockTagRepo.save.mockResolvedValue({ ...mockTag, name: '#Updated-tag' } as any);
 
       const result = await service.update(1, dto);
 

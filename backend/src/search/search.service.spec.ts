@@ -176,7 +176,7 @@ describe('SearchService', () => {
 
       expect(mockHttpService.post).toHaveBeenCalledWith(
         'http://localhost:11434/api/embed',
-        { model: 'nomic-embed-text', input: 'hello world' },
+        { model: 'nomic-embed-text', input: 'search_document: hello world' },
       );
     });
   });

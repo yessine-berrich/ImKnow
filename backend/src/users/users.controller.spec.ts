@@ -111,7 +111,7 @@ describe('UsersController', () => {
       const expectedResult = { accessToken: 'token123' };
       service.login.mockResolvedValue(expectedResult);
 
-      const result = await controller.login(loginDto as any, 'Mozilla/5.0', '127.0.0.1');
+      const result = await controller.login(loginDto as any, 'Mozilla/5.0', { ip: '127.0.0.1' });
 
       expect(result).toEqual(expectedResult);
       expect(service.login).toHaveBeenCalledWith(loginDto, { userAgent: 'Mozilla/5.0', ipAddress: '127.0.0.1' });

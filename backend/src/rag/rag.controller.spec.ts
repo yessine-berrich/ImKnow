@@ -1,7 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { RagController } from './rag.controller';
 import { RagService } from './rag.service';
 import { AuthGuard } from '../users/guards/auth.guard';
+import { AuthRolesGuard } from '../users/guards/auth-roles.guard';
+import { PublicationChunkService } from '../publication/publication-chunk.service';
+import { Publication } from '../publication/entities/publication.entity';
 
 describe('RagController', () => {
   let controller: RagController;
@@ -11,14 +15,19 @@ describe('RagController', () => {
     ragSearch: jest.fn(),
   };
 
-  const mockReq = { user: { id: 1 } };
+  const mockReq = { user: { sub: 1 } };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RagController],
-      providers: [{ provide: RagService, useValue: mockRagService }],
+      providers: [
+        { provide: RagService, useValue: mockRagService },
+        { provide: PublicationChunkService, useValue: { generateChunks: jest.fn() } },
+        { provide: getRepositoryToken(Publication), useValue: { find: jest.fn() } },
+      ],
     })
       .overrideGuard(AuthGuard).useValue({ canActivate: () => true })
+      .overrideGuard(AuthRolesGuard).useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<RagController>(RagController);

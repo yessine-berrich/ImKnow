@@ -337,6 +337,357 @@ const COMMENT_THREADS: CommentThread[] = [
       },
     ],
   },
+  {
+    articleTitle: 'Performance JavaScript : les optimisations qui font vraiment la différence',
+    threads: [
+      {
+        authorEmail: 'julien.leroy@imknow.com',
+        content: "Excellent rappel Thomas ! Le piège classique de useMemo c'est justement de l'overuse — mémoïser une valeur simple coûte plus cher que de la recalculer. Il faut profiler d'abord avec React DevTools Profiler avant d'optimiser.",
+        mentions: ['thomas.martin@imknow.com'],
+        likers: ['alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'thomas.martin@imknow.com', content: "Tout à fait Julien ! La règle que j'applique : useMemo uniquement si la valeur est utilisée dans un autre tableau de dépendances ou si le calcul prend > 1ms mesuré. Dans les autres cas, la réduction de lisibilité ne vaut pas le gain.", mentions: ['julien.leroy@imknow.com'], likers: ['julien.leroy@imknow.com', 'alexandre.petit@imknow.com'] },
+          { authorEmail: 'alexandre.petit@imknow.com', content: "On a utilisé react-window sur notre liste de 2000 articles et le gain est spectaculaire : de 600ms à 30ms de rendu. La virtualisation est définitivement l'optimisation avec le meilleur ratio impact/effort.", mentions: [], likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'nicolas.mercier@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'sophie.laurent@imknow.com',
+        content: "La section sur les Web Workers m'a ouvert les yeux. On a un parseur de Markdown qui freeze l'UI sur les articles longs — c'est exactement le cas d'usage parfait. Je teste ça demain.",
+        mentions: [],
+        likers: ['thomas.martin@imknow.com', 'emma.moreau@imknow.com'],
+        replies: [
+          { authorEmail: 'thomas.martin@imknow.com', content: "Parfait cas d'usage Sophie ! Avec Comlink (librairie de Google) tu peux exposer le worker comme un objet JavaScript classique — ça simplifie énormément le code. Le parseur Markdown tourne en arrière-plan sans bloquer l'UI.", mentions: ['sophie.laurent@imknow.com'], likers: ['sophie.laurent@imknow.com', 'alexandre.petit@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Recruter les meilleurs talents tech : stratégies pour 2024',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "Le take-home project payé est vraiment ce qui fait la différence. J'ai décliné plusieurs processus avec des tests non rémunérés de 6h. Ça envoie un mauvais signal dès le départ sur la façon dont l'entreprise valorise le temps des gens.",
+        mentions: [],
+        likers: ['julien.leroy@imknow.com', 'alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'marie.dupont@imknow.com', content: "Témoignage très utile Thomas ! On a adopté le take-home payé (50€ pour 3h max) et la qualité des candidatures a augmenté et les refus en milieu de process ont chuté. Le ROI est clairement positif.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'emma.moreau@imknow.com'] },
+          { authorEmail: 'julien.leroy@imknow.com', content: "Ce que j'ajouterais au processus : une session de review du take-home avec le candidat. Ça permet de voir comment il explique ses choix, comment il réagit au feedback, et si le code est vraiment le sien.", mentions: [], likers: ['thomas.martin@imknow.com', 'marie.dupont@imknow.com', 'alexandre.petit@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Stratégie content marketing B2B : guide complet 2024',
+    threads: [
+      {
+        authorEmail: 'clarisse.renaud@imknow.com',
+        content: "Très bon article Emma ! Une chose que j'ajouterais au funnel : le contenu post-achat (BOFU) est souvent négligé. Les articles qui aident les clients existants à mieux utiliser le produit génèrent les meilleurs taux d'upsell et de recommandation.",
+        mentions: ['emma.moreau@imknow.com'],
+        likers: ['marie.dupont@imknow.com', 'emma.moreau@imknow.com', 'sophie.laurent@imknow.com'],
+        replies: [
+          { authorEmail: 'emma.moreau@imknow.com', content: "Excellent point Clarisse ! Chez nous le ratio TOFU/MOFU/BOFU était 70/20/10 et on a rééquilibré vers 50/30/20. L'impact sur le taux de renouvellement a été immédiat.", mentions: ['clarisse.renaud@imknow.com'], likers: ['clarisse.renaud@imknow.com', 'marie.dupont@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'sophie.laurent@imknow.com',
+        content: "La partie sur la mesure m'intéresse beaucoup. Comment vous distinguez le pipeline influencé par le contenu vs le pipeline direct ? Chez nous l'attribution multi-touch est un vrai casse-tête.",
+        mentions: ['emma.moreau@imknow.com'],
+        likers: ['clarisse.renaud@imknow.com', 'camille.rousseau@imknow.com'],
+        replies: [
+          { authorEmail: 'emma.moreau@imknow.com', content: "On utilise un modèle d'attribution en U (40% premier touch, 40% dernier touch, 20% répartis). Ce n'est pas parfait mais ça donne une vue équilibrée. HubSpot et Marketo proposent des modèles prêts à l'emploi.", mentions: ['sophie.laurent@imknow.com'], likers: ['sophie.laurent@imknow.com', 'clarisse.renaud@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'GraphQL vs REST : comment choisir pour votre prochain projet',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "Notre retour chez ImKnow : REST pour les endpoints publics documentés avec OpenAPI, et on considère GraphQL pour le dashboard interne où les requêtes changent souvent. Le principal frein : la courbe d'apprentissage pour l'équipe backend qui ne connaît pas le schema-first.",
+        mentions: ['alexandre.petit@imknow.com'],
+        likers: ['julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'julien.leroy@imknow.com', content: "Le schema-first est justement l'un des grands avantages de GraphQL — il force à définir le contrat avant de coder. Avec code-first (Pothos, NestJS GraphQL) vous pouvez garder TypeScript comme source de vérité si votre équipe est plus à l'aise.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com'] },
+          { authorEmail: 'nicolas.mercier@imknow.com', content: "N'oublions pas les Persisted Queries pour le cache côté GraphQL — ça comble l'un des principaux avantages REST (cacheability HTTP GET). Avec Apollo Client et un CDN, les performances sont comparables.", mentions: [], likers: ['julien.leroy@imknow.com', 'thomas.martin@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Tests A/B : méthodologie et pièges à éviter',
+    threads: [
+      {
+        authorEmail: 'emma.moreau@imknow.com',
+        content: "Le peeking problem est vraiment le piège numéro un. On a failli prendre une mauvaise décision sur notre page d'accueil en arrêtant le test à J3 parce que p < 0.05. Finalement à J14 le test a convergé dans l'autre sens. La discipline de ne pas regarder les résultats avant la fin est difficile à maintenir mais essentielle.",
+        mentions: ['clarisse.renaud@imknow.com'],
+        likers: ['clarisse.renaud@imknow.com', 'marie.dupont@imknow.com', 'camille.rousseau@imknow.com'],
+        replies: [
+          { authorEmail: 'clarisse.renaud@imknow.com', content: "C'est exactement pour ça qu'on a adopté le sequential testing (méthode de Wald) plutôt que le test de signification classique. Ça permet des arrêts anticipés statistiquement valides si le résultat est décisif, sans multiplier le risque d'erreur.", mentions: ['emma.moreau@imknow.com'], likers: ['emma.moreau@imknow.com', 'thomas.martin@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'camille.rousseau@imknow.com',
+        content: "Question côté finance : comment vous gérez la prise de décision quand un test A/B montre une amélioration de 3% mais pas statistiquement significative ? L'équipe business veut quand même lancer. On a ce débat régulièrement.",
+        mentions: [],
+        likers: ['emma.moreau@imknow.com', 'clarisse.renaud@imknow.com'],
+        replies: [
+          { authorEmail: 'clarisse.renaud@imknow.com', content: "Décision de gestion de risque : 3% non significatif peut quand même valoir le déploiement si l'effet négatif potentiel est limité et le coût de non-action élevé. L'important est de documenter la décision comme risquée et de monitorer après déploiement.", mentions: ['camille.rousseau@imknow.com'], likers: ['camille.rousseau@imknow.com', 'emma.moreau@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Design Patterns en JavaScript : du classique au moderne',
+    threads: [
+      {
+        authorEmail: 'julien.leroy@imknow.com',
+        content: "Très bon panorama Thomas ! J'ajouterais le pattern Proxy (ES6) qui est très puissant pour la validation, le logging et le lazy loading. Les frameworks modernes l'utilisent énormément — Vue 3 Reactivity est basé dessus.",
+        mentions: ['thomas.martin@imknow.com'],
+        likers: ['alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'thomas.martin@imknow.com', content: "Absolument ! J'ai volontairement écarté Proxy pour ne pas alourdir l'article mais tu as raison. Le pattern Proxy ES6 pour la validation de schéma runtime est élégant et performant. J'écrirais un article de suivi.", mentions: ['julien.leroy@imknow.com'], likers: ['julien.leroy@imknow.com', 'alexandre.petit@imknow.com'] },
+          { authorEmail: 'nicolas.mercier@imknow.com', content: "Mention spéciale aussi pour le pattern Command pour l'undo/redo — très utilisé dans les éditeurs de code et les formulaires complexes. Combiné avec un stack d'historique, ça donne une UX soignée.", mentions: [], likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'alexandre.petit@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Vue.js 3 et la Composition API : migration depuis Options API',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "La migration d'Options API vers Composition API qu'on a faite sur un projet Vue 2 → Vue 3 a pris 6 semaines pour 80 composants. La clé : commencer par identifier les mixins (souvent les plus sales) et les convertir en composables en premier. Ça débloque le plus de valeur.",
+        mentions: ['alexandre.petit@imknow.com'],
+        likers: ['julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'alexandre.petit@imknow.com', content: "L'outil `@vue/compat` est indispensable pour la migration — il permet de faire tourner Vue 3 en mode compatibilité Vue 2 et d'activer les warnings progressivement. On a migré 120 composants sans jamais casser la prod.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com'] },
+          { authorEmail: 'nicolas.mercier@imknow.com', content: "Pinia vs Vuex pour les nouveaux projets : Pinia sans hésitation. L'intégration TypeScript est native, l'API est simple, et le devtools Vue supporte les deux. Migrer un Vuex existant vers Pinia est aussi plus simple qu'on ne le croit grâce au plugin de migration.", mentions: [], likers: ['alexandre.petit@imknow.com', 'thomas.martin@imknow.com', 'julien.leroy@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'sophie.laurent@imknow.com',
+        content: "On utilise Vue 3 + TypeScript pour notre Design System. Les defineProps avec TypeScript sont un game changer pour la DX — l'autocomplétion des props dans les templates est enfin fiable. Quelqu'un a une opinion sur Nuxt 3 vs Next.js pour un nouveau projet full-stack ?",
+        mentions: [],
+        likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com'],
+        replies: [
+          { authorEmail: 'thomas.martin@imknow.com', content: "Nuxt 3 si l'équipe est sur Vue, Next.js si elle est sur React — la techno principale prime sur tout le reste. Les deux sont excellents avec App Router / Nuxt Layers. Si l'équipe est mixte et peut choisir, Next.js a un écosystème plus large et un déploiement Vercel imbattable.", mentions: ['sophie.laurent@imknow.com'], likers: ['sophie.laurent@imknow.com', 'alexandre.petit@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'OWASP Top 10 : sécuriser ses applications web en 2024',
+    threads: [
+      {
+        authorEmail: 'julien.leroy@imknow.com',
+        content: "Article de référence Lucas ! Le Broken Access Control en première position me surprend encore. Dans 90% des audits que j'ai vus, les IDOR (Insecure Direct Object Reference) sont présents parce que les équipes vérifient l'authentification (qui es-tu ?) mais pas l'autorisation (as-tu le droit ?). Ce sont deux checks distincts.",
+        mentions: ['lucas.bernard@imknow.com'],
+        likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com', 'lea.dubois@imknow.com'],
+        replies: [
+          { authorEmail: 'lucas.bernard@imknow.com', content: "Exactement Julien. En NestJS, `@UseGuards(JwtAuthGuard)` c'est l'authn. L'authz c'est vérifier dans le handler que `resource.ownerId === req.user.id`. Ce deuxième check est souvent oublié car il n'y a pas de framework qui l'impose — c'est une décision de l'équipe.", mentions: ['julien.leroy@imknow.com'], likers: ['julien.leroy@imknow.com', 'thomas.martin@imknow.com', 'alexandre.petit@imknow.com'] },
+          { authorEmail: 'lea.dubois@imknow.com', content: "D'un point de vue RGPD, un IDOR qui permet d'accéder aux données d'un autre utilisateur est une violation de données à notifier à la CNIL dans les 72h. Ce n'est pas juste un bug technique, c'est une exposition légale.", mentions: [], likers: ['lucas.bernard@imknow.com', 'thomas.martin@imknow.com', 'julien.leroy@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'nicolas.mercier@imknow.com',
+        content: "La section SSRF arrive au bon moment. On a eu un rapport de bug bounty sur une feature d'import d'URL qu'on avait laissée sans validation. La validation côté serveur des URLs est vraiment critique dès qu'on fait des requêtes HTTP côté backend.",
+        mentions: ['lucas.bernard@imknow.com'],
+        likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'alexandre.petit@imknow.com'],
+        replies: [
+          { authorEmail: 'lucas.bernard@imknow.com', content: "Un bug bounty c'est exactement la bonne façon de découvrir ça. Pour les imports d'URL, blocklist des IPs privées (RFC 1918), résolution DNS côté serveur pour détecter les rebinding attacks, et timeout agressif. Ne jamais faire confiance à l'URL fournie par l'utilisateur.", mentions: ['nicolas.mercier@imknow.com'], likers: ['nicolas.mercier@imknow.com', 'julien.leroy@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Leadership technique : passer de développeur senior à tech lead',
+    threads: [
+      {
+        authorEmail: 'nicolas.mercier@imknow.com',
+        content: "Le syndrome 'c'est plus rapide si je le fais moi-même' — je me suis reconnu à 100% dans ma première année comme tech lead. La bascule mentale qui m'a aidé : visualiser mon équipe dans 6 mois. Si je fais le code à la place de quelqu'un, il ne progressera pas et dans 6 mois je serai encore le seul capable. Ce n'est pas scalable.",
+        mentions: ['julien.leroy@imknow.com'],
+        likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'lucas.bernard@imknow.com', 'marie.dupont@imknow.com'],
+        replies: [
+          { authorEmail: 'julien.leroy@imknow.com', content: "Cette visualisation à 6 mois est très puissante Nicolas. J'ajoute : mesurer sa propre valeur en termes de délivrabilité de l'équipe plutôt que de lignes de code personnelles. Un tech lead qui réduit sa propre contribution de code mais double la vélocité de l'équipe fait un travail excellent.", mentions: ['nicolas.mercier@imknow.com'], likers: ['nicolas.mercier@imknow.com', 'thomas.martin@imknow.com', 'alexandre.petit@imknow.com'] },
+          { authorEmail: 'thomas.martin@imknow.com', content: "Ce qui m'a le plus aidé : des 1-on-1 hebdomadaires avec chaque membre de l'équipe. Ça permet de détecter les blocages techniques avant qu'ils ne deviennent des retards de sprint, et de connaître les aspirations de chacun pour les orienter vers les bonnes missions.", mentions: [], likers: ['julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'marie.dupont@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'marie.dupont@imknow.com',
+        content: "En tant que RH, j'apprécie beaucoup la section sur 'parler le langage du business'. Les tech leads qui savent traduire la dette technique en impact business font des propositions qui passent en comité de direction. Ceux qui parlent en jargon technique se font dire 'c'est pas une priorité'.",
+        mentions: [],
+        likers: ['emma.moreau@imknow.com', 'camille.rousseau@imknow.com', 'julien.leroy@imknow.com'],
+        replies: [
+          { authorEmail: 'julien.leroy@imknow.com', content: "C'est une compétence qui s'apprend ! Je recommande de participer aux réunions de direction ou comités produits même quand on n'est pas invité — demander à y assister en observateur. Comprendre les préoccupations business change la façon dont on présente les sujets techniques.", mentions: ['marie.dupont@imknow.com'], likers: ['marie.dupont@imknow.com', 'thomas.martin@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: "Machine Learning en production : de l'expérimentation au déploiement",
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "La partie sur le data drift est souvent sous-estimée. On a eu un modèle de classification qui performait parfaitement en staging mais se dégradait progressivement en prod. La cause : les données de prod avaient une distribution différente (biais de sélection dans le dataset d'entraînement). Le monitoring avec Evidently nous a permis de détecter ça avant que ça devienne critique.",
+        mentions: ['nicolas.mercier@imknow.com'],
+        likers: ['julien.leroy@imknow.com', 'alexandre.petit@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'nicolas.mercier@imknow.com', content: "Le training-serving skew est effectivement très courant. Une bonne pratique : sauvegarder un snapshot des données de production toutes les semaines et comparer la distribution avec le training set. Ça détecte le drift avant d'impacter les métriques business.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com'] },
+          { authorEmail: 'julien.leroy@imknow.com', content: "MLflow pour le tracking des expériences est vraiment indispensable. On a eu des situations où on ne savait plus quel dataset, quelle version du code, quels hyperparamètres correspondaient à quel modèle en prod. C'est le genre de dette MLOps qui coûte cher.", mentions: [], likers: ['nicolas.mercier@imknow.com', 'thomas.martin@imknow.com', 'lucas.bernard@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Next.js 14 et le App Router : migration complète depuis Pages Router',
+    threads: [
+      {
+        authorEmail: 'alexandre.petit@imknow.com',
+        content: "On est en pleine migration Pages Router → App Router sur ImKnow. Les Server Components ont réduit notre bundle JS de 180kb à 65kb sur la page d'accueil. La difficulté c'est de repérer quels composants ont vraiment besoin de 'use client' — beaucoup de libs tierces ne sont pas encore compatibles.",
+        mentions: ['thomas.martin@imknow.com'],
+        likers: ['julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'sophie.laurent@imknow.com'],
+        replies: [
+          { authorEmail: 'thomas.martin@imknow.com', content: "Pour les libs tierces pas encore compatibles, le pattern du 'wrapper client' fonctionne bien : créer un petit composant avec 'use client' qui encapsule la lib, et passer le reste en Server Component. La règle : le 'use client' descend le plus bas possible dans l'arbre.", mentions: ['alexandre.petit@imknow.com'], likers: ['alexandre.petit@imknow.com', 'julien.leroy@imknow.com'] },
+          { authorEmail: 'julien.leroy@imknow.com', content: "Le cache du App Router est puissant mais déroutant au début. Quatre layers de cache différents (Request Memoization, Data Cache, Full Route Cache, Router Cache) avec des règles d'invalidation distinctes. Je recommande de commencer avec `cache: 'no-store'` partout puis d'ajouter le cache progressivement.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'sophie.laurent@imknow.com',
+        content: "Les gains sur les métriques Core Web Vitals que tu mentionnes sont impressionnants. On a lancé un audit Lighthouse avant/après et le LCP est passé de 3.8s à 1.2s. Le SEO a suivi avec une amélioration notable des positions sur nos pages publiques.",
+        mentions: [],
+        likers: ['thomas.martin@imknow.com', 'emma.moreau@imknow.com', 'clarisse.renaud@imknow.com'],
+        replies: [
+          { authorEmail: 'thomas.martin@imknow.com', content: "L'impact SEO est sous-estimé ! Les Core Web Vitals sont un facteur de classement direct depuis 2021. Avec le App Router et les Server Components, on charge uniquement le JS nécessaire — les bots de Google voient le HTML complet directement, sans attendre le JS.", mentions: ['sophie.laurent@imknow.com'], likers: ['sophie.laurent@imknow.com', 'clarisse.renaud@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Redis en production : stratégies de cache et patterns avancés',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "On utilise le pattern Cache-aside sur ImKnow avec une subtilité : le cache stampede. Quand une clé expire et que 50 requêtes arrivent simultanément, elles vont toutes taper la DB. Solution : le probabilistic early revalidation — revalider la clé quelques secondes avant l'expiration avec une probabilité croissante.",
+        mentions: ['lucas.bernard@imknow.com'],
+        likers: ['julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'alexandre.petit@imknow.com'],
+        replies: [
+          { authorEmail: 'lucas.bernard@imknow.com', content: "Le cache stampede est un vrai problème en prod ! Une autre approche : le mutex lock — seul le premier thread revalide, les autres attendent le résultat en cache. Avec ioredis et `SET NX PX` (set if not exists with TTL), c'est 5 lignes de code.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com'] },
+          { authorEmail: 'julien.leroy@imknow.com', content: "Pour les sessions, Redis avec `SETEX` et un TTL glissant (reset à chaque requête) est la solution standard. Comparé aux sessions en DB, la latence passe de ~20ms à ~0.3ms — très notable sur les endpoints authentifiés qui sont appelés des dizaines de fois par page.", mentions: [], likers: ['lucas.bernard@imknow.com', 'thomas.martin@imknow.com', 'nicolas.mercier@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'CI/CD avec GitHub Actions : pipeline complet pour une application NestJS',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "Le cache des layers Docker avec `cache-from: type=gha` a réduit notre build de 8 minutes à 90 secondes. Ce n'est pas dans le Dockerfile de base de la plupart des projets et pourtant c'est la chose la plus impactante qu'on puisse faire sur un pipeline NestJS.",
+        mentions: ['julien.leroy@imknow.com'],
+        likers: ['alexandre.petit@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'julien.leroy@imknow.com', content: "Pour aller plus loin : ordonner les instructions Dockerfile pour maximiser la réutilisation du cache. COPY package*.json et npm ci avant COPY . — comme ça, si seulement le code change (pas les dépendances), le layer npm ci est réutilisé.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'lucas.bernard@imknow.com'] },
+          { authorEmail: 'lucas.bernard@imknow.com', content: "On a ajouté les Environments GitHub (staging et production) avec un approbateur obligatoire pour la prod. Le déploiement en production nécessite maintenant une validation manuelle d'un senior — ça a évité plusieurs incidents de déploiement accidentel.", mentions: [], likers: ['julien.leroy@imknow.com', 'thomas.martin@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'nicolas.mercier@imknow.com',
+        content: "Le matrix strategy pour paralléliser les tests est top ! On a 3 suites de tests (unit, integration, e2e) qui prenaient 12 minutes en séquence. En parallèle c'est 5 minutes. Combiné avec le cache npm, notre pipeline total est passé de 20 minutes à 7 minutes.",
+        mentions: [],
+        likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'julien.leroy@imknow.com'],
+        replies: [
+          { authorEmail: 'julien.leroy@imknow.com', content: "Pour les tests e2e en parallèle, attention à l'isolation de la DB de test. Chaque runner matrix doit avoir sa propre instance PostgreSQL (les services GitHub Actions sont indépendants par job) ou sa propre DB de test nommée distinctement.", mentions: ['nicolas.mercier@imknow.com'], likers: ['nicolas.mercier@imknow.com', 'thomas.martin@imknow.com', 'lucas.bernard@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Gestion de la performance : conduire des entretiens annuels efficaces',
+    threads: [
+      {
+        authorEmail: 'emma.moreau@imknow.com',
+        content: "La séparation entretien de performance / entretien salarial change vraiment la dynamique. Chez nous on les avait fusionnés et tout le monde arrivait en mode défensif, à minimiser ses lacunes pour ne pas impacter la révision salariale. Depuis la séparation, les entretiens de développement sont devenus des vraies conversations.",
+        mentions: ['marie.dupont@imknow.com'],
+        likers: ['marie.dupont@imknow.com', 'lea.dubois@imknow.com', 'camille.rousseau@imknow.com', 'thomas.martin@imknow.com'],
+        replies: [
+          { authorEmail: 'marie.dupont@imknow.com', content: "Exactement Emma ! C'est aussi recommandé par la plupart des frameworks RH modernes (Lattice, 15Five). Le délai entre les deux entretiens doit être d'au moins 2 semaines pour que l'employé puisse dissocier mentalement les deux sujets.", mentions: ['emma.moreau@imknow.com'], likers: ['emma.moreau@imknow.com', 'lea.dubois@imknow.com'] },
+          { authorEmail: 'thomas.martin@imknow.com', content: "Les OKR trimestriels ont remplacé les objectifs annuels dans mon équipe. L'environnement tech change trop vite pour fixer des objectifs à 12 mois. Réviser tous les 3 mois avec l'équipe permet d'adapter aux nouvelles priorités et de garder le sens d'avancement.", mentions: [], likers: ['marie.dupont@imknow.com', 'emma.moreau@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'SEO technique en 2024 : Core Web Vitals, structured data et indexation',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "Le passage de FID à INP en mars 2024 a surpris beaucoup d'équipes. Notre score INP était mauvais à cause d'un handler click synchrone qui faisait trop de travail. Solution : déplacer le traitement lourd dans un requestIdleCallback ou un Web Worker. INP < 200ms atteint.",
+        mentions: ['emma.moreau@imknow.com'],
+        likers: ['alexandre.petit@imknow.com', 'clarisse.renaud@imknow.com', 'sophie.laurent@imknow.com'],
+        replies: [
+          { authorEmail: 'emma.moreau@imknow.com', content: "Merci pour ce retour concret Thomas ! La migration FID → INP a aussi affecté nos scores PageSpeed — des pages qui étaient à 90 sont passées à 70. On est en train d'identifier les interactions lentes avec le Profiler Chrome DevTools.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'clarisse.renaud@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'clarisse.renaud@imknow.com',
+        content: "Les données structurées pour les articles ont boosté notre CTR de 18% en ajoutant l'auteur et la date dans les rich snippets. On a aussi implémenté le schema BreadcrumbList et les résultats de recherche Google montrent maintenant le fil d'Ariane — très utile pour les pages catégories.",
+        mentions: [],
+        likers: ['emma.moreau@imknow.com', 'sophie.laurent@imknow.com', 'marie.dupont@imknow.com'],
+        replies: [
+          { authorEmail: 'emma.moreau@imknow.com', content: "Excellents chiffres Clarisse ! On a aussi ajouté le FAQ schema sur nos pages de documentation et certaines pages ont des featured snippets en position 0. Ça ne se traduit pas toujours en plus de clics mais la visibilité est incomparable.", mentions: ['clarisse.renaud@imknow.com'], likers: ['clarisse.renaud@imknow.com', 'thomas.martin@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Accessibilité web WCAG 2.2 : guide pratique pour les développeurs',
+    threads: [
+      {
+        authorEmail: 'thomas.martin@imknow.com',
+        content: "L'accessibilité dans ImKnow a révélé des problèmes qu'on n'avait pas vus en tests visuels. Test rapide : déconnecter la souris et naviguer avec Tab uniquement. Si vous ne pouvez pas accéder à toutes les fonctions, votre app n'est pas accessible — et c'est souvent le cas.",
+        mentions: ['sophie.laurent@imknow.com'],
+        likers: ['alexandre.petit@imknow.com', 'lea.dubois@imknow.com', 'emma.moreau@imknow.com'],
+        replies: [
+          { authorEmail: 'sophie.laurent@imknow.com', content: "Le test Tab-uniquement est le meilleur test rapide que je connaisse ! On l'a intégré dans notre Definition of Done : toute nouvelle feature doit être navigable au clavier avant de passer en review. Ça a changé comment les développeurs pensent les composants interactifs.", mentions: ['thomas.martin@imknow.com'], likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'lea.dubois@imknow.com'] },
+          { authorEmail: 'alexandre.petit@imknow.com', content: "Pour l'automatisation : on a intégré axe-core dans notre pipeline CI via `@axe-core/playwright`. Chaque PR lance un test d'accessibilité sur les pages principales. Ça n'attrape pas tout (30-40% comme mentionné) mais ça évite les régressions les plus grossières.", mentions: [], likers: ['thomas.martin@imknow.com', 'sophie.laurent@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'lea.dubois@imknow.com',
+        content: "Point légal important : en France, la loi de 2005 rend l'accessibilité obligatoire pour les services publics numériques. Pour le secteur privé, le risque de litige ADA (USA) est croissant et des entreprises françaises avec présence US ont déjà été attaquées. L'accessibilité n'est plus optionnelle.",
+        mentions: [],
+        likers: ['sophie.laurent@imknow.com', 'marie.dupont@imknow.com', 'thomas.martin@imknow.com', 'emma.moreau@imknow.com'],
+        replies: [
+          { authorEmail: 'sophie.laurent@imknow.com', content: "Merci pour ce rappel légal Léa ! L'argument ROI est souvent nécessaire pour convaincre la direction. Accessibility = marché élargi (15% de la population mondiale), meilleur SEO (les mêmes pratiques), et réduction des risques légaux. Trois justifications business en une.", mentions: ['lea.dubois@imknow.com'], likers: ['lea.dubois@imknow.com', 'thomas.martin@imknow.com'] },
+        ],
+      },
+    ],
+  },
+  {
+    articleTitle: 'Gestion de la dette technique : mesurer, prioriser et rembourser',
+    threads: [
+      {
+        authorEmail: 'julien.leroy@imknow.com',
+        content: "La règle du Boy Scout est simple mais efficace : on l'a formalisée dans notre Definition of Done. Chaque PR doit laisser le code 'au moins aussi propre' qu'avant. Pas de refactoring massif obligatoire, mais une amélioration marginale systématique. Sur 6 mois, l'effet est réel.",
+        mentions: ['nicolas.mercier@imknow.com'],
+        likers: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'lucas.bernard@imknow.com'],
+        replies: [
+          { authorEmail: 'nicolas.mercier@imknow.com', content: "On a ajouté une règle complémentaire : si tu touches un fichier et tu vois une dette évidente (fonction de 200 lignes, variable mal nommée, commentaire trompeur), tu la corriges dans le même PR. Pas dans 'un prochain ticket' qui n'arrivera jamais.", mentions: ['julien.leroy@imknow.com'], likers: ['julien.leroy@imknow.com', 'thomas.martin@imknow.com', 'alexandre.petit@imknow.com'] },
+          { authorEmail: 'thomas.martin@imknow.com', content: "La communication en termes business est vraiment la clé. On a eu du mal à faire passer du budget pour le remboursement de dette jusqu'à ce qu'on le formule comme 'ce module nous coûte 2 jours supplémentaires par sprint en moyenne'. Le ROI devient clair.", mentions: [], likers: ['julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com'] },
+        ],
+      },
+      {
+        authorEmail: 'lucas.bernard@imknow.com',
+        content: "SonarQube a changé notre façon de gérer la dette. Le Technical Debt Ratio affiché à chaque build force les équipes à se confronter aux chiffres. On a mis une quality gate : pas de merge si le TD Ratio augmente de plus de 0.5%. Ça crée une friction positive.",
+        mentions: [],
+        likers: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'alexandre.petit@imknow.com'],
+        replies: [
+          { authorEmail: 'julien.leroy@imknow.com', content: "La quality gate SonarQube en CI est une excellente idée ! On a aussi activé le scan des secrets (SonarQube détecte les tokens et credentials hardcodés) — ça a rattrapé 3 secrets en prod sur le premier scan. La dette de sécurité est souvent la plus urgente.", mentions: ['lucas.bernard@imknow.com'], likers: ['lucas.bernard@imknow.com', 'thomas.martin@imknow.com', 'nicolas.mercier@imknow.com'] },
+        ],
+      },
+    ],
+  },
 ];
 
 export async function seedComments(

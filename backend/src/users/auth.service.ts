@@ -312,6 +312,12 @@ export class AuthService {
       );
     }
 
+    if (newRole === userRole.SUPERADMIN) {
+      throw new BadRequestException(
+        'Cannot assign SUPERADMIN role. Only ADMIN and EMPLOYEE roles can be assigned.',
+      );
+    }
+
     if (adminId === targetUserId) {
       throw new BadRequestException('You cannot change your own role');
     }

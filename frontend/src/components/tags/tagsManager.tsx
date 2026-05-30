@@ -327,7 +327,7 @@ export default function TagsManager({
                     {tag.name}
                     <span className="text-[10px] bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded-md">{tag.count}</span>
                   </div>
-                  <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute -top-2 -right-2 flex gap-1">
                     <button
                       onClick={() => onEditTag(tag)}
                       className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg transition-all hover:scale-110"
@@ -404,14 +404,14 @@ export default function TagsManager({
                     <div className="flex gap-1">
                       <button
                         onClick={() => onEditTag(tag)}
-                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
                         title={t("tags_page.btn_edit")}
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => onDeleteTag(tag.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
                         title={t("tags_page.btn_delete")}
                       >
                         <X className="w-4 h-4" />

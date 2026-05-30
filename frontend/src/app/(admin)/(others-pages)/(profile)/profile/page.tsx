@@ -51,6 +51,7 @@ export default function CurrentUserProfilePageWithAPI() {
   const { user: userData, loading: userLoading } = useUser();
   const { t, language } = useTranslation();
   const [activeTab, setActiveTab] = useState<'publications' | 'drafts' | 'pending' | 'rejected'>('publications');
+  const [pubPage, setPubPage] = useState(1);
   const [userPublications, setUserPublications] = useState<UserPublication[]>([]);
   const [publicationsLoading, setPublicationsLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -369,6 +370,18 @@ export default function CurrentUserProfilePageWithAPI() {
   const emptyState = getEmptyMessage();
   const currentPublications = getTabContent();
 
+  const PUB_PAGE_SIZE = 5;
+  const pubTotalPages = Math.max(1, Math.ceil(currentPublications.length / PUB_PAGE_SIZE));
+  const paginatedPublications = currentPublications.slice(
+    (pubPage - 1) * PUB_PAGE_SIZE,
+    pubPage * PUB_PAGE_SIZE
+  );
+
+  const handleTabChange = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    setPubPage(1);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="mx-auto max-w-7xl px-4 py-8">
@@ -435,7 +448,7 @@ export default function CurrentUserProfilePageWithAPI() {
                 {/* Tabs */}
                 <div className="flex border-b border-gray-200 dark:border-gray-800">
                   <button
-                    onClick={() => setActiveTab('publications')}
+                    onClick={() => handleTabChange('publications')}
                     className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'publications'
                       ? 'border-[#168F6F] text-[#168F6F] dark:text-[#00B383]'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
@@ -444,7 +457,7 @@ export default function CurrentUserProfilePageWithAPI() {
                     {t('profile_page.tab_published')} ({publishedPublications.length})
                   </button>
                   <button
-                    onClick={() => setActiveTab('drafts')}
+                    onClick={() => handleTabChange('drafts')}
                     className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'drafts'
                       ? 'border-[#168F6F] text-[#168F6F] dark:text-[#00B383]'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
@@ -453,7 +466,7 @@ export default function CurrentUserProfilePageWithAPI() {
                     {t('profile_page.tab_drafts')} ({draftPublications.length})
                   </button>
                   <button
-                    onClick={() => setActiveTab('pending')}
+                    onClick={() => handleTabChange('pending')}
                     className={`relative px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'pending'
                       ? 'border-amber-500 text-amber-600 dark:text-amber-400'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
@@ -473,7 +486,7 @@ export default function CurrentUserProfilePageWithAPI() {
                     )}
                   </button>
                   <button
-                    onClick={() => setActiveTab('rejected')}
+                    onClick={() => handleTabChange('rejected')}
                     className={`px-4 py-2 font-medium border-b-2 transition-colors ${activeTab === 'rejected'
                       ? 'border-red-600 text-red-600 dark:text-red-400'
                       : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
@@ -509,7 +522,7 @@ export default function CurrentUserProfilePageWithAPI() {
                   </div>
                 ) : (
                   <>
-                    {currentPublications.map((publication) => (
+                    {paginatedPublications.map((publication) => (
                       <div key={publication.id} className="relative">
                         {activeTab === 'pending' && (
                           <div className="mb-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-2">
@@ -554,6 +567,55 @@ export default function CurrentUserProfilePageWithAPI() {
                         />
                       </div>
                     ))}
+
+                    {/* Pagination */}
+                    {pubTotalPages > 1 && (
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {(pubPage - 1) * PUB_PAGE_SIZE + 1}–{Math.min(pubPage * PUB_PAGE_SIZE, currentPublications.length)} / {currentPublications.length}
+                        </p>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setPubPage(p => Math.max(1, p - 1))}
+                            disabled={pubPage === 1}
+                            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            ←
+                          </button>
+                          {Array.from({ length: pubTotalPages }, (_, i) => i + 1)
+                            .filter(p => p === 1 || p === pubTotalPages || Math.abs(p - pubPage) <= 1)
+                            .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                              if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                              acc.push(p);
+                              return acc;
+                            }, [])
+                            .map((p, idx) =>
+                              p === '...' ? (
+                                <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">…</span>
+                              ) : (
+                                <button
+                                  key={p}
+                                  onClick={() => setPubPage(p as number)}
+                                  className={`w-8 h-8 text-sm rounded-lg border transition-colors ${
+                                    pubPage === p
+                                      ? 'bg-[#168F6F] border-[#168F6F] text-white'
+                                      : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                  }`}
+                                >
+                                  {p}
+                                </button>
+                              )
+                            )}
+                          <button
+                            onClick={() => setPubPage(p => Math.min(pubTotalPages, p + 1))}
+                            disabled={pubPage === pubTotalPages}
+                            className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

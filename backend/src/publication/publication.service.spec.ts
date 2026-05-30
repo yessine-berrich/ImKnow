@@ -15,6 +15,7 @@ import { PublicationReport } from './entities/publication-report.entity';
 import { PublicationStatus, NotificationType } from 'utils/constants';
 import { NotFoundException } from '@nestjs/common';
 import { PublicationChunkService } from './publication-chunk.service';
+import { ReportAIService } from '../report-ai/report-ai.service';
 
 describe('PublicationService', () => {
   let service: PublicationService;
@@ -149,6 +150,10 @@ describe('PublicationService', () => {
           useValue: {
             generateChunks: jest.fn().mockResolvedValue(undefined),
           },
+        },
+        {
+          provide: ReportAIService,
+          useValue: { analyzePublicationReport: jest.fn() },
         },
       ],
     }).compile();
@@ -316,8 +321,10 @@ describe('PublicationService', () => {
         { id: 2, title: 'Similar Publication', authorId: 2, similarity: 0.85 },
       ]);
 
+      // Content must be at least 150 chars to pass the duplicate-min-length guard
+      const longContent = 'This is a sufficiently long content for duplicate detection. '.repeat(4);
       const result = await service.checkDuplicate(
-        { title: 'Test', content: 'Content' },
+        { title: 'Test', content: longContent },
         1,
       );
 

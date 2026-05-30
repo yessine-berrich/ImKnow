@@ -248,7 +248,7 @@ export default function PublicationHistoryModal({
                               <div className="flex items-center gap-1">
                                 <User className="w-4 h-4" />
                                 <span>
-                                  {version.author.firstName} {version.author.lastName}
+                                  {version.author?.firstName} {version.author?.lastName}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1">

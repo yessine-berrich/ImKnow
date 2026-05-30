@@ -385,14 +385,7 @@ export default function TagPublicationsPage() {
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   {t(publications.length > 1 ? 'cat_pub.pub_count_plural' : 'cat_pub.pub_count', { count: publications.length })}
                 </span>
-                {tag?.publicationCount && tag.publicationCount > publications.length && (() => {
-                  const diff = tag.publicationCount - publications.length;
-                  return (
-                    <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                      {t(diff > 1 ? 'cat_pub.tag_unpublished_plural' : 'cat_pub.tag_unpublished', { count: diff })}
-                    </span>
-                  );
-                })()}
+                
                 {!isAuthenticated && (
                   <span className="text-xs text-yellow-600 dark:text-yellow-400">
                     {t('cat_pub.login_to_interact')}

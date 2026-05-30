@@ -6,15 +6,15 @@ import { useRouter } from 'next/navigation';
 import {
   Eye, MoreVertical, ChevronLeft, ChevronRight, ArrowUpDown,
   Loader2, Copy, AlertTriangle, User,
-  FolderOpen, BarChart2, Link2, Trash2, ThumbsUp, X,
+  FolderOpen, BarChart2, Link2, Trash2, ThumbsUp,
 } from 'lucide-react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { DuplicatePublication } from '@/app/(admin)/(others-pages)/(rejected)/rejected/duplicated/page';
 import Avatar from '@/components/ui/avatar/Avatar';
-import MarkdownPreview from '@/components/markdoun-editor/MarkdownPreview';
 import { useTranslation } from '@/context/LanguageContext';
 import { translateError } from '@/utils/errorTranslation';
+import PublicationDetailModal from '@/components/modals/PublicationDetailModal';
 
 interface DuplicatesTableProps {
   publications: DuplicatePublication[];
@@ -31,88 +31,13 @@ const truncateText = (text: string, maxLength: number = 20): string => {
   return text.substring(0, maxLength) + '...';
 };
 
-interface SimplePublicationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  publication: DuplicatePublication | null;
-}
-
-function SimplePublicationModal({ isOpen, onClose, publication }: SimplePublicationModalProps) {
-  const { t, language } = useTranslation();
-
-  useEffect(() => {
-    if (isOpen) { document.body.style.overflow = 'hidden'; }
-    else { document.body.style.overflow = ''; }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const diffInMs = Date.now() - date.getTime();
-    const minutes = Math.floor(diffInMs / 60000);
-    if (minutes < 1) return t('notifications.just_now');
-    if (minutes < 60) return t('notifications.minutes_ago', { count: minutes });
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return t('notifications.hours_ago', { count: hours });
-    const days = Math.floor(hours / 24);
-    if (days < 30) return t(days > 1 ? 'tables.days_ago_plural' : 'tables.days_ago_one', { count: days });
-    return date.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' });
-  };
-
-  if (!isOpen || !publication) return null;
-
-  return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-slideUp">
-        <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Avatar src={publication.author?.profileImage} alt={publication.author?.name || t('tables.unknown_author_short')} size="medium" className="!w-12 !h-12" />
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                {publication.author?.name || t('tables.unknown_author')}
-              </h3>
-              <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <span>{publication.author?.role || t('tables.member')}</span>
-                <span>•</span>
-                <span>{getTimeAgo(publication.createdAt)}</span>
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0">
-            <X size={24} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <div className="p-6 space-y-6">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="px-3 py-1 bg-[#00926B]/10 dark:bg-[#00926B]/20 text-[#00926B] dark:text-[#00B383] text-sm font-medium rounded-full">
-                {publication.category?.name || t('tables.uncategorized')}
-              </span>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{publication.title}</h1>
-            <div className="prose dark:prose-invert max-w-none">
-              <MarkdownPreview content={publication.content} />
-            </div>
-            {publication.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-6 border-t border-gray-200 dark:border-gray-800">
-                {publication.tags.map((tag, i) => (
-                  <span key={i} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm">{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function DuplicatesTable({ publications: initialPublications, onRefresh, title, description }: DuplicatesTableProps) {
   const { t, language } = useTranslation();
   const router = useRouter();
   const [publications, setPublications] = useState(initialPublications);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [scoreFilter, setScoreFilter] = useState(''); // '' | 'high'
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: 'asc' | 'desc' } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -121,8 +46,11 @@ export default function DuplicatesTable({ publications: initialPublications, onR
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [expandedSimilarId, setExpandedSimilarId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [selectedPublication, setSelectedPublication] = useState<DuplicatePublication | null>(null);
-  const [isPublicationModalOpen, setIsPublicationModalOpen] = useState(false);
+  const [modalPublication, setModalPublication] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [loadingSimilarId, setLoadingSimilarId] = useState<number | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [userToken, setUserToken] = useState<string | undefined>(undefined);
 
   useEffect(() => { setPublications(initialPublications); }, [initialPublications]);
 
@@ -134,11 +62,110 @@ export default function DuplicatesTable({ publications: initialPublications, onR
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      setUserToken(token);
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.sub);
+      } catch {}
+    }
+  }, []);
+
   const getAuthHeaders = () => {
     const token = getToken();
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
   };
 
+  /* ── Mapper: DuplicatePublication → format PublicationDetailModal ── */
+  const mapDuplicateToModal = (pub: DuplicatePublication): any => {
+    const name = pub.author?.name || t('tables.unknown_author');
+    const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+    return {
+      id: String(pub.id),
+      title: pub.title,
+      content: pub.content,
+      description: pub.rejectionReason || '',
+      author: {
+        id: pub.author?.id,
+        name,
+        initials,
+        department: '',
+        avatar: pub.author?.profileImage || null,
+      },
+      category: {
+        name: pub.category?.name || '',
+        slug: pub.category?.name?.toLowerCase().replace(/\s+/g, '-') || '',
+      },
+      tags: pub.tags,
+      publishedAt: pub.createdAt,
+      updatedAt: pub.updatedAt,
+      status: 'rejected' as const,
+      stats: { likes: 0, comments: 0, views: 0 },
+      isLiked: false,
+      isBookmarked: false,
+    };
+  };
+
+  /* ── Mapper: réponse API publication → format PublicationDetailModal ── */
+  const mapApiToModal = (raw: any): any => {
+    const data = raw?.publication ?? raw;
+    const authorName =
+      data.author?.name ||
+      (data.author?.firstName
+        ? `${data.author.firstName} ${data.author.lastName || ''}`.trim()
+        : t('tables.unknown_author'));
+    const initials = authorName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
+    return {
+      id: String(data.id),
+      title: data.title || '',
+      content: data.content || '',
+      description: data.description || data.excerpt || '',
+      author: {
+        id: data.author?.id,
+        name: authorName,
+        initials,
+        department: data.author?.role || '',
+        avatar: data.author?.profileImage || data.author?.avatar || null,
+      },
+      category: {
+        name: data.category?.name || '',
+        slug: data.category?.slug || data.category?.name?.toLowerCase().replace(/\s+/g, '-') || '',
+      },
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      publishedAt: data.publishedAt || data.createdAt || '',
+      updatedAt: data.updatedAt || '',
+      status: data.status || 'published',
+      stats: {
+        likes:    data.likes    ?? data._count?.likes    ?? data.stats?.likes    ?? 0,
+        comments: data.comments ?? data._count?.comments ?? data.stats?.comments ?? 0,
+        views:    data.views    ?? data._count?.views    ?? data.stats?.views    ?? 0,
+      },
+      isLiked:      data.isLiked      ?? false,
+      isBookmarked: data.isBookmarked ?? false,
+    };
+  };
+
+  /* ── Fetch une publication similaire puis ouvre le modal ── */
+  const fetchAndViewSimilarPublication = async (simId: number) => {
+    setLoadingSimilarId(simId);
+    try {
+      const res = await fetch(`http://localhost:3000/api/publications/${simId}`, {
+        headers: getAuthHeaders(),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      const data = await res.json();
+      setModalPublication(mapApiToModal(data));
+      setIsDetailModalOpen(true);
+    } catch (err: any) {
+      toast.error(translateError(err.message, t as any));
+    } finally {
+      setLoadingSimilarId(null);
+    }
+  };
+
+  /* ── Actions ── */
   const handleApprove = async (id: number, pubTitle: string) => {
     setOpenMenuId(null);
     if (!await confirm(t('tables.approve_confirm_msg', { title: pubTitle }), { title: t('tables.approve_confirm_title') })) return;
@@ -149,7 +176,7 @@ export default function DuplicatesTable({ publications: initialPublications, onR
       setPublications(prev => prev.filter(a => a.id !== id));
       toast.success(t('tables.toast_approved'));
     } catch (err: any) {
-      toast.error(t('tables.toast_approve_error', { error: translateError(err.message, t) }));
+      toast.error(t('tables.toast_approve_error', { error: translateError(err.message, t as any) }));
     } finally {
       setLoading(l => ({ ...l, [id]: false }));
     }
@@ -165,30 +192,51 @@ export default function DuplicatesTable({ publications: initialPublications, onR
       setPublications(prev => prev.filter(a => a.id !== id));
       toast.success(t('tables.toast_deleted'));
     } catch (err: any) {
-      toast.error(t('tables.toast_delete_error', { error: translateError(err.message, t) }));
+      toast.error(t('tables.toast_delete_error', { error: translateError(err.message, t as any) }));
     } finally {
       setLoading(l => ({ ...l, [id]: false }));
     }
   };
 
   const handleViewPublication = (publication: DuplicatePublication) => {
-    setSelectedPublication(publication);
-    setIsPublicationModalOpen(true);
+    setModalPublication(mapDuplicateToModal(publication));
+    setIsDetailModalOpen(true);
     setOpenMenuId(null);
   };
 
-  const filteredPublications = useMemo(() => {
-    if (!search.trim()) return publications;
-    const s = search.toLowerCase();
-    return publications.filter(a =>
-      a.title.toLowerCase().includes(s) ||
-      a.author?.name.toLowerCase().includes(s) ||
-      a.author?.email.toLowerCase().includes(s) ||
-      a.category?.name.toLowerCase().includes(s) ||
-      a.tags.some(tag => tag.toLowerCase().includes(s))
-    );
-  }, [publications, search]);
+  const handleCopyRejectionReason = (reason: string) => {
+    navigator.clipboard.writeText(reason);
+    toast.success(t('tables.toast_reason_copied'));
+    setOpenMenuId(null);
+  };
 
+  /* ── Computed: catégories disponibles ── */
+  const allCategories = useMemo(() => {
+    const set = new Set<string>();
+    publications.forEach(p => { if (p.category?.name) set.add(p.category.name); });
+    return Array.from(set).sort();
+  }, [publications]);
+
+  /* ── Filtrage ── */
+  const filteredPublications = useMemo(() => {
+    return publications.filter(a => {
+      if (search.trim()) {
+        const s = search.toLowerCase();
+        if (!(
+          a.title.toLowerCase().includes(s) ||
+          a.author?.name.toLowerCase().includes(s) ||
+          a.author?.email.toLowerCase().includes(s) ||
+          a.category?.name.toLowerCase().includes(s) ||
+          a.tags.some(tag => tag.toLowerCase().includes(s))
+        )) return false;
+      }
+      if (categoryFilter && a.category?.name !== categoryFilter) return false;
+      if (scoreFilter === 'high' && a.duplicateScore < 0.85) return false;
+      return true;
+    });
+  }, [publications, search, categoryFilter, scoreFilter]);
+
+  /* ── Tri ── */
   const sortedPublications = useMemo(() => {
     if (!sortConfig) return filteredPublications;
     return [...filteredPublications].sort((a, b) => {
@@ -207,17 +255,18 @@ export default function DuplicatesTable({ publications: initialPublications, onR
     });
   }, [filteredPublications, sortConfig]);
 
-  const totalPages = Math.ceil(sortedPublications.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const totalPages  = Math.ceil(sortedPublications.length / itemsPerPage);
+  const startIndex  = (currentPage - 1) * itemsPerPage;
   const pagePublications = sortedPublications.slice(startIndex, startIndex + itemsPerPage);
   const displayRows = Array(itemsPerPage).fill(null).map((_, i) => pagePublications[i] ?? null);
 
+  /* ── Stats ── */
   const stats = useMemo(() => {
     const scores = publications.map(a => a.duplicateScore);
     return {
-      total: publications.length,
-      avgScore: scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : 0,
-      highRisk: publications.filter(a => a.duplicateScore >= 0.85).length,
+      total:      publications.length,
+      avgScore:   scores.length ? scores.reduce((s, v) => s + v, 0) / scores.length : 0,
+      highRisk:   publications.filter(a => a.duplicateScore >= 0.85).length,
       categories: new Set(publications.map(a => a.category?.name).filter(Boolean)).size,
     };
   }, [publications]);
@@ -235,7 +284,7 @@ export default function DuplicatesTable({ publications: initialPublications, onR
   };
 
   const scoreBar = (score: number) => {
-    const pct = Math.round(score * 100);
+    const pct   = Math.round(score * 100);
     const color = score >= 0.9 ? 'bg-red-500' : score >= 0.75 ? 'bg-orange-500' : 'bg-yellow-500';
     return (
       <div className="flex items-center gap-2">
@@ -249,12 +298,6 @@ export default function DuplicatesTable({ publications: initialPublications, onR
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-
-  const handleCopyRejectionReason = (reason: string) => {
-    navigator.clipboard.writeText(reason);
-    toast.success(t('tables.toast_reason_copied'));
-    setOpenMenuId(null);
-  };
 
   const renderEmptyRow = (key: number) => (
     <tr key={`empty-${key}`} className="opacity-0 pointer-events-none h-[65px]">
@@ -272,43 +315,111 @@ export default function DuplicatesTable({ publications: initialPublications, onR
 
   return (
     <div className="space-y-6">
+
+      {/* ── En-tête ── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">{description}</p>
         </div>
-        <button onClick={onRefresh} className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors self-start">
+        <button
+          onClick={onRefresh}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors self-start"
+        >
           <ArrowUpDown size={15} /> {t('tables.refresh')}
         </button>
       </div>
 
+      {/* ── Cartes statistiques (cliquables comme ModerationTable) ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: t('tables.stat_total_dup'),     value: stats.total,                           gradient: 'from-orange-500 to-orange-600', icon: <Copy size={18} /> },
-          { label: t('tables.stat_avg_score'),      value: `${Math.round(stats.avgScore * 100)}%`, gradient: 'from-yellow-500 to-yellow-600', icon: <BarChart2 size={18} /> },
-          { label: t('tables.stat_high_risk'),      value: stats.highRisk,                        gradient: 'from-red-500 to-red-600',       icon: <AlertTriangle size={18} /> },
-          { label: t('tables.stat_categories_hit'), value: stats.categories,                      gradient: 'from-purple-500 to-purple-600', icon: <FolderOpen size={18} /> },
-        ].map(({ label, value, gradient, icon }) => (
-          <div key={label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 hover:shadow-lg transition-shadow">
+        {([
+          {
+            label:    t('tables.stat_total_dup'),
+            value:    stats.total,
+            gradient: 'from-orange-500 to-orange-600',
+            icon:     <Copy size={18} />,
+            onClick:  (() => { setCategoryFilter(''); setScoreFilter(''); setSearch(''); setCurrentPage(1); }) as (() => void) | null,
+            isActive: false,
+          },
+          {
+            label:    t('tables.stat_avg_score'),
+            value:    `${Math.round(stats.avgScore * 100)}%`,
+            gradient: 'from-yellow-500 to-yellow-600',
+            icon:     <BarChart2 size={18} />,
+            onClick:  null as (() => void) | null,
+            isActive: false,
+          },
+          {
+            label:    t('tables.stat_high_risk'),
+            value:    stats.highRisk,
+            gradient: 'from-red-500 to-red-600',
+            icon:     <AlertTriangle size={18} />,
+            onClick:  (() => { setScoreFilter(scoreFilter === 'high' ? '' : 'high'); setCurrentPage(1); }) as (() => void) | null,
+            isActive: scoreFilter === 'high',
+          },
+          {
+            label:    t('tables.stat_categories_hit'),
+            value:    stats.categories,
+            gradient: 'from-purple-500 to-purple-600',
+            icon:     <FolderOpen size={18} />,
+            onClick:  null as (() => void) | null,
+            isActive: false,
+          },
+        ]).map(({ label, value, gradient, icon, onClick, isActive }) => (
+          <div
+            key={label}
+            onClick={onClick ?? undefined}
+            className={`bg-white dark:bg-gray-900 rounded-xl border-2 p-5 transition-all
+              ${onClick ? 'cursor-pointer hover:shadow-lg' : 'cursor-default'}
+              ${isActive ? 'border-[#168F6F] shadow-md ring-2 ring-[#168F6F]/20' : 'border-gray-200 dark:border-gray-800'}`}
+          >
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
               <span className={`p-1.5 rounded-lg bg-gradient-to-br ${gradient} text-white`}>{icon}</span>
             </div>
             <p className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</p>
+            {isActive && <p className="text-xs text-[#168F6F] mt-1 font-medium">{t('tables.active_filter')}</p>}
           </div>
         ))}
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+      {/* ── Barre de filtres (identique au style ModerationTable) ── */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 flex flex-col sm:flex-row gap-3">
+        {/* Recherche textuelle */}
         <input
           type="text"
           placeholder={t('tables.search_dup')}
           value={search}
           onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-          className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent"
+          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent"
         />
+        {/* Filtre catégorie */}
+        <select
+          value={categoryFilter}
+          onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+          className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent min-w-[180px]"
+        >
+          <option value="">{t('tables.all_categories')}</option>
+          {allCategories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
+        {/* Filtre score */}
+        <select
+          value={scoreFilter}
+          onChange={(e) => { setScoreFilter(e.target.value); setCurrentPage(1); }}
+          className={`px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#168F6F] focus:border-transparent transition-all ${
+            scoreFilter === 'high'
+              ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-400 text-red-700 dark:text-red-300 font-medium'
+              : 'bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white'
+          }`}
+        >
+          <option value="">{t('tables.all_severities')}</option>
+          <option value="high">{t('tables.high_severity_filter')}</option>
+        </select>
       </div>
 
+      {/* ── Tableau ── */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -339,20 +450,24 @@ export default function DuplicatesTable({ publications: initialPublications, onR
               ) : (
                 displayRows.map((publication, index) => {
                   if (!publication) return renderEmptyRow(index);
-                  const isLoading = loading[publication.id];
+                  const isLoading      = loading[publication.id];
                   const truncatedTitle = truncateText(publication.title, 20);
-                  const hasLongTitle = publication.title && publication.title.length > 20;
-                  const simCount = publication.similarPublicationsCache.length;
+                  const hasLongTitle   = publication.title && publication.title.length > 20;
+                  const simCount       = publication.similarPublicationsCache.length;
 
                   return (
                     <React.Fragment key={publication.id}>
                       <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+
+                        {/* Titre + raison */}
                         <td className="px-4 py-3 max-w-xs">
                           <div>
                             <p className="font-medium text-gray-900 dark:text-white truncate cursor-help" title={hasLongTitle ? publication.title : undefined}>{truncatedTitle}</p>
                             <p className="text-xs text-orange-600 dark:text-orange-400 mt-0.5 truncate max-w-[220px]" title={publication.rejectionReason}>{publication.rejectionReason}</p>
                           </div>
                         </td>
+
+                        {/* Auteur */}
                         <td className="px-4 py-3">
                           {publication.author ? (
                             <div className="flex items-center gap-2">
@@ -364,13 +479,21 @@ export default function DuplicatesTable({ publications: initialPublications, onR
                             </div>
                           ) : <span className="text-sm text-gray-400">—</span>}
                         </td>
+
+                        {/* Catégorie */}
                         <td className="px-4 py-3">
                           {publication.category ? (
                             <span className="px-2.5 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 text-xs font-medium rounded-full">{publication.category.name}</span>
                           ) : <span className="text-sm text-gray-400">—</span>}
                         </td>
+
+                        {/* Score */}
                         <td className="px-4 py-3">{scoreBar(publication.duplicateScore)}</td>
+
+                        {/* Date */}
                         <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{formatDate(publication.createdAt)}</td>
+
+                        {/* Tags */}
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-1">
                             {publication.tags.length === 0 ? (
@@ -387,6 +510,8 @@ export default function DuplicatesTable({ publications: initialPublications, onR
                             )}
                           </div>
                         </td>
+
+                        {/* Publications similaires — avec bouton œil pour ouvrir PublicationDetailModal */}
                         <td className="px-4 py-3">
                           <button
                             onClick={() => setExpandedSimilarId(expandedSimilarId === publication.id ? null : publication.id)}
@@ -395,15 +520,36 @@ export default function DuplicatesTable({ publications: initialPublications, onR
                             <Link2 size={13} />
                             {t(simCount > 1 ? 'tables.similar_plural' : 'tables.similar_one', { count: simCount })}
                           </button>
-                          {expandedSimilarId === publication.id && publication.similarPublicationsCache.length > 0 && (
-                            <div className="mt-2 space-y-1.5 max-w-[220px]">
+
+                          {expandedSimilarId === publication.id && simCount > 0 && (
+                            <div className="mt-2 space-y-1.5 max-w-[240px]">
                               {publication.similarPublicationsCache.map(sim => {
-                                const truncatedSimTitle = truncateText(sim.title, 20);
-                                const hasLongSimTitle = sim.title && sim.title.length > 20;
+                                const truncatedSimTitle = truncateText(sim.title, 18);
+                                const hasLongSimTitle   = sim.title && sim.title.length > 18;
+                                const isSimLoading      = loadingSimilarId === sim.id;
+
                                 return (
                                   <div key={sim.id} className="text-xs bg-gray-50 dark:bg-gray-800 rounded-lg p-2 border border-gray-200 dark:border-gray-700">
-                                    <p className="font-medium text-gray-900 dark:text-white truncate cursor-help" title={hasLongSimTitle ? sim.title : undefined}>{truncatedSimTitle}</p>
-                                    <div className="flex items-center justify-between mt-0.5">
+                                    <div className="flex items-start gap-1">
+                                      <p
+                                        className="font-medium text-gray-900 dark:text-white truncate flex-1 cursor-help"
+                                        title={hasLongSimTitle ? sim.title : undefined}
+                                      >
+                                        {truncatedSimTitle}
+                                      </p>
+                                      {/* Bouton pour ouvrir PublicationDetailModal */}
+                                      <button
+                                        onClick={() => fetchAndViewSimilarPublication(sim.id)}
+                                        disabled={isSimLoading}
+                                        title={t('tables.view_publication')}
+                                        className="flex-shrink-0 p-0.5 rounded text-[#168F6F] hover:bg-[#168F6F]/10 transition-colors disabled:opacity-50"
+                                      >
+                                        {isSimLoading
+                                          ? <Loader2 size={12} className="animate-spin" />
+                                          : <Eye size={12} />}
+                                      </button>
+                                    </div>
+                                    <div className="flex items-center justify-between mt-1">
                                       <span className="text-gray-500 dark:text-gray-400">{formatDate(sim.createdAt)}</span>
                                       <span className={`font-bold px-1.5 py-0.5 rounded ${scoreColor(sim.score)}`}>{Math.round(sim.score * 100)}%</span>
                                     </div>
@@ -413,6 +559,8 @@ export default function DuplicatesTable({ publications: initialPublications, onR
                             </div>
                           )}
                         </td>
+
+                        {/* Menu actions */}
                         <td className="px-4 py-3">
                           <div className="relative" ref={openMenuId === publication.id ? menuRef : undefined}>
                             <button
@@ -422,8 +570,12 @@ export default function DuplicatesTable({ publications: initialPublications, onR
                             >
                               {isLoading ? <Loader2 size={18} className="animate-spin" /> : <MoreVertical size={18} />}
                             </button>
+
                             {openMenuId === publication.id && !isLoading && (
-                              <div className={`absolute z-[100] w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 ${menuPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'}`} style={{ left: '50%', transform: 'translateX(-90%)' }}>
+                              <div
+                                className={`absolute z-[100] w-64 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-2 ${menuPosition === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'}`}
+                                style={{ left: '50%', transform: 'translateX(-90%)' }}
+                              >
                                 <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate cursor-help" title={hasLongTitle ? publication.title : undefined}>{truncatedTitle}</p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -477,18 +629,23 @@ export default function DuplicatesTable({ publications: initialPublications, onR
         )}
       </div>
 
-      <SimplePublicationModal
-        isOpen={isPublicationModalOpen}
-        onClose={() => { setIsPublicationModalOpen(false); setSelectedPublication(null); }}
-        publication={selectedPublication}
+      {/* ── PublicationDetailModal (remplace SimplePublicationModal) ── */}
+      <PublicationDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => { setIsDetailModalOpen(false); setModalPublication(null); }}
+        publication={modalPublication}
+        currentUserId={currentUserId}
+        userToken={userToken}
+        showActions={false}
+        showHistory={false}
       />
 
       <style jsx global>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .animate-fadeIn { animation: fadeIn 0.2s ease-out; }
+        .animate-fadeIn  { animation: fadeIn  0.2s ease-out; }
         .animate-slideUp { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar       { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

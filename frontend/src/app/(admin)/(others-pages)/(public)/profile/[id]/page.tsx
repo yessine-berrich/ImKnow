@@ -79,6 +79,7 @@ export default function PublicProfilePage() {
   const { t, language } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<'publications' | 'relations'>('publications');
+  const [pubPage, setPubPage] = useState(1);
   const [user, setUser] = useState<User | null>(null);
   const [userPublications, setUserPublications] = useState<UserPublication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,6 +373,13 @@ export default function PublicProfilePage() {
     };
   };
 
+  const PUB_PAGE_SIZE = 5;
+  const pubTotalPages = Math.max(1, Math.ceil(userPublications.length / PUB_PAGE_SIZE));
+  const paginatedPublications = userPublications.slice(
+    (pubPage - 1) * PUB_PAGE_SIZE,
+    pubPage * PUB_PAGE_SIZE
+  );
+
   // Statistiques basées sur les publications publiés
   const userStats = {
     totalPublications: userPublications.length,
@@ -505,7 +513,7 @@ export default function PublicProfilePage() {
                     {activeTab === 'publications' ? (
                       userPublications.length > 0 ? (
                         <>
-                          {userPublications.map((publication) => (
+                          {paginatedPublications.map((publication) => (
                             <PublicationCard
                               key={publication.id}
                               publication={publication}
@@ -516,6 +524,55 @@ export default function PublicProfilePage() {
                               currentUserId={currentUserId}
                             />
                           ))}
+
+                          {/* Pagination */}
+                          {pubTotalPages > 1 && (
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-800">
+                              <p className="text-sm text-gray-500 dark:text-gray-400">
+                                {(pubPage - 1) * PUB_PAGE_SIZE + 1}–{Math.min(pubPage * PUB_PAGE_SIZE, userPublications.length)} / {userPublications.length}
+                              </p>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => setPubPage(p => Math.max(1, p - 1))}
+                                  disabled={pubPage === 1}
+                                  className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  ←
+                                </button>
+                                {Array.from({ length: pubTotalPages }, (_, i) => i + 1)
+                                  .filter(p => p === 1 || p === pubTotalPages || Math.abs(p - pubPage) <= 1)
+                                  .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...');
+                                    acc.push(p);
+                                    return acc;
+                                  }, [])
+                                  .map((p, idx) =>
+                                    p === '...' ? (
+                                      <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">…</span>
+                                    ) : (
+                                      <button
+                                        key={p}
+                                        onClick={() => setPubPage(p as number)}
+                                        className={`w-8 h-8 text-sm rounded-lg border transition-colors ${
+                                          pubPage === p
+                                            ? 'bg-[#168F6F] border-[#168F6F] text-white'
+                                            : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                        }`}
+                                      >
+                                        {p}
+                                      </button>
+                                    )
+                                  )}
+                                <button
+                                  onClick={() => setPubPage(p => Math.min(pubTotalPages, p + 1))}
+                                  disabled={pubPage === pubTotalPages}
+                                  className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  →
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="py-12 text-center">

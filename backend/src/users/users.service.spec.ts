@@ -8,6 +8,7 @@ import { AuthService } from './auth.service';
 import { SessionService } from '../session/session.service';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
+import { ReportAIService } from '../report-ai/report-ai.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { userRole } from 'utils/constants';
 import * as bcrypt from 'bcryptjs';
@@ -113,6 +114,10 @@ describe('UsersService', () => {
         {
           provide: MailService,
           useValue: { sendMail: jest.fn(), sendNotificationEmail: jest.fn() },
+        },
+        {
+          provide: ReportAIService,
+          useValue: { analyzeUserReport: jest.fn() },
         },
       ],
     }).compile();

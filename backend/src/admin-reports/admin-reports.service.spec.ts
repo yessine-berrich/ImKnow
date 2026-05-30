@@ -6,7 +6,9 @@ import { PublicationReport } from 'src/publication/entities/publication-report.e
 import { UserReport } from 'src/users/entities/user-report.entity';
 import { Publication } from 'src/publication/entities/publication.entity';
 import { User } from 'src/users/entities/user.entity';
-import { PublicationStatus } from 'utils/constants';
+import { ReportAdminNote } from './entities/report-admin-note.entity';
+import { NotificationService } from 'src/notification/notification.service';
+import { PublicationStatus, UserStatus } from 'utils/constants';
 
 describe('AdminReportsService', () => {
   let service: AdminReportsService;
@@ -31,6 +33,7 @@ describe('AdminReportsService', () => {
     status: 'pending',
     createdAt: now,
     updatedAt: now,
+    aiAnalyzedAt: null,
     publication: mockPublication,
     reporter: mockReporter,
   };
@@ -42,6 +45,7 @@ describe('AdminReportsService', () => {
     email: 'alice@example.com',
     department: 'Engineering',
     isActive: true,
+    status: UserStatus.ACTIVE,
     role: 'employee',
     createdAt: now,
   };
@@ -53,6 +57,7 @@ describe('AdminReportsService', () => {
     status: 'pending',
     createdAt: now,
     updatedAt: now,
+    aiAnalyzedAt: null,
     reportedUser: mockUser,
     reporter: mockReporter,
   };
@@ -86,14 +91,28 @@ describe('AdminReportsService', () => {
     update: jest.fn().mockResolvedValue({ affected: 1 }),
   };
 
+  const mockReportNoteRepo = {
+    find: jest.fn(),
+    findOne: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+  };
+
+  const mockNotificationService = {
+    createAndNotify: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminReportsService,
         { provide: getRepositoryToken(PublicationReport), useValue: mockPublicationReportRepo },
-        { provide: getRepositoryToken(UserReport),   useValue: mockUserReportRepo },
-        { provide: getRepositoryToken(Publication),      useValue: mockPublicationRepo },
-        { provide: getRepositoryToken(User),         useValue: mockUserRepo },
+        { provide: getRepositoryToken(UserReport),        useValue: mockUserReportRepo },
+        { provide: getRepositoryToken(Publication),       useValue: mockPublicationRepo },
+        { provide: getRepositoryToken(User),              useValue: mockUserRepo },
+        { provide: getRepositoryToken(ReportAdminNote),   useValue: mockReportNoteRepo },
+        { provide: NotificationService,                   useValue: mockNotificationService },
       ],
     }).compile();
 
@@ -258,7 +277,7 @@ describe('AdminReportsService', () => {
 
       expect(mockPublicationReportRepo.update).toHaveBeenCalledWith(
         { publication: { id: 1 }, status: 'pending' },
-        { status: 'dismissed' },
+        { status: 'dismissed', adminNote: null },
       );
       expect(result.action).toBe('dismiss_all');
     });
@@ -268,7 +287,7 @@ describe('AdminReportsService', () => {
 
       expect(mockPublicationReportRepo.update).toHaveBeenCalledWith(
         { publication: { id: 1 }, status: 'pending' },
-        { status: 'reviewed' },
+        { status: 'reviewed', adminNote: null },
       );
       expect(result.action).toBe('review_all');
     });
@@ -348,7 +367,7 @@ describe('AdminReportsService', () => {
     it('should count banned users in summary', async () => {
       const bannedReport = {
         ...mockUserReport,
-        reportedUser: { ...mockUser, isActive: false },
+        reportedUser: { ...mockUser, status: UserStatus.INACTIVE },
       };
       mockUserReportRepo.createQueryBuilder.mockReturnValue(makeQB([bannedReport]));
 
@@ -382,18 +401,17 @@ describe('AdminReportsService', () => {
       await expect(service.getUserReportDetail(999)).rejects.toThrow(NotFoundException);
     });
 
-    it('should recommend review_all for inactive user', async () => {
-      mockUserRepo.findOne.mockResolvedValue({ ...mockUser, isActive: false });
+    it('should recommend unban for inactive user', async () => {
+      mockUserRepo.findOne.mockResolvedValue({ ...mockUser, status: UserStatus.INACTIVE });
       mockUserReportRepo.find.mockResolvedValue([mockUserReport]);
 
       const result = await service.getUserReportDetail(10);
 
-      expect(result.intelligence.recommendation.action).toBe('review_all');
+      expect(result.intelligence.recommendation.action).toBe('unban');
     });
 
     it('should recommend ban for harassment on active user with high risk', async () => {
       mockUserRepo.findOne.mockResolvedValue(mockUser);
-      // Many harassment reports to raise risk level to critical
       const heavyReports = Array.from({ length: 5 }, () => ({
         ...mockUserReport,
         reason: 'harassment',
@@ -421,7 +439,7 @@ describe('AdminReportsService', () => {
 
       expect(mockUserReportRepo.update).toHaveBeenCalledWith(
         { reportedUser: { id: 10 }, status: 'pending' },
-        { status: 'dismissed' },
+        { status: 'dismissed', adminNote: null },
       );
       expect(result.action).toBe('dismiss_all');
     });
@@ -443,7 +461,7 @@ describe('AdminReportsService', () => {
     it('should ban user and mark reports reviewed', async () => {
       const result = await service.takeActionOnUser(10, 'ban', 99);
 
-      expect(mockUserRepo.update).toHaveBeenCalledWith(10, { isActive: false });
+      expect(mockUserRepo.update).toHaveBeenCalledWith(10, { status: UserStatus.INACTIVE });
       expect(mockUserReportRepo.update).toHaveBeenCalled();
       expect(result.action).toBe('ban');
     });

@@ -25,6 +25,22 @@ const BOOKMARKS: { title: string; users: string[] }[] = [
   { title: 'Clean Architecture : appliquer les principes de Bob Martin en NestJS',    users: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'lucas.bernard@imknow.com', 'david.moreau@imknow.com'] },
   { title: 'Monitoring avec Prometheus et Grafana : guide pratique',                  users: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'nicolas.mercier@imknow.com'] },
   { title: 'Design Patterns en JavaScript : du classique au moderne',                  users: ['alexandre.petit@imknow.com', 'sophie.laurent@imknow.com', 'nicolas.mercier@imknow.com'] },
+  // Articles manquants
+  { title: 'Stratégie content marketing B2B : guide complet 2024',                      users: ['clarisse.renaud@imknow.com', 'emma.moreau@imknow.com', 'marie.dupont@imknow.com'] },
+  { title: 'GraphQL vs REST : comment choisir pour votre prochain projet',              users: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'alexandre.petit@imknow.com'] },
+  { title: 'Tests A/B : méthodologie et pièges à éviter',                               users: ['clarisse.renaud@imknow.com', 'emma.moreau@imknow.com', 'marie.dupont@imknow.com', 'camille.rousseau@imknow.com'] },
+  { title: 'Marque employeur : construire une image qui attire les talents',            users: ['marie.dupont@imknow.com', 'emma.moreau@imknow.com', 'julien.leroy@imknow.com', 'camille.rousseau@imknow.com'] },
+  { title: 'Vue.js 3 et la Composition API : migration depuis Options API',             users: ['alexandre.petit@imknow.com', 'thomas.martin@imknow.com', 'nicolas.mercier@imknow.com', 'julien.leroy@imknow.com'] },
+  { title: 'OWASP Top 10 : sécuriser ses applications web en 2024',                     users: ['lucas.bernard@imknow.com', 'julien.leroy@imknow.com', 'thomas.martin@imknow.com', 'lea.dubois@imknow.com', 'alexandre.petit@imknow.com'] },
+  { title: 'Leadership technique : passer de développeur senior à tech lead',            users: ['thomas.martin@imknow.com', 'nicolas.mercier@imknow.com', 'julien.leroy@imknow.com', 'marie.dupont@imknow.com', 'alexandre.petit@imknow.com'] },
+  { title: "Machine Learning en production : de l'expérimentation au déploiement",      users: ['julien.leroy@imknow.com', 'thomas.martin@imknow.com', 'lucas.bernard@imknow.com', 'nicolas.mercier@imknow.com'] },
+  { title: 'Next.js 14 et le App Router : migration complète depuis Pages Router',       users: ['alexandre.petit@imknow.com', 'thomas.martin@imknow.com', 'nicolas.mercier@imknow.com', 'julien.leroy@imknow.com'] },
+  { title: 'Redis en production : stratégies de cache et patterns avancés',              users: ['lucas.bernard@imknow.com', 'julien.leroy@imknow.com', 'thomas.martin@imknow.com', 'nicolas.mercier@imknow.com', 'alexandre.petit@imknow.com'] },
+  { title: 'CI/CD avec GitHub Actions : pipeline complet pour une application NestJS',  users: ['thomas.martin@imknow.com', 'alexandre.petit@imknow.com', 'lucas.bernard@imknow.com', 'nicolas.mercier@imknow.com'] },
+  { title: 'Gestion de la performance : conduire des entretiens annuels efficaces',      users: ['marie.dupont@imknow.com', 'emma.moreau@imknow.com', 'lea.dubois@imknow.com', 'camille.rousseau@imknow.com'] },
+  { title: 'SEO technique en 2024 : Core Web Vitals, structured data et indexation',    users: ['clarisse.renaud@imknow.com', 'emma.moreau@imknow.com', 'sophie.laurent@imknow.com', 'thomas.martin@imknow.com'] },
+  { title: 'Accessibilité web WCAG 2.2 : guide pratique pour les développeurs',         users: ['sophie.laurent@imknow.com', 'thomas.martin@imknow.com', 'lea.dubois@imknow.com', 'emma.moreau@imknow.com', 'alexandre.petit@imknow.com'] },
+  { title: 'Gestion de la dette technique : mesurer, prioriser et rembourser',          users: ['thomas.martin@imknow.com', 'julien.leroy@imknow.com', 'nicolas.mercier@imknow.com', 'lucas.bernard@imknow.com', 'alexandre.petit@imknow.com'] },
 ];
 
 export async function seedBookmarks(

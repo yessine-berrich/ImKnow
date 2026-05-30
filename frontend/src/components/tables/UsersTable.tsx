@@ -149,7 +149,7 @@ export default function UsersTable({
     }
   };
 
-  const handleChangeRole = async (id: string, newRole: 'SUPERADMIN' | 'ADMIN' | 'EMPLOYEE', currentRole: string) => {
+  const handleChangeRole = async (id: string, newRole: 'ADMIN' | 'EMPLOYEE', currentRole: string) => {
     if (newRole === currentRole) { setOpenRoleMenuId(null); return; }
 
     setLoading(prev => ({ ...prev, [id]: true }));
@@ -225,9 +225,8 @@ export default function UsersTable({
   const isSuperAdmin = currentUserRole === 'SUPERADMIN';
 
   const roleOptions = [
-    { value: 'SUPERADMIN', label: t('users_page.role_superadmin_full'), icon: '🛡️', description: t('users_page.role_superadmin_desc'), color: 'text-purple-600 dark:text-purple-400' },
-    { value: 'ADMIN',      label: t('users_page.role_admin'),           icon: '👑', description: t('users_page.role_admin_desc'),      color: 'text-red-600 dark:text-red-400'    },
-    { value: 'EMPLOYEE',   label: t('users_page.role_employee'),        icon: '👤', description: t('users_page.role_employee_desc'),   color: 'text-[#168F6F]'                    },
+    { value: 'ADMIN',    label: t('users_page.role_admin'),    icon: '👑', description: t('users_page.role_admin_desc'),    color: 'text-red-600 dark:text-red-400' },
+    { value: 'EMPLOYEE', label: t('users_page.role_employee'), icon: '👤', description: t('users_page.role_employee_desc'), color: 'text-[#168F6F]'                 },
   ];
 
   const renderEmptyRow = (key: number) => (
@@ -353,7 +352,7 @@ export default function UsersTable({
                           'text-red-500 dark:text-red-400'
                         }`}>
                           {user.status === 'active'           ? <UserCheck size={16} /> :
-                           user.status === 'pending'          ? <LoaderIcon size={16} /> :
+                           user.status === 'pending'          ? <Loader2 size={16} /> :
                            user.status === 'email_unverified' ? <Mail size={16} /> :
                            <UserX size={16} />}
                           <span className="text-sm">
