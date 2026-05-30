@@ -28,7 +28,7 @@ export class AuthService {
     private readonly notificationService: NotificationService,
     private readonly sessionService: SessionService,
     private readonly avatarUploadService: AvatarUploadService,
-  ) {}
+  ) { }
 
   async register(registerDto: CreateUserDto): Promise<{ message: string }> {
     const { email, password, firstName, lastName } = registerDto;
@@ -322,7 +322,7 @@ export class AuthService {
       throw new BadRequestException('You cannot change your own role');
     }
 
-    if (newRole !== userRole.SUPERADMIN && user.role === userRole.SUPERADMIN) {
+    if (user.role === userRole.SUPERADMIN) {
       const superAdminCount = await this.userRepository.count({
         where: { role: userRole.SUPERADMIN },
       });
