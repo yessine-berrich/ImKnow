@@ -1,20 +1,21 @@
 'use client';
 
 import { getToken } from '../../../services/auth.service';
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
   Eye, MoreVertical, ChevronLeft, ChevronRight, ArrowUpDown,
   Loader2, Copy, AlertTriangle, User,
-  FolderOpen, BarChart2, Link2, Trash2, ThumbsUp,
+  FolderOpen, BarChart2, Link2, Trash2, ThumbsUp, X,
 } from 'lucide-react';
 import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { DuplicatePublication } from '@/app/(admin)/(others-pages)/(rejected)/rejected/duplicated/page';
 import Avatar from '@/components/ui/avatar/Avatar';
+import MarkdownPreview from '@/components/markdoun-editor/MarkdownPreview';
 import { useTranslation } from '@/context/LanguageContext';
 import { translateError } from '@/utils/errorTranslation';
-import PublicationDetailModal from '@/components/modals/PublicationDetailModal';
 
 interface DuplicatesTableProps {
   publications: DuplicatePublication[];
@@ -46,11 +47,31 @@ export default function DuplicatesTable({ publications: initialPublications, onR
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [expandedSimilarId, setExpandedSimilarId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [modalPublication, setModalPublication] = useState<any>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  /* Type unifié pour le modal read-only (rejected + similar) */
+  interface ModalPub {
+    title: string;
+    content: string;
+    rejectionReason?: string;
+    author: { name: string; profileImage?: string | null; role?: string } | null;
+    category: { name: string } | null;
+    tags: string[];
+    createdAt: string;
+  }
+
+  const [modalPub, setModalPub] = useState<ModalPub | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingSimilarId, setLoadingSimilarId] = useState<number | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [userToken, setUserToken] = useState<string | undefined>(undefined);
+  const [isMounted, setIsMounted] = useState(false);
+
+  /* Portal SSR-safe : s'assurer qu'on est côté client */
+  useEffect(() => { setIsMounted(true); }, []);
+
+  /* Bloquer le scroll du body quand le modal est ouvert */
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [isModalOpen]);
 
   useEffect(() => { setPublications(initialPublications); }, [initialPublications]);
 
@@ -62,89 +83,9 @@ export default function DuplicatesTable({ publications: initialPublications, onR
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const token = getToken();
-    if (token) {
-      setUserToken(token);
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setCurrentUserId(payload.sub);
-      } catch {}
-    }
-  }, []);
-
   const getAuthHeaders = () => {
     const token = getToken();
     return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
-  };
-
-  /* ── Mapper: DuplicatePublication → format PublicationDetailModal ── */
-  const mapDuplicateToModal = (pub: DuplicatePublication): any => {
-    const name = pub.author?.name || t('tables.unknown_author');
-    const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-    return {
-      id: String(pub.id),
-      title: pub.title,
-      content: pub.content,
-      description: pub.rejectionReason || '',
-      author: {
-        id: pub.author?.id,
-        name,
-        initials,
-        department: '',
-        avatar: pub.author?.profileImage || null,
-      },
-      category: {
-        name: pub.category?.name || '',
-        slug: pub.category?.name?.toLowerCase().replace(/\s+/g, '-') || '',
-      },
-      tags: pub.tags,
-      publishedAt: pub.createdAt,
-      updatedAt: pub.updatedAt,
-      status: 'rejected' as const,
-      stats: { likes: 0, comments: 0, views: 0 },
-      isLiked: false,
-      isBookmarked: false,
-    };
-  };
-
-  /* ── Mapper: réponse API publication → format PublicationDetailModal ── */
-  const mapApiToModal = (raw: any): any => {
-    const data = raw?.publication ?? raw;
-    const authorName =
-      data.author?.name ||
-      (data.author?.firstName
-        ? `${data.author.firstName} ${data.author.lastName || ''}`.trim()
-        : t('tables.unknown_author'));
-    const initials = authorName.split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || '?';
-    return {
-      id: String(data.id),
-      title: data.title || '',
-      content: data.content || '',
-      description: data.description || data.excerpt || '',
-      author: {
-        id: data.author?.id,
-        name: authorName,
-        initials,
-        department: data.author?.role || '',
-        avatar: data.author?.profileImage || data.author?.avatar || null,
-      },
-      category: {
-        name: data.category?.name || '',
-        slug: data.category?.slug || data.category?.name?.toLowerCase().replace(/\s+/g, '-') || '',
-      },
-      tags: Array.isArray(data.tags) ? data.tags : [],
-      publishedAt: data.publishedAt || data.createdAt || '',
-      updatedAt: data.updatedAt || '',
-      status: data.status || 'published',
-      stats: {
-        likes:    data.likes    ?? data._count?.likes    ?? data.stats?.likes    ?? 0,
-        comments: data.comments ?? data._count?.comments ?? data.stats?.comments ?? 0,
-        views:    data.views    ?? data._count?.views    ?? data.stats?.views    ?? 0,
-      },
-      isLiked:      data.isLiked      ?? false,
-      isBookmarked: data.isBookmarked ?? false,
-    };
   };
 
   /* ── Fetch une publication similaire puis ouvre le modal ── */
@@ -155,9 +96,22 @@ export default function DuplicatesTable({ publications: initialPublications, onR
         headers: getAuthHeaders(),
       });
       if (!res.ok) throw new Error(`Error ${res.status}`);
-      const data = await res.json();
-      setModalPublication(mapApiToModal(data));
-      setIsDetailModalOpen(true);
+      const raw = await res.json();
+      const d = raw?.publication ?? raw;
+      const authorName =
+        d.author?.name ||
+        (d.author?.firstName
+          ? `${d.author.firstName} ${d.author.lastName || ''}`.trim()
+          : t('tables.unknown_author'));
+      setModalPub({
+        title:    d.title    || '',
+        content:  d.content  || '',
+        author:   d.author ? { name: authorName, profileImage: d.author.profileImage ?? d.author.avatar ?? null, role: typeof d.author.role === 'string' ? d.author.role : '' } : null,
+        category: d.category ? { name: d.category.name || '' } : null,
+        tags:     Array.isArray(d.tags) ? d.tags.map((tg: any) => (typeof tg === 'string' ? tg : tg?.name ?? '')).filter(Boolean) : [],
+        createdAt: d.publishedAt || d.createdAt || '',
+      });
+      setIsModalOpen(true);
     } catch (err: any) {
       toast.error(translateError(err.message, t as any));
     } finally {
@@ -199,8 +153,18 @@ export default function DuplicatesTable({ publications: initialPublications, onR
   };
 
   const handleViewPublication = (publication: DuplicatePublication) => {
-    setModalPublication(mapDuplicateToModal(publication));
-    setIsDetailModalOpen(true);
+    setModalPub({
+      title:            publication.title,
+      content:          publication.content,
+      rejectionReason:  publication.rejectionReason,
+      author:           publication.author
+        ? { name: publication.author.name, profileImage: publication.author.profileImage ?? null }
+        : null,
+      category:         publication.category ? { name: publication.category.name } : null,
+      tags:             publication.tags,
+      createdAt:        publication.createdAt,
+    });
+    setIsModalOpen(true);
     setOpenMenuId(null);
   };
 
@@ -474,7 +438,6 @@ export default function DuplicatesTable({ publications: initialPublications, onR
                               <Avatar src={publication.author.profileImage} alt={publication.author.name} size="small" />
                               <div className="min-w-0">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{publication.author.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{publication.author.email}</p>
                               </div>
                             </div>
                           ) : <span className="text-sm text-gray-400">—</span>}
@@ -629,16 +592,68 @@ export default function DuplicatesTable({ publications: initialPublications, onR
         )}
       </div>
 
-      {/* ── PublicationDetailModal (remplace SimplePublicationModal) ── */}
-      <PublicationDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => { setIsDetailModalOpen(false); setModalPublication(null); }}
-        publication={modalPublication}
-        currentUserId={currentUserId}
-        userToken={userToken}
-        showActions={false}
-        showHistory={false}
-      />
+      {/* ── Modal read-only via portal (évite le piège fixed + transform du layout admin) ── */}
+      {isMounted && isModalOpen && modalPub && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fadeIn" onClick={() => { setIsModalOpen(false); setModalPub(null); }} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col animate-slideUp">
+            {/* En-tête */}
+            <div className="flex items-start justify-between gap-4 p-6 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <Avatar src={modalPub.author?.profileImage} alt={modalPub.author?.name || t('tables.unknown_author_short')} size="medium" className="!w-12 !h-12" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">{modalPub.author?.name || t('tables.unknown_author')}</h3>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    {modalPub.author?.role && <span>{modalPub.author.role}</span>}
+                    {modalPub.author?.role && <span>•</span>}
+                    <span>{formatDate(modalPub.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => { setIsModalOpen(false); setModalPub(null); }}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Corps */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              <div className="p-6 space-y-5">
+                {/* Catégorie + raison de rejet */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {modalPub.category?.name && (
+                    <span className="px-3 py-1 bg-[#00926B]/10 dark:bg-[#00926B]/20 text-[#00926B] dark:text-[#00B383] text-sm font-medium rounded-full">
+                      {modalPub.category.name}
+                    </span>
+                  )}
+                  {modalPub.rejectionReason && (
+                    <span className="px-3 py-1 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-sm rounded-full">
+                      {modalPub.rejectionReason}
+                    </span>
+                  )}
+                </div>
+
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{modalPub.title}</h1>
+
+                <div className="prose dark:prose-invert max-w-none">
+                  <MarkdownPreview content={modalPub.content} />
+                </div>
+
+                {modalPub.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-5 border-t border-gray-200 dark:border-gray-800">
+                    {modalPub.tags.map((tag, i) => (
+                      <span key={i} className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <style jsx global>{`
         @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }

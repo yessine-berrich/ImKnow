@@ -27,6 +27,8 @@ interface ChatAreaProps {
   onLoadMore: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onRespondToRequest?: (requestId: number, action: 'accepted' | 'declined') => Promise<void>;
+  /** ID du message à cibler après un clic dans les résultats de recherche */
+  highlightMessageId?: number | null;
 }
 
 const ChatArea: React.FC<ChatAreaProps> = ({
@@ -42,8 +44,37 @@ const ChatArea: React.FC<ChatAreaProps> = ({
   onLoadMore,
   messagesEndRef,
   onRespondToRequest,
+  highlightMessageId,
 }) => {
   const { t } = useTranslation();
+
+  /* ── Scroll-to-message + highlight ─────────────────────────────── */
+  const [highlightedId, setHighlightedId] = useState<number | null>(null);
+  // Compteur pour pouvoir re-déclencher l'animation si le même message est cliqué deux fois
+  const [highlightSeq, setHighlightSeq] = useState(0);
+
+  useEffect(() => {
+    if (!highlightMessageId) return;
+
+    setHighlightedId(highlightMessageId);
+    setHighlightSeq(s => s + 1);
+
+    // Laisser le DOM se peindre avant de scroller
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(`msg-${highlightMessageId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+
+    // Effacer le surlignage après l'animation
+    const timer = setTimeout(() => setHighlightedId(null), 3000);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [highlightMessageId]);
+
   const participantName =
     participant?.fullName ||
     (participant?.firstName || participant?.lastName
@@ -148,7 +179,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
             // ── Message SYSTEM ─────────────────────────────────
             if (message.type === MessageType.SYSTEM) {
               return (
-                <div key={message.id} className="flex justify-center my-3">
+                <div
+                  key={message.id}
+                  id={`msg-${message.id}`}
+                  className={`flex justify-center my-3 rounded-xl ${highlightedId === message.id ? 'msg-highlighted' : ''}`}
+                >
                   <div className="flex items-center gap-2 bg-gradient-to-r from-[#00926B]/10 to-[#00B383]/10 border border-[#00926B]/20 text-[#00926B] dark:text-[#00B383] text-xs px-4 py-2 rounded-full">
                     <span>🎉</span>
                     <span className="font-medium">{message.content}</span>
@@ -165,7 +200,11 @@ const ChatArea: React.FC<ChatAreaProps> = ({
               const isDeclined = message.status === MessageRequestStatus.DECLINED;
 
               return (
-                <div key={message.id} className="flex justify-center my-4">
+                <div
+                  key={message.id}
+                  id={`msg-${message.id}`}
+                  className={`flex justify-center my-4 rounded-2xl ${highlightedId === message.id ? 'msg-highlighted' : ''}`}
+                >
                   <div className="max-w-sm w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-start gap-3">
                       <div className="text-2xl flex-shrink-0">📩</div>
@@ -222,26 +261,44 @@ const ChatArea: React.FC<ChatAreaProps> = ({
 
             const isOwn = message.senderId === currentUserId;
             return (
-              <MessageBubble
+              <div
                 key={message.id}
-                message={message}
-                isOwn={isOwn}
-                showAvatar={showAvatar}
-                isConsecutive={isConsecutive}
-                senderName={isOwn ? undefined : participantName}
-                senderUserId={isOwn ? undefined : participant?.id}
-                senderProfileImageUrl={isOwn ? undefined : participant?.profileImage}
-                onDelete={onDeleteMessage}
-                onEdit={onEditMessage}
-                onAddReaction={onAddReaction}
-                onRemoveReaction={onRemoveReaction}
-              />
+                id={`msg-${message.id}`}
+                // La clé inclut highlightSeq pour forcer le re-mount de l'animation
+                // si le même message est re-cliqué
+                data-highlight-seq={highlightedId === message.id ? highlightSeq : 0}
+                className={`rounded-xl ${highlightedId === message.id ? 'msg-highlighted' : ''}`}
+              >
+                <MessageBubble
+                  message={message}
+                  isOwn={isOwn}
+                  showAvatar={showAvatar}
+                  isConsecutive={isConsecutive}
+                  senderName={isOwn ? undefined : participantName}
+                  senderUserId={isOwn ? undefined : participant?.id}
+                  senderProfileImageUrl={isOwn ? undefined : participant?.profileImage}
+                  onDelete={onDeleteMessage}
+                  onEdit={onEditMessage}
+                  onAddReaction={onAddReaction}
+                  onRemoveReaction={onRemoveReaction}
+                />
+              </div>
             );
           })}
         </div>
       ))}
 
       <div ref={messagesEndRef} />
+
+      {/* Keyframe animation injectée une seule fois dans le <head> */}
+      <style>{`
+        @keyframes msgHighlightFade {
+          0%   { background-color: rgba(234,179,8,0.22); box-shadow: 0 0 0 2px rgba(234,179,8,0.35); }
+          60%  { background-color: rgba(234,179,8,0.18); box-shadow: 0 0 0 2px rgba(234,179,8,0.20); }
+          100% { background-color: transparent;          box-shadow: none; }
+        }
+        .msg-highlighted { animation: msgHighlightFade 3s ease-out forwards; }
+      `}</style>
     </div>
   );
 };

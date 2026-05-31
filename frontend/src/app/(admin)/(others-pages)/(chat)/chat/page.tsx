@@ -86,6 +86,7 @@ export default function ChatPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ChatMessage[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [highlightMessageId, setHighlightMessageId] = useState<number | null>(null);
 
   // ── Sending ───────────────────────────────────────────────
   const [isSending, setIsSending] = useState(false);
@@ -532,6 +533,14 @@ export default function ChatPage() {
     }
   }, [activeConversation]);
 
+  /** Clic sur un résultat de recherche : ferme la recherche et navigue vers le message */
+  const handleMessageClick = useCallback((message: ChatMessage) => {
+    setShowSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setHighlightMessageId(message.id);
+  }, []);
+
   // Détermine si l'input doit être bloqué et pourquoi.
   // Priorité : demande (pending/declined) > bloqué > ouvert
   const chatInputState = useMemo<'open' | 'declined' | 'pending_sent' | 'blocked'>(() => {
@@ -632,6 +641,7 @@ export default function ChatPage() {
                       setSearchQuery('');
                       setSearchResults([]);
                     }}
+                    onMessageClick={handleMessageClick}
                   />
                 ) : (
                   <ChatArea
@@ -646,6 +656,7 @@ export default function ChatPage() {
                     hasMore={hasMore}
                     onLoadMore={handleLoadMore}
                     messagesEndRef={messagesEndRef}
+                    highlightMessageId={highlightMessageId}
                   />
                 )}
               </div>

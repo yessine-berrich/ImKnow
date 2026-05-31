@@ -62,6 +62,7 @@ const AppHeader: React.FC = () => {
   const [searchResults, setSearchResults] = useState<GlobalSearchResponse | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [searchError, setSearchError] = useState(false);
 
   const { isMobileOpen, toggleSidebar, toggleMobileSidebar, isExpanded } = useSidebar();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -116,50 +117,53 @@ const AppHeader: React.FC = () => {
   }, []);
 
   // Recherche globale – appel API
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (!searchQuery.trim()) {
-        setSearchResults(null);
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(false);
+
+    try {
+      const token = getToken();
+      if (!token) {
+        console.warn("Non authentifié");
         return;
       }
 
-      setIsSearching(true);
+      const params = new URLSearchParams({
+        query: query.trim(),
+        limitPerType: "5",
+        minSimilarity: "0.65",
+      });
 
-      try {
-        const token = getToken();
-        if (!token) {
-          console.warn("Non authentifié");
-          return;
-        }
+      const res = await fetch(`http://localhost:3000/api/search?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-        const params = new URLSearchParams({
-          query: searchQuery.trim(),
-          limitPerType: "5",
-          minSimilarity: "0.65",
-        });
-
-        const res = await fetch(`http://localhost:3000/api/search?${params.toString()}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!res.ok) {
-          throw new Error(`Erreur HTTP: ${res.status}`);
-        }
-
-        const data = await res.json();
-        console.log("Résultats de recherche:", data);
-        setSearchResults(data);
-      } catch (err) {
-        console.error("Erreur recherche:", err);
-        setSearchResults(null);
-      } finally {
-        setIsSearching(false);
+      if (!res.ok) {
+        throw new Error(`Erreur HTTP: ${res.status}`);
       }
-    }, 350);
 
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (err) {
+      console.error("Erreur recherche:", err);
+      setSearchResults(null);
+      setSearchError(true);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    setSearchError(false);
+    const timer = setTimeout(() => performSearch(searchQuery), 350);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -277,6 +281,23 @@ const AppHeader: React.FC = () => {
                   {isSearching ? (
                     <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                       {t('header.searching')}
+                    </div>
+                  ) : searchError ? (
+                    <div className="p-4 flex flex-col items-center gap-3 text-center">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20">
+                        <svg className="w-5 h-5 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                        {t('header.search_error')}
+                      </p>
+                      <button
+                        onClick={() => performSearch(searchQuery)}
+                        className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline"
+                      >
+                        {t('header.search_retry')}
+                      </button>
                     </div>
                   ) : !searchResults || totalResults === 0 ? (
                     <div className="p-4 text-center text-gray-500 dark:text-gray-400">

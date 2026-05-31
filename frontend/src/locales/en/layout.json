@@ -43,7 +43,9 @@
     "ai_assistant": "AI Assistant",
     "ai_assistant_subtitle": "Explore publications through artificial intelligence",
     "my_drafts": "My Drafts",
-    "add_publication": "Add Publication"
+    "add_publication": "Add Publication",
+    "search_error": "Search service unavailable. Please try again later.",
+    "search_retry": "Retry"
   },
   "user_dropdown": {
     "user_label": "User",

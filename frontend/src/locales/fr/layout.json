@@ -43,7 +43,9 @@
     "ai_assistant": "Assistant IA",
     "ai_assistant_subtitle": "Explorez les publications par l'intelligence artificielle",
     "my_drafts": "Mes brouillons",
-    "add_publication": "Ajouter une publication"
+    "add_publication": "Ajouter une publication",
+    "search_error": "Service de recherche indisponible. Veuillez réessayer ultérieurement.",
+    "search_retry": "Réessayer"
   },
   "user_dropdown": {
     "user_label": "Utilisateur",
