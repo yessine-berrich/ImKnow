@@ -622,6 +622,7 @@ export default function ChatPage() {
                     isLoading={searchLoading}
                     autoFocus
                     onClear={() => {
+                      setShowSearch(false);
                       setSearchQuery('');
                       setSearchResults([]);
                     }}
