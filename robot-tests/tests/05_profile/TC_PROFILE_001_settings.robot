@@ -107,8 +107,10 @@ TC_PROFILE_001_09 Notifications tab is present in settings
     ...                (same text "Notifications" in both FR and EN).
     [Tags]    profile    settings    notifications
     Go To    ${SETTINGS_URL}
-    Wait For Load State    domcontentloaded
-    # Use simple selector — comma+role="tab" variant caused count=0 in some RF Browser versions
+    # networkidle ensures React hydration is complete before counting (Get Element Count is instant)
+    Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
+    # Wait for at least one tab button to appear, then count Notifications
+    Wait For Elements State    button:has-text("Sécurité"), button:has-text("Security")    visible    timeout=${TIMEOUT}
     ${count}=    Get Element Count    button:has-text("Notifications")
     Should Be True    ${count} >= 1    msg=A Notifications tab must be present in settings
 

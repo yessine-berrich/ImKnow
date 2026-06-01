@@ -40,7 +40,7 @@ export default function TagsPage() {
       try {
         const token = getToken();
         if (!token) {
-          router.push('/login');
+          router.push('/signin');
           return;
         }
 
@@ -54,7 +54,7 @@ export default function TagsPage() {
         setIsCheckingRole(false);
         fetchTags();
       } catch (err) {
-        router.push('/login');
+        router.push('/signin');
       }
     };
 
@@ -82,7 +82,7 @@ export default function TagsPage() {
       }
 
       if (response.status === 401) {
-        router.push('/login');
+        router.push('/signin');
         return;
       }
 

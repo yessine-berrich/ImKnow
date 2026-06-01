@@ -163,19 +163,14 @@ TC_CHAT_001_10 Sending a message in an active conversation succeeds
     Sleep    1s
     ${has_conv}=    Run Keyword And Return Status
     ...    Wait For Elements State    aside >> [class*="cursor-pointer"]    visible    timeout=5s
-    IF    not ${has_conv}
-        Log    No conversation available — send test skipped    WARN
-        RETURN
-    END
+    # Pass Execution If works in test cases (RETURN is keyword-only in RF5+)
+    Pass Execution If    not ${has_conv}    No conversation available — send test skipped
     Click    aside >> [class*="cursor-pointer"] >> nth=0
     ${has_input}=    Run Keyword And Return Status
     ...    Wait For Elements State
     ...    textarea[placeholder*="message" i], textarea[placeholder*="Écrivez" i]
     ...    visible    timeout=${TIMEOUT}
-    IF    not ${has_input}
-        Log    Message input not available (blocked/pending state)    WARN
-        RETURN
-    END
+    Pass Execution If    not ${has_input}    Message input not available — blocked or pending state
     Fill Text
     ...    textarea[placeholder*="message" i], textarea[placeholder*="Écrivez" i]
     ...    Robot test message ${RANDOM_STRING}

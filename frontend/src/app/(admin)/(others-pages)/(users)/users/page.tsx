@@ -39,7 +39,7 @@ export default function UsersPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      router.push('/login');
+      router.push('/signin');
       return;
     }
 
@@ -56,7 +56,7 @@ export default function UsersPage() {
       setIsCheckingRole(false);
     } catch (err) {
       localStorage.removeItem('auth_token');
-      router.push('/login');
+      router.push('/signin');
     }
   }, [router]);
 
@@ -96,7 +96,7 @@ export default function UsersPage() {
       });
 
       if (response.status === 403) { router.push('/error-403'); return; }
-      if (response.status === 401) { localStorage.removeItem('auth_token'); router.push('/login'); return; }
+      if (response.status === 401) { localStorage.removeItem('auth_token'); router.push('/signin'); return; }
       if (!response.ok) throw new Error(`Erreur ${response.status}: ${response.statusText}`);
 
       const data: User[] = await response.json();

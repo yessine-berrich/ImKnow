@@ -110,25 +110,28 @@ TC_CREATE_001_07 Footer displays keyboard shortcut hint
 TC_CREATE_001_08 Submitting with empty title shows validation error
     [Documentation]    Clicking "Soumettre pour validation" with no title
     ...                must display a toast error mentioning the title.
+    ...                Toast uses react-hot-toast: message rendered in <span class="...leading-snug">
     [Tags]    create-article    validation    regression
     Open Create Modal
     Wait For Elements State    ${SUBMIT_BTN}    visible    timeout=${TIMEOUT}
     Click    ${SUBMIT_BTN}
+    # Toast message: "Le titre est obligatoire" — in a <span> inside react-hot-toast
     Wait For Elements State
-    ...    div[class*="bottom-6"][class*="right-6"] p:has-text("titre")
+    ...    span:has-text("titre est obligatoire"), span[class*="leading-snug"]:has-text("titre"), span[class*="font-medium"]:has-text("titre")
     ...    visible    timeout=${TIMEOUT}
 
 TC_CREATE_001_09 Submitting with title but no category shows validation error
     [Documentation]    Filling the title but leaving the category empty must
     ...                show a "catégorie" validation error in the toast area.
+    ...                Toast message: "Veuillez sélectionner une catégorie"
     [Tags]    create-article    validation
     Open Create Modal
     Wait For Elements State    ${TITLE_INPUT}    visible    timeout=${TIMEOUT}
     Fill Text    ${TITLE_INPUT}    Titre de test
     Click    ${SUBMIT_BTN}
-    # Toast container is fixed bottom-right (z-[999999]) — target it specifically
+    # Toast message: "Veuillez sélectionner une catégorie" — in a <span> inside react-hot-toast
     Wait For Elements State
-    ...    div[class*="bottom-6"][class*="right-6"] p:has-text("catégorie")
+    ...    span:has-text("sélectionner une catégorie"), span[class*="leading-snug"]:has-text("catégorie"), span[class*="font-medium"]:has-text("catégorie")
     ...    visible    timeout=${TIMEOUT}
 
 TC_CREATE_001_10 Markdown editor toolbar is visible

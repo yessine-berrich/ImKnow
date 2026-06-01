@@ -50,7 +50,7 @@ export default function DuplicatePublicationsPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      router.push('/login');
+      router.push('/signin');
       return;
     }
 
@@ -66,7 +66,7 @@ export default function DuplicatePublicationsPage() {
       setIsCheckingRole(false);
     } catch (err) {
       localStorage.removeItem('auth_token');
-      router.push('/login');
+      router.push('/signin');
     }
   }, [router]);
 
@@ -92,7 +92,7 @@ export default function DuplicatePublicationsPage() {
       });
 
       if (response.status === 403) { router.push('/error-403'); return; }
-      if (response.status === 401) { localStorage.removeItem('auth_token'); router.push('/login'); return; }
+      if (response.status === 401) { localStorage.removeItem('auth_token'); router.push('/signin'); return; }
       if (!response.ok) throw new Error(`Erreur ${response.status}: ${response.statusText}`);
 
       const data = await response.json();

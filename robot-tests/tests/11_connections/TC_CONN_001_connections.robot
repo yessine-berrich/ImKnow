@@ -45,9 +45,9 @@ TC_CONN_001_02 All four tabs are visible
     Wait For Elements State
     ...    button:has-text("Abonnements"), button:has-text("Following")
     ...    visible    timeout=${TIMEOUT}
-    # Tab 3: Friends/Associates / Amis / Collègues
+    # Tab 3: FR "Associés" / EN "Associates" (confirmed from connections.json)
     Wait For Elements State
-    ...    button:has-text("Amis"), button:has-text("Collègues"), button:has-text("Associates"), button:has-text("Colleagues")
+    ...    button:has-text("Associés"), button:has-text("Associates"), button:has-text("Amis"), button:has-text("Collègues"), button:has-text("Colleagues")
     ...    visible    timeout=${TIMEOUT}
     # Tab 4: Suggestions (same in both languages)
     Wait For Elements State    button:has-text("Suggestions")    visible    timeout=${TIMEOUT}

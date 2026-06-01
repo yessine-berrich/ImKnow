@@ -52,7 +52,7 @@ export default function ModerationRejectedPage() {
 
   useEffect(() => {
     const token = getToken();
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/signin'); return; }
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -60,7 +60,7 @@ export default function ModerationRejectedPage() {
       setIsCheckingRole(false);
     } catch {
       localStorage.removeItem('auth_token');
-      router.push('/login');
+      router.push('/signin');
     }
   }, [router]);
 
@@ -80,7 +80,7 @@ export default function ModerationRejectedPage() {
       });
 
       if (response.status === 403) { router.push('/error-403'); return; }
-      if (response.status === 401) { localStorage.removeItem('auth_token'); router.push('/login'); return; }
+      if (response.status === 401) { localStorage.removeItem('auth_token'); router.push('/signin'); return; }
       if (!response.ok) throw new Error(`Erreur ${response.status}: ${response.statusText}`);
 
       const data = await response.json();

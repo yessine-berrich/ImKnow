@@ -72,16 +72,18 @@ TC_PROFILE_002_05 Follow stats section is visible
 TC_PROFILE_002_06 Articles list or empty state is rendered
     [Documentation]    The "Publiés" tab content must display either article
     ...                cards or an empty-state message.
+    ...                PublicationCard renders as <article>; empty state renders h3 + p with specific text.
     [Tags]    profile    my-profile    regression
     Go To    ${PROFILE_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
     Click    button:has-text("Publiés")
-    Sleep    1s
-    ${articles}=    Get Element Count
-    ...    article, [class*="ArticleCard"], [class*="article-card"], [class*="PublicationCard"], [class*="publication-card"]
-    ${empty}=    Run Keyword And Return Status
-    ...    Wait For Elements State
-    ...    [class*="empty"], [class*="EmptyState"], [class*="empty-state"], p:has-text("Aucun"), p:has-text("No article"), p:has-text("Aucune publication"), p:has-text("No published"), svg
-    ...    visible    timeout=5s
+    Sleep    1.5s
+    # Use Get Element Count (no strict mode) instead of Wait For Elements State
+    ${articles}=    Get Element Count    article
+    # Empty state: h3 "Aucun publication publié" / p "Commencez à partager vos connaissances"
+    ${empty_h3}=    Get Element Count    h3:has-text("Aucun publication publié")
+    ${empty_p}=     Get Element Count    p:has-text("Commencez à partager")
+    ${empty_en}=    Get Element Count    h3:has-text("No published publications")
+    ${empty}=    Evaluate    ${empty_h3} + ${empty_p} + ${empty_en} > 0
     Should Be True    ${articles} > 0 or ${empty}
     ...    msg=Either articles or an empty state must be visible

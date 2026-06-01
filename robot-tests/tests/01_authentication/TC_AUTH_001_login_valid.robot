@@ -41,7 +41,8 @@ TC_AUTH_001_04 Forgot password link is present and navigates correctly
     [Documentation]    Clicking "Forgot password?" opens the reset-password page.
     [Tags]    auth    navigation
     Navigate To Sign In Page
-    Click    text=Forgot password?, text=Mot de passe oublié?
+    # Target by href — language-independent and robust
+    Click    a[href="/forgot-password"], a[href*="forgot-password"]
     Wait For URL    **/forgot-password    timeout=${RETRY_TIMEOUT}
 
 TC_AUTH_001_05 Sign-in form is submitted with Enter key
