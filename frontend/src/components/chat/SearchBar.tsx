@@ -106,7 +106,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={value}
           onChange={handleChange}
           onFocus={onFocus}

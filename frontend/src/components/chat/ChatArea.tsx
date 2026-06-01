@@ -59,19 +59,29 @@ const ChatArea: React.FC<ChatAreaProps> = ({
     setHighlightedId(highlightMessageId);
     setHighlightSeq(s => s + 1);
 
-    // Laisser le DOM se peindre avant de scroller
-    const raf = requestAnimationFrame(() => {
+    // Retry scroll jusqu'à ce que l'élément soit dans le DOM (max ~600ms)
+    let attempts = 0;
+    const MAX_ATTEMPTS = 12;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tryScroll = () => {
       const el = document.getElementById(`msg-${highlightMessageId}`);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (attempts < MAX_ATTEMPTS) {
+        attempts++;
+        timeoutId = setTimeout(tryScroll, 50);
       }
-    });
+    };
+
+    const raf = requestAnimationFrame(tryScroll);
 
     // Effacer le surlignage après l'animation
-    const timer = setTimeout(() => setHighlightedId(null), 3000);
+    const clearTimer = setTimeout(() => setHighlightedId(null), 3000);
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(timer);
+      clearTimeout(timeoutId);
+      clearTimeout(clearTimer);
     };
   }, [highlightMessageId]);
 
