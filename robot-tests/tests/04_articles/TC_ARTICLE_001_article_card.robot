@@ -31,8 +31,8 @@ TC_ARTICLE_001_01 Article card renders title, author and category
     ${count}=    Get Element Count    ${ARTICLE_CARD}
     Skip If    ${count} == 0    No articles in the feed — skipping card test
     ${first_card}=    Get Element    ${ARTICLE_CARD} >> nth=0
-    # Title must be present
-    Wait For Elements State    ${first_card} >> h2    visible    timeout=${TIMEOUT}
+    # Title must be present — use nth=0 to avoid strict-mode on article-content h2s
+    Wait For Elements State    ${first_card} >> h2 >> nth=0    visible    timeout=${TIMEOUT}
 
 TC_ARTICLE_001_02 Like button toggles liked state
     [Documentation]    Clicking the like button on the first article increments
@@ -71,7 +71,7 @@ TC_ARTICLE_001_04 Clicking an article card opens the detail modal
     ${count}=    Get Element Count    ${ARTICLE_CARD}
     Skip If    ${count} == 0    No articles in the feed
     # Click the title of the first card to open detail modal
-    ${title}=    Get Element    ${ARTICLE_CARD} >> nth=0 >> h2
+    ${title}=    Get Element    ${ARTICLE_CARD} >> nth=0 >> h2 >> nth=0
     Click    ${title}
     Wait For Elements State    [class*="z-[99999]"]    visible    timeout=${RETRY_TIMEOUT}
 
@@ -83,7 +83,7 @@ TC_ARTICLE_001_05 Article detail modal can be closed
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
     ${count}=    Get Element Count    ${ARTICLE_CARD}
     Skip If    ${count} == 0    No articles in the feed
-    ${title}=    Get Element    ${ARTICLE_CARD} >> nth=0 >> h2
+    ${title}=    Get Element    ${ARTICLE_CARD} >> nth=0 >> h2 >> nth=0
     Click    ${title}
     Wait For Elements State    [class*="z-[99999]"]    visible    timeout=${RETRY_TIMEOUT}
     Click    button[aria-label="Fermer"]
@@ -96,5 +96,5 @@ TC_ARTICLE_001_06 Create Article button is accessible to authenticated users
     Navigate To Home
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
     Wait For Elements State
-    ...    button[title*="article" i], button:has-text("Créer"), button:has-text("Create")
+    ...    button[title="Ajouter une publication"], button[title="Add Publication"], button[title*="publication" i], button:has-text("Créer"), button:has-text("Create")
     ...    visible    timeout=${RETRY_TIMEOUT}

@@ -41,15 +41,16 @@ TC_AUTH_001_04 Forgot password link is present and navigates correctly
     [Documentation]    Clicking "Forgot password?" opens the reset-password page.
     [Tags]    auth    navigation
     Navigate To Sign In Page
-    Click    text=Forgot password?
+    Click    text=Forgot password?, text=Mot de passe oublié?
     Wait For URL    **/forgot-password    timeout=${RETRY_TIMEOUT}
 
 TC_AUTH_001_05 Sign-in form is submitted with Enter key
     [Documentation]    Pressing Enter inside the password field submits the form
-    ...                and redirects to /home.
+    ...                and redirects to /home. Uses the admin account which is
+    ...                guaranteed to exist in any environment.
     [Tags]    auth    keyboard
     Navigate To Sign In Page
-    Fill Text    .login-form-box input[type="email"]      ${VALID_EMAIL}
-    Fill Text    .login-form-box input[type="password"]   ${VALID_PASSWORD}
+    Fill Text    .login-form-box input[type="email"]      ${ADMIN_EMAIL}
+    Fill Text    .login-form-box input[type="password"]   ${ADMIN_PASSWORD}
     Keyboard Key    press    Enter
     Wait For URL    **/home    timeout=${RETRY_TIMEOUT}

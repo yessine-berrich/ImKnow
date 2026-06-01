@@ -17,9 +17,9 @@ Test Teardown    Close Modal If Open
 
 
 *** Variables ***
-${OPEN_BTN}        button[title="Ajouter un article"]
+${OPEN_BTN}        button[title="Ajouter une publication"], button[title="Add Publication"]
 ${MODAL}           div.fixed.inset-0.z-\\[99999\\]
-${MODAL_H2}        h2:has-text("Créer un article")
+${MODAL_H2}        h2:has-text("Créer une publication"), h2:has-text("Create a publication")
 ${TITLE_INPUT}     input[placeholder*="accrocheur"]
 ${CAT_SELECT}      select:has(option:has-text("Sélectionner"))
 ${DRAFT_BTN}       button:has-text("Sauvegarder brouillon")
@@ -57,7 +57,8 @@ TC_CREATE_001_02 Modal opens with correct title
     [Tags]    smoke    create-article    modal
     Open Create Modal
     ${text}=    Get Text    ${MODAL_H2}
-    Should Contain    ${text}    Créer un article
+    ${ok}=    Evaluate    "Créer" in "${text}" or "Create" in "${text}"
+    Should Be True    ${ok}    msg=Modal heading must contain "Créer" or "Create"
 
 TC_CREATE_001_03 Title input is visible and accepts text
     [Documentation]    The title input (placeholder contains "accrocheur")

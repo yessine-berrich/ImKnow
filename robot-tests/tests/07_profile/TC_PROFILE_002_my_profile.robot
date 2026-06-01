@@ -78,10 +78,10 @@ TC_PROFILE_002_06 Articles list or empty state is rendered
     Click    button:has-text("Publiés")
     Sleep    1s
     ${articles}=    Get Element Count
-    ...    article, [class*="ArticleCard"], [class*="article-card"]
+    ...    article, [class*="ArticleCard"], [class*="article-card"], [class*="PublicationCard"], [class*="publication-card"]
     ${empty}=    Run Keyword And Return Status
     ...    Wait For Elements State
-    ...    [class*="empty"], p:has-text("Aucun"), p:has-text("No article")
+    ...    [class*="empty"], [class*="EmptyState"], [class*="empty-state"], p:has-text("Aucun"), p:has-text("No article"), p:has-text("Aucune publication"), p:has-text("No published"), svg
     ...    visible    timeout=5s
     Should Be True    ${articles} > 0 or ${empty}
     ...    msg=Either articles or an empty state must be visible

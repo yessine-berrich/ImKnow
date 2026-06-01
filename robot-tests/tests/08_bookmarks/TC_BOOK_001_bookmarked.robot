@@ -29,7 +29,8 @@ TC_BOOK_001_02 Page heading is visible
     [Tags]    bookmarks    ui
     Go To    ${BOOKMARKED_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1    visible    timeout=${RETRY_TIMEOUT}
+    # Use nth=0 — article detail content may also have an h1 on the same page
+    Wait For Elements State    h1 >> nth=0    visible    timeout=${RETRY_TIMEOUT}
 
 TC_BOOK_001_03 Articles or empty state is displayed
     [Documentation]    The bookmarks page must show either article cards or

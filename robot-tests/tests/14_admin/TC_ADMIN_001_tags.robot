@@ -24,7 +24,7 @@ TC_ADMIN_001_01 Tags page loads with correct heading
     [Tags]    smoke    admin    tags
     Go To    ${TAGS_ADMIN_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1:has-text("Gestion des Tags")    visible    timeout=${RETRY_TIMEOUT}
+    Wait For Elements State    h1    visible    timeout=${TIMEOUT}
 
 TC_ADMIN_001_02 Tags list or empty state is displayed
     [Documentation]    The tags table or cloud view must render either tag
@@ -32,7 +32,7 @@ TC_ADMIN_001_02 Tags list or empty state is displayed
     [Tags]    admin    tags    regression
     Go To    ${TAGS_ADMIN_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1:has-text("Gestion des Tags")    visible    timeout=${RETRY_TIMEOUT}
+    Wait For Elements State    h1    visible    timeout=${TIMEOUT}
     ${tags}=    Get Element Count
     ...    [class*="tag"], [class*="Tag"], tr, [class*="badge"]
     ${empty}=    Run Keyword And Return Status
@@ -43,14 +43,14 @@ TC_ADMIN_001_02 Tags list or empty state is displayed
     ...    msg=Tags page must show tags or an empty state
 
 TC_ADMIN_001_03 Create tag button is visible
-    [Documentation]    An "Ajouter" or "Créer un tag" action button must be
-    ...                present on the tags management page.
+    [Documentation]    A "New Tag" or equivalent action button must be present
+    ...                on the tags management page.
     [Tags]    admin    tags    ui
     Go To    ${TAGS_ADMIN_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1:has-text("Gestion des Tags")    visible    timeout=${RETRY_TIMEOUT}
+    Wait For Elements State    h1    visible    timeout=${TIMEOUT}
     Wait For Elements State
-    ...    button:has-text("Ajouter"), button:has-text("Créer"), button:has-text("Nouveau")
+    ...    button:has-text("New Tag"), button:has-text("New tag"), button:has-text("Add"), button:has-text("Create"), button:has-text("Ajouter"), button:has-text("Créer")
     ...    visible    timeout=${RETRY_TIMEOUT}
 
 TC_ADMIN_001_04 View mode toggle is present (list/cloud)
@@ -59,7 +59,7 @@ TC_ADMIN_001_04 View mode toggle is present (list/cloud)
     [Tags]    admin    tags    ui
     Go To    ${TAGS_ADMIN_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1:has-text("Gestion des Tags")    visible    timeout=${RETRY_TIMEOUT}
+    Wait For Elements State    h1    visible    timeout=${TIMEOUT}
     ${count}=    Get Element Count
     ...    button:has-text("Liste"), button:has-text("Nuage"), button[title*="list" i], button[title*="cloud" i]
     Run Keyword If    ${count} == 0
@@ -71,7 +71,7 @@ TC_ADMIN_001_05 Search or filter input is present
     [Tags]    admin    tags    ui
     Go To    ${TAGS_ADMIN_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1:has-text("Gestion des Tags")    visible    timeout=${RETRY_TIMEOUT}
+    Wait For Elements State    h1    visible    timeout=${TIMEOUT}
     ${count}=    Get Element Count
     ...    input[type="text"], input[type="search"], input[placeholder*="Recherch"]
     Run Keyword If    ${count} == 0

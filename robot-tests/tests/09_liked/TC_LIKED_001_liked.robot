@@ -29,7 +29,8 @@ TC_LIKED_001_02 Page heading is visible
     [Tags]    liked    ui
     Go To    ${LIKED_URL}
     Wait For Load State    networkidle    timeout=${RETRY_TIMEOUT}
-    Wait For Elements State    h1    visible    timeout=${RETRY_TIMEOUT}
+    # Use nth=0 — article detail content may also have an h1 on the same page
+    Wait For Elements State    h1 >> nth=0    visible    timeout=${RETRY_TIMEOUT}
 
 TC_LIKED_001_03 Articles or empty state is displayed
     [Documentation]    The liked articles page must show either article

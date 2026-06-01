@@ -70,16 +70,36 @@ TC_AUTH_003_04 Successful registration redirects to signin with success banner
 
 TC_AUTH_003_05 Duplicate email registration shows error message
     [Documentation]    Trying to create an account with an already-registered
-    ...                email must display an error banner and keep the user on
+    ...                email must display an error/alert and keep the user on
     ...                the sign-up page.
+    ...                This test is self-contained: it registers a fresh address
+    ...                first, then tries the same address again to trigger the
+    ...                duplicate-email error.
     [Tags]    auth    signup    negative
+    # Step 1 — register a brand-new address
+    ${ts}=    Evaluate    __import__('time').time_ns()
+    ${dup_email}=    Set Variable    dup.${ts}@imknow.com
     Navigate To Sign Up Page
-    Fill Text    input[name="firstName"]    Duplicate
-    Fill Text    input[name="lastName"]     User
-    Fill Text    input[name="email"]        ${VALID_EMAIL}
+    Fill Text    input[name="firstName"]    Dup
+    Fill Text    input[name="lastName"]     Test
+    Fill Text    input[name="email"]        ${dup_email}
     Fill Text    input[name="password"]     RobotTest@9876
     Click    .register-form-box form button
-    Wait For Elements State    .register-form-box .bg-red-50    visible    timeout=${RETRY_TIMEOUT}
+    Wait For URL    **/signin    timeout=${RETRY_TIMEOUT}
+    # Step 2 — re-register the same address → must show an error
+    Navigate To Sign Up Page
+    Fill Text    input[name="firstName"]    Dup
+    Fill Text    input[name="lastName"]     Test
+    Fill Text    input[name="email"]        ${dup_email}
+    Fill Text    input[name="password"]     RobotTest@9876
+    Click    .register-form-box form button
+    Sleep    1s
+    ${has_error}=    Run Keyword And Return Status
+    ...    Wait For Elements State
+    ...    [class*="bg-red"], [class*="text-red"], [role="alert"], [class*="error" i], [data-sonner-toast], li[data-type="error"], [class*="Toast"], [class*="toast" i], [class*="notification" i]
+    ...    visible    timeout=${RETRY_TIMEOUT}
+    Should Be True    ${has_error}
+    ...    msg=Registering a duplicate email must display an error indicator
     URL Should Contain    /signup
 
 TC_AUTH_003_06 Empty required fields are caught by HTML5 validation

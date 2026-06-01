@@ -24,7 +24,7 @@ ${CATEGORIES_URL}       ${BASE_URL}/categories
 ${USERS_ADMIN_URL}      ${BASE_URL}/users
 ${REJECTED_MOD_URL}     ${BASE_URL}/rejected/moderation
 ${REJECTED_DUP_URL}     ${BASE_URL}/rejected/duplicated
-${REPORTED_ART_URL}     ${BASE_URL}/reported/reported-articles
+${REPORTED_ART_URL}     ${BASE_URL}/reported/reported-publications
 ${REPORTED_USR_URL}     ${BASE_URL}/reported/reported-users
 ${STATISTICS_URL}       ${BASE_URL}/statistics
 ${ERROR_403_URL}        ${BASE_URL}/error-403
@@ -53,6 +53,11 @@ ${NEW_LAST_NAME}        Tester
 ${RANDOM_STRING}        ${{__import__('uuid').uuid4().hex[:8]}}
 ${NEW_EMAIL}            robot.tester.${RANDOM_STRING}@imknow.com
 ${NEW_PASSWORD}         RobotTest@9876
+
+# ── Additional user pages ─────────────────────────────────────────────────────
+${ASSISTANT_URL}        ${BASE_URL}/assistant
+${COMMENTED_URL}        ${BASE_URL}/commented
+${ERROR_404_URL}        ${BASE_URL}/error-404
 
 # ── Search ────────────────────────────────────────────────────────────────────
 ${SEARCH_QUERY}         NestJS

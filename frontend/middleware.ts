@@ -9,6 +9,8 @@ const ADMIN_ONLY_ROUTES = [
   '/tags',
   '/settings',
   '/statistics',
+  '/rejected',
+  '/reported',
 ];
 
 export function middleware(request: NextRequest) {
@@ -42,7 +44,7 @@ export function middleware(request: NextRequest) {
       return res;
     }
 
-    if (payload.role !== 'ADMIN') {
+    if (payload.role !== 'ADMIN' && payload.role !== 'SUPERADMIN') {
       return NextResponse.redirect(new URL('/error-403', request.url));
     }
   } catch {
@@ -54,11 +56,20 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    // Include both exact paths and sub-paths to cover all Next.js versions
+    '/users',
     '/users/:path*',
+    '/admin',
     '/admin/:path*',
+    '/categories',
     '/categories/:path*',
+    '/tags',
     '/tags/:path*',
+    '/settings',
     '/settings/:path*',
+    '/statistics',
     '/statistics/:path*',
+    '/rejected/:path*',
+    '/reported/:path*',
   ],
 };
