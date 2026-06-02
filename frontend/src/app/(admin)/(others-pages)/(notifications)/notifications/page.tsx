@@ -8,7 +8,7 @@ import { toast } from '@/components/modals/ToastContainer';
 import { confirm } from '@/components/modals/ConfirmModal';
 import { usePublicationModal } from '@/context/PublicationModalContext';
 import { useTranslation } from '@/context/LanguageContext';
-import { resolveAvatarUrl } from '@/utils/profile-image';
+import Avatar from '@/components/ui/avatar/Avatar';
 
 const enum NotificationType {
   MENTION = 'mention',
@@ -27,7 +27,9 @@ const enum NotificationType {
   LIKE_ON_PUBLICATION = 'like_on_publication',
   NEW_FOLLOWER = 'new_follower',
   NEWSLETTER = 'newsletter',
-  PLATFORM_UPDATE = 'platform_update'
+  PLATFORM_UPDATE = 'platform_update',
+  ACCOUNT_ACTIVATED = 'account_activated',
+  ACCOUNT_DEACTIVATED = 'account_deactivated',
 }
 
 interface Notification {
@@ -286,6 +288,10 @@ export default function NotificationsPage() {
         return t('notifications.type_newsletter');
       case NotificationType.PLATFORM_UPDATE:
         return t('notifications.type_platform_update');
+      case NotificationType.ACCOUNT_ACTIVATED:
+        return t('notifications.type_account_activated');
+      case NotificationType.ACCOUNT_DEACTIVATED:
+        return t('notifications.type_account_deactivated');
       default:
         return t('notifications_page.type_default');
     }
@@ -424,10 +430,6 @@ export default function NotificationsPage() {
     const days = Math.floor(hours / 24);
     if (days < 30) return t(days > 1 ? 'notifications_page.days_ago_plural' : 'notifications_page.days_ago_one', { count: days });
     return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-  };
-
-  const getProfileImageUrl = (userData: any) => {
-    return resolveAvatarUrl(userData?.avatar ?? userData?.profileImage);
   };
 
   const PAGE_SIZE = 10;
@@ -680,13 +682,10 @@ export default function NotificationsPage() {
                     <div className="flex items-start gap-4">
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
-                        <img
-                          src={getProfileImageUrl(notif.sender)}
+                        <Avatar
+                          src={notif.sender ? (notif.sender.profileImage || notif.sender.avatar || '/images/profile.jpg') : '/images/admin.avif'}
                           alt={senderName}
-                          className="w-12 h-12 rounded-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/images/user/profile.jpg';
-                          }}
+                          size="medium"
                         />
                         {!notif.isRead && (
                           <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-blue-500 border-2 border-white dark:border-gray-900"></span>
@@ -776,6 +775,10 @@ export default function NotificationsPage() {
                               : notif.type === NotificationType.SYSTEM_INFO ||
                                 notif.type === NotificationType.PLATFORM_UPDATE
                               ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                              : notif.type === NotificationType.ACCOUNT_ACTIVATED
+                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                              : notif.type === NotificationType.ACCOUNT_DEACTIVATED
+                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                               : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                           }`}>
                             {getNotificationTypeLabel(notif.type)}
