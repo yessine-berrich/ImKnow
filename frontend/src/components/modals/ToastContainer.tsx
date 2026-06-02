@@ -1,7 +1,7 @@
 'use client';
 
 import { Toaster, toast as hotToast, Toast } from 'react-hot-toast';
-import { CheckCircle, XCircle, Info, AlertTriangle, Bell, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, AlertTriangle, Bell, MessageCircle, X } from 'lucide-react';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -62,6 +62,39 @@ export interface NotificationToastData {
   typeLabel: string;
 }
 
+export interface MessageToastData {
+  message: string;
+  senderName: string;
+  avatarUrl?: string | null;
+}
+
+function AvatarOrIcon({
+  avatarUrl,
+  senderName,
+  fallbackIcon,
+  fallbackBg,
+  fallbackIconColor,
+}: {
+  avatarUrl?: string | null;
+  senderName: string;
+  fallbackIcon: React.ReactNode;
+  fallbackBg: string;
+  fallbackIconColor: string;
+}) {
+  return avatarUrl ? (
+    <img
+      src={avatarUrl}
+      alt={senderName}
+      className="w-10 h-10 rounded-full object-cover"
+      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+    />
+  ) : (
+    <div className={`w-10 h-10 rounded-full ${fallbackBg} flex items-center justify-center`}>
+      <span className={fallbackIconColor}>{fallbackIcon}</span>
+    </div>
+  );
+}
+
 function NotificationToastItem({ t, data }: { t: Toast; data: NotificationToastData }) {
   return (
     <div
@@ -77,30 +110,58 @@ function NotificationToastItem({ t, data }: { t: Toast; data: NotificationToastD
         transition: 'opacity 250ms, transform 250ms',
       }}
     >
-      {/* Avatar or fallback bell */}
       <div className="flex-shrink-0 mt-0.5">
-        {data.avatarUrl ? (
-          <img
-            src={data.avatarUrl}
-            alt={data.senderName}
-            className="w-10 h-10 rounded-full object-cover"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-            <Bell size={18} className="text-orange-500" />
-          </div>
-        )}
+        <AvatarOrIcon
+          avatarUrl={data.avatarUrl}
+          senderName={data.senderName}
+          fallbackIcon={<Bell size={18} />}
+          fallbackBg="bg-orange-100"
+          fallbackIconColor="text-orange-500"
+        />
       </div>
-
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-semibold text-orange-500 mb-0.5">{data.typeLabel}</p>
         <p className="text-sm text-gray-800 leading-snug line-clamp-2">{data.message}</p>
         <p className="text-xs text-gray-400 mt-1">{data.senderName}</p>
       </div>
+      <button
+        onClick={() => hotToast.dismiss(t.id)}
+        className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
+      >
+        <X size={15} />
+      </button>
+    </div>
+  );
+}
 
-      {/* Close */}
+function MessageToastItem({ t, data }: { t: Toast; data: MessageToastData }) {
+  return (
+    <div
+      className="flex items-start gap-3 px-4 py-3 rounded-xl shadow-xl"
+      style={{
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        color: '#111827',
+        minWidth: '280px',
+        maxWidth: '380px',
+        opacity: t.visible ? 1 : 0,
+        transform: t.visible ? 'translateY(0)' : 'translateY(10px)',
+        transition: 'opacity 250ms, transform 250ms',
+      }}
+    >
+      <div className="flex-shrink-0 mt-0.5">
+        <AvatarOrIcon
+          avatarUrl={data.avatarUrl}
+          senderName={data.senderName}
+          fallbackIcon={<MessageCircle size={18} />}
+          fallbackBg="bg-blue-100"
+          fallbackIconColor="text-blue-500"
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-semibold text-blue-500 mb-0.5">{data.senderName}</p>
+        <p className="text-sm text-gray-800 leading-snug line-clamp-2">{data.message}</p>
+      </div>
       <button
         onClick={() => hotToast.dismiss(t.id)}
         className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors mt-0.5"
@@ -126,6 +187,10 @@ export const toast = {
   notification: (data: NotificationToastData) =>
     hotToast.custom((t) => <NotificationToastItem t={t} data={data} />, {
       duration: 10000,
+    }),
+  message: (data: MessageToastData) =>
+    hotToast.custom((t) => <MessageToastItem t={t} data={data} />, {
+      duration: 6000,
     }),
 };
 

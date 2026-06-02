@@ -49,10 +49,33 @@ export async function seedUsers(context?: INestApplicationContext): Promise<{ em
   const userRepo = context.get<Repository<User>>(getRepositoryToken(User));
 
   const emailToUser: Record<string, User> = {};
-  const passwordHash = await bcrypt.hash('Employee@1234', 10);
-  const adminHash = await bcrypt.hash('Admin@1234', 10);
+  const passwordHash    = await bcrypt.hash('Employee@1234', 10);
+  const adminHash       = await bcrypt.hash('Admin@1234', 10);
+  const superAdminHash  = await bcrypt.hash('SuperAdmin@1234', 10);
 
   try {
+    // ── SuperAdmin ──────────────────────────────────────────────────────────
+    const existingSuperAdmin = await userRepo.findOne({ where: { email: 'superadmin@imknow.com' } });
+    if (existingSuperAdmin) {
+      emailToUser['superadmin@imknow.com'] = existingSuperAdmin;
+      logger.log(`  ⏭️  SuperAdmin existe déjà (id=${existingSuperAdmin.id})`);
+    } else {
+      const superAdmin = userRepo.create({
+        firstName: 'Super',
+        lastName: 'Admin',
+        email: 'superadmin@imknow.com',
+        password: superAdminHash,
+        role: userRole.SUPERADMIN,
+        status: UserStatus.ACTIVE,
+        isEmailActive: true,
+        emailNotificationsEnabled: false,
+        pushNotificationsEnabled: true,
+      });
+      emailToUser['superadmin@imknow.com'] = await userRepo.save(superAdmin);
+      logger.log(`  ✅ SuperAdmin créé (id=${emailToUser['superadmin@imknow.com'].id})`);
+    }
+
+    // ── Admin ────────────────────────────────────────────────────────────────
     const existingAdmin = await userRepo.findOne({ where: { email: 'admin@imknow.com' } });
     if (existingAdmin) {
       emailToUser['admin@imknow.com'] = existingAdmin;

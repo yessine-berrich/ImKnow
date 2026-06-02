@@ -183,18 +183,14 @@ export class PublicationService {
         let notificationMessage = '';
         let notificationType: NotificationType = NotificationType.SYSTEM_INFO;
 
-        if (moderation.score > 0.7) {
+        if (moderation.isFlagged || moderation.score > 0.35) {
           newStatus = PublicationStatus.REJECTED;
-          savedPublication.rejectionReason = moderation.reason || 'Content flagged as inappropriate';
-          notificationMessage = `Your publication "${savedPublication.title}" has been rejected: ${savedPublication.rejectionReason}`;
+          savedPublication.rejectionReason = moderation.reason || 'Contenu signalé comme inapproprié par la modération automatique';
+          notificationMessage = `Votre publication "${savedPublication.title}" a été rejetée : ${savedPublication.rejectionReason}`;
           notificationType = NotificationType.PUBLICATION_REJECTED;
-        } else if (moderation.isFlagged || moderation.score > 0.35) {
-          newStatus = PublicationStatus.PENDING;
-          notificationMessage = `Your publication "${savedPublication.title}" is pending review (potential risk detected)`;
-          notificationType = NotificationType.PUBLICATION_PENDING_MODERATION;
         } else {
           newStatus = PublicationStatus.PUBLISHED;
-          notificationMessage = `Your publication "${savedPublication.title}" has been published`;
+          notificationMessage = `Votre publication "${savedPublication.title}" a été publiée`;
           notificationType = NotificationType.PUBLICATION_PUBLISHED;
         }
 
@@ -220,7 +216,7 @@ export class PublicationService {
         console.error('Content moderation failed:', err);
 
         if (err?.status === 429 || err?.message?.includes('429')) {
-          savedPublication.status = PublicationStatus.PENDING;
+          savedPublication.status = PublicationStatus.PUBLISHED;
           savedPublication = await this.publicationRepository.save(savedPublication);
         }
 
@@ -228,7 +224,7 @@ export class PublicationService {
           NotificationType.SYSTEM_ERROR,
           user.id,
           null,
-          'Content moderation failed. Your publication is pending manual review.',
+          'La modération automatique a échoué. Votre publication a été publiée.',
           { publicationId: savedPublication.id },
         );
       }
@@ -535,18 +531,14 @@ export class PublicationService {
         let notificationMessage = '';
         let notificationType: NotificationType = NotificationType.SYSTEM_INFO;
 
-        if (moderation.score > 0.7) {
+        if (moderation.isFlagged || moderation.score > 0.35) {
           newStatus = PublicationStatus.REJECTED;
-          publication.rejectionReason = moderation.reason || 'Content flagged as inappropriate';
-          notificationMessage = `Your publication "${publication.title}" has been rejected: ${publication.rejectionReason}`;
+          publication.rejectionReason = moderation.reason || 'Contenu signalé comme inapproprié par la modération automatique';
+          notificationMessage = `Votre publication "${publication.title}" a été rejetée : ${publication.rejectionReason}`;
           notificationType = NotificationType.PUBLICATION_REJECTED;
-        } else if (moderation.isFlagged || moderation.score > 0.35) {
-          newStatus = PublicationStatus.PENDING;
-          notificationMessage = `Your publication "${publication.title}" is pending review (potential risk detected)`;
-          notificationType = NotificationType.PUBLICATION_PENDING_MODERATION;
         } else {
           newStatus = PublicationStatus.PUBLISHED;
-          notificationMessage = `Your publication "${publication.title}" has been published`;
+          notificationMessage = `Votre publication "${publication.title}" a été publiée`;
           notificationType = NotificationType.PUBLICATION_PUBLISHED;
         }
 
@@ -572,7 +564,7 @@ export class PublicationService {
         console.error('Content moderation failed:', err);
 
         if (err?.status === 429 || err?.message?.includes('429')) {
-          publication.status = PublicationStatus.PENDING;
+          publication.status = PublicationStatus.PUBLISHED;
           publication = await this.publicationRepository.save(publication);
         }
 
@@ -580,7 +572,7 @@ export class PublicationService {
           NotificationType.SYSTEM_ERROR,
           user.id,
           null,
-          'Content moderation failed. Your publication is pending manual review.',
+          'La modération automatique a échoué. Votre publication a été publiée.',
           { publicationId: publication.id },
         );
       }

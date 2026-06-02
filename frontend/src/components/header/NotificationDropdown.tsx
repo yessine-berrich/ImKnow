@@ -18,7 +18,6 @@ const enum NotificationType {
   NEW_COMMENT = 'new_comment',
   SYSTEM_ERROR = 'system_error',
   PUBLICATION_PUBLISHED = 'publication_published',
-  PUBLICATION_PENDING_MODERATION = 'publication_pending_moderation',
   PUBLICATION_REJECTED = 'publication_rejected',
   SYSTEM_INFO = 'system_info',
   COMMENT_LIKED = 'comment_liked',
@@ -202,7 +201,6 @@ export default function NotificationDropdown() {
       case NotificationType.MENTION:                  return t('notifications.type_mention');
       case NotificationType.NEW_FOLLOWER:             return t('notifications.type_new_follower');
       case NotificationType.PUBLICATION_PUBLISHED:        return t('notifications.type_publication_published');
-      case NotificationType.PUBLICATION_PENDING_MODERATION: return t('notifications.type_pending_moderation');
       case NotificationType.PUBLICATION_REJECTED:         return t('notifications.type_publication_rejected');
       case NotificationType.PUBLICATION_LIKED:            return t('notifications.type_publication_liked');
       case NotificationType.COMMENT_LIKED:            return t('notifications.type_comment_liked');
@@ -450,13 +448,6 @@ export default function NotificationDropdown() {
                         </p>
                       )}
 
-                      {/* Afficher l'info de modération */}
-                      {notif.type === NotificationType.PUBLICATION_PENDING_MODERATION && (
-                        <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                          {t('notifications.pending_moderation_info')}
-                        </p>
-                      )}
-
                       <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
                         {/* Type badge with color coding and icon */}
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${notif.type === NotificationType.NEW_COMMENT ||
@@ -475,9 +466,7 @@ export default function NotificationDropdown() {
                                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                     : notif.type === NotificationType.PUBLICATION_REJECTED
                                       ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                      : notif.type === NotificationType.PUBLICATION_PENDING_MODERATION
-                                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                                        : notif.type === NotificationType.SYSTEM_ERROR
+                                      : notif.type === NotificationType.SYSTEM_ERROR
                                           ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                                           : notif.type === NotificationType.SYSTEM_INFO
                                             ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
@@ -517,10 +506,6 @@ export default function NotificationDropdown() {
                           ) : notif.type === NotificationType.PUBLICATION_REJECTED ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                          ) : notif.type === NotificationType.PUBLICATION_PENDING_MODERATION ? (
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
                           ) : notif.type === NotificationType.SYSTEM_ERROR ? (
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">

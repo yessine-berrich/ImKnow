@@ -14,7 +14,6 @@ export class DailyModerationDto {
   date: string;
   approved: number;
   rejected: number;
-  pending: number;
   flagged: number;
 }
 

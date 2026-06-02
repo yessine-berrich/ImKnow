@@ -13,7 +13,6 @@ export enum UserStatus {
 export enum PublicationStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
-  PENDING = 'pending',
   REJECTED = 'rejected',
 }
 
@@ -23,7 +22,6 @@ export enum NotificationType {
   NEW_COMMENT = 'new_comment',
   SYSTEM_ERROR = 'system_error',
   PUBLICATION_PUBLISHED = 'publication_published',
-  PUBLICATION_PENDING_MODERATION = 'publication_pending_moderation',
   PUBLICATION_REJECTED = 'publication_rejected',
   SYSTEM_INFO = 'system_info',
   COMMENT_LIKED = 'comment_liked',

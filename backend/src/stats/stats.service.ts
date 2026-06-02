@@ -477,15 +477,12 @@ export class StatsService {
       const dayStart = new Date(date.setHours(0, 0, 0, 0));
       const dayEnd = new Date(date.setHours(23, 59, 59, 999));
 
-      const [published, draft, pending, rejected] = await Promise.all([
+      const [published, draft, rejected] = await Promise.all([
         this.publicationRepo.count({
           where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.PUBLISHED },
         }),
         this.publicationRepo.count({
           where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.DRAFT },
-        }),
-        this.publicationRepo.count({
-          where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.PENDING },
         }),
         this.publicationRepo.count({
           where: { createdAt: Between(dayStart, dayEnd), status: PublicationStatus.REJECTED },
@@ -496,17 +493,15 @@ export class StatsService {
         date: dayStart.toISOString().split('T')[0],
         published,
         draft,
-        pending,
         rejected,
       });
     }
 
     const totalPublished = dailyPublications.reduce((sum, d) => sum + d.published, 0);
     const totalDraft = dailyPublications.reduce((sum, d) => sum + d.draft, 0);
-    const totalPending = dailyPublications.reduce((sum, d) => sum + d.pending, 0);
     const totalRejected = dailyPublications.reduce((sum, d) => sum + d.rejected, 0);
 
-    const total = totalPublished + totalDraft + totalPending + totalRejected;
+    const total = totalPublished + totalDraft + totalRejected;
     const publicationRate = total > 0 ? Math.round((totalPublished / total) * 100) : 0;
 
     return {
@@ -514,7 +509,6 @@ export class StatsService {
       period: { from: from.toISOString(), to: now.toISOString() },
       totalPublished,
       totalDraft,
-      totalPending,
       totalRejected,
       publicationRate,
       avgTimeToPublish: null,
@@ -795,7 +789,6 @@ export class StatsService {
     const statusCounts = {
       [PublicationStatus.PUBLISHED]: 0,
       [PublicationStatus.DRAFT]: 0,
-      [PublicationStatus.PENDING]: 0,
       [PublicationStatus.REJECTED]: 0,
     };
 
@@ -809,7 +802,6 @@ export class StatsService {
     const statusBreakdown: ModerationStatusDto[] = [
       { status: 'published', count: statusCounts[PublicationStatus.PUBLISHED], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.PUBLISHED] / total) * 100) : 0 },
       { status: 'draft', count: statusCounts[PublicationStatus.DRAFT], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.DRAFT] / total) * 100) : 0 },
-      { status: 'pending', count: statusCounts[PublicationStatus.PENDING], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.PENDING] / total) * 100) : 0 },
       { status: 'rejected', count: statusCounts[PublicationStatus.REJECTED], percentage: total > 0 ? Math.round((statusCounts[PublicationStatus.REJECTED] / total) * 100) : 0 },
     ];
 
@@ -848,7 +840,6 @@ export class StatsService {
         date: dayStart.toISOString().split('T')[0],
         approved: dayPublications.filter((a) => a.status === PublicationStatus.PUBLISHED).length,
         rejected: dayPublications.filter((a) => a.status === PublicationStatus.REJECTED).length,
-        pending: dayPublications.filter((a) => a.status === PublicationStatus.PENDING).length,
         flagged: dayPublications.filter((a) => a.moderationResult?.isFlagged).length,
       });
     }

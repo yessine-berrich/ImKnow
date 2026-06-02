@@ -16,7 +16,6 @@ const enum NotificationType {
   NEW_COMMENT = 'new_comment',
   SYSTEM_ERROR = 'system_error',
   PUBLICATION_PUBLISHED = 'publication_published',
-  PUBLICATION_PENDING_MODERATION = 'publication_pending_moderation',
   PUBLICATION_REJECTED = 'publication_rejected',
   SYSTEM_INFO = 'system_info',
   COMMENT_LIKED = 'comment_liked',
@@ -267,8 +266,6 @@ export default function NotificationsPage() {
         return t('notifications.type_new_follower');
       case NotificationType.PUBLICATION_PUBLISHED:
         return t('notifications.type_publication_published');
-      case NotificationType.PUBLICATION_PENDING_MODERATION:
-        return t('notifications.type_pending_moderation');
       case NotificationType.PUBLICATION_REJECTED:
         return t('notifications.type_publication_rejected');
       case NotificationType.PUBLICATION_LIKED:
@@ -707,12 +704,6 @@ export default function NotificationsPage() {
                               </p>
                             )}
 
-                            {/* Moderation info */}
-                            {notif.type === NotificationType.PUBLICATION_PENDING_MODERATION && (
-                              <p className="mt-2 text-xs text-yellow-600 dark:text-yellow-400">
-                                {t('notifications_page.pending_moderation')}
-                              </p>
-                            )}
                           </div>
 
                           {/* Actions */}
@@ -768,8 +759,6 @@ export default function NotificationsPage() {
                               ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                               : notif.type === NotificationType.PUBLICATION_REJECTED
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                              : notif.type === NotificationType.PUBLICATION_PENDING_MODERATION
-                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                               : notif.type === NotificationType.SYSTEM_ERROR
                               ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                               : notif.type === NotificationType.SYSTEM_INFO ||

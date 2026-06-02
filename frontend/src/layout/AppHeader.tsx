@@ -443,13 +443,13 @@ const AppHeader: React.FC = () => {
           >
             <div className="flex items-center gap-2 2xsm:gap-3">
               {/* Bouton AI Assistant */}
-              <button
+              {/* <button
                 onClick={() => setIsAIAssistantOpen(true)}
                 className="relative flex items-center justify-center h-11 w-11 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-500 transition-colors hover:bg-[#168F6F]/10 hover:text-[#168F6F] hover:border-[#168F6F]/30 dark:bg-gray-800/80 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-[#168F6F]/20 dark:hover:text-[#168F6F]"
                 title={t('header.ai_assistant')}
               >
                 <Sparkles size={20} />
-              </button>
+              </button> */}
 
               {/* Bouton Brouillons */}
               <button
@@ -492,10 +492,10 @@ const AppHeader: React.FC = () => {
       />
 
       {/* AI Assistant Modal */}
-      <AIAssistant
+      {/* <AIAssistant
         isOpen={isAIAssistantOpen}
         onClose={() => setIsAIAssistantOpen(false)}
-      />
+      /> */}
     </>
   );
 };

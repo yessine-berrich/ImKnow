@@ -14,9 +14,10 @@ Composée d'un backend **NestJS 11** et d'un frontend **Next.js 16**, avec une s
 4. [Ollama (IA locale)](#4-ollama-ia-locale)
 5. [Backend (NestJS)](#5-backend-nestjs)
 6. [Frontend (Next.js)](#6-frontend-nextjs)
-7. [Tests automatisés (Robot Framework)](#7-tests-automatisés-robot-framework)
-8. [Démarrage complet](#8-démarrage-complet)
-9. [Scripts disponibles](#9-scripts-disponibles)
+7. [Données de développement (Seeds)](#7-données-de-développement-seeds)
+8. [Tests automatisés (Robot Framework)](#8-tests-automatisés-robot-framework)
+9. [Démarrage complet](#9-démarrage-complet)
+10. [Scripts disponibles](#10-scripts-disponibles)
 
 ---
 
@@ -47,8 +48,9 @@ ImKnow/
 
 - Rédaction et publication d'articles avec suggestion de tags par IA
 - Recherche sémantique (embeddings pgvector + Ollama)
+- Détection automatique de doublons par similarité cosinus (seuil 0.92)
+- Modération automatique binaire des contenus par IA (Groq) : **accepté** ou **rejeté**, sans état intermédiaire
 - Like, bookmark, partage et commentaires sur les articles
-- Modération automatique des contenus
 - Classement des top contributeurs et articles tendances
 - Paramètres utilisateur : profil, sécurité, thème clair/sombre, langue
 - Authentification par email/mot de passe et Google OAuth
@@ -162,7 +164,7 @@ Le projet utilise deux modèles Ollama :
 
 | Modèle | Usage |
 |--------|-------|
-| `nomic-embed-text` | Génération d'embeddings (dimension 768) pour la recherche sémantique |
+| `nomic-embed-text` | Génération d'embeddings (dimension 768) pour la recherche sémantique et la détection de doublons |
 | `llama3.2:3b` | Suggestion automatique de tags pour les articles |
 
 ### Démarrer Ollama
@@ -176,7 +178,7 @@ Ollama tourne sur **http://localhost:11434** par défaut.
 ### Télécharger les modèles
 
 ```bash
-# Modèle d'embedding (requis pour la recherche sémantique)
+# Modèle d'embedding (requis pour la recherche sémantique et la détection de doublons)
 ollama pull nomic-embed-text
 
 # Modèle de génération de tags (requis pour la suggestion de tags)
@@ -188,7 +190,7 @@ Vérifier que les modèles sont installés :
 ollama list
 ```
 
-> **Note** : Sans Ollama, la recherche sémantique bascule automatiquement sur une recherche textuelle (ILIKE), et la suggestion de tags est désactivée. Le reste de l'application fonctionne normalement.
+> **Note** : Sans Ollama, la recherche sémantique bascule automatiquement sur une recherche textuelle (ILIKE), la détection de doublons est ignorée silencieusement, et la suggestion de tags est désactivée. Le reste de l'application fonctionne normalement.
 
 ---
 
@@ -226,7 +228,7 @@ GOOGLE_CLIENT_ID=votre_google_client_id
 GOOGLE_CLIENT_SECRET=votre_google_client_secret
 GOOGLE_CALLBACK_URL=http://localhost:3000/api/users/auth/google/callback
 
-# IA cloud (optionnel)
+# IA cloud (optionnel — modération automatique des contenus)
 GEMINI_API_KEY=votre_gemini_api_key
 GROQ_API_KEY=votre_groq_api_key
 ```
@@ -249,6 +251,7 @@ mkdir -p backend/uploads/avatars
 cd backend
 npm install
 npm run typeorm:run   # Appliquer les migrations
+npm run seed          # Insérer les données de développement (optionnel)
 npm run start:dev     # Démarrer en mode développement
 ```
 
@@ -279,11 +282,88 @@ L'application est disponible sur : **http://localhost:3001**
 
 ---
 
-## 7. Tests automatisés (Robot Framework)
+## 7. Données de développement (Seeds)
+
+Les seeds peuplent la base avec des données réalistes pour le développement et les tests.
+
+```bash
+cd backend
+npm run seed
+```
+
+### 7.1 Comptes créés
+
+#### SuperAdmin
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `superadmin@imknow.com` |
+| Mot de passe | `SuperAdmin@1234` |
+| Rôle | `SUPERADMIN` |
+| Accès | Toutes les fonctionnalités + gestion des admins |
+
+#### Admin
+
+| Champ | Valeur |
+|-------|--------|
+| Email | `admin@imknow.com` |
+| Mot de passe | `Admin@1234` |
+| Rôle | `ADMIN` |
+| Accès | Back-office complet (utilisateurs, publications, modération, statistiques) |
+
+#### Employés (mot de passe commun : `Employee@1234`)
+
+| Nom | Email | Département | Statut |
+|-----|-------|-------------|--------|
+| Marie Dupont | marie.dupont@imknow.com | RH | Actif |
+| Thomas Martin | thomas.martin@imknow.com | Développement | Actif |
+| Sophie Laurent | sophie.laurent@imknow.com | Design | Actif |
+| Lucas Bernard | lucas.bernard@imknow.com | DevOps | Actif |
+| Emma Moreau | emma.moreau@imknow.com | Marketing | Actif |
+| Alexandre Petit | alexandre.petit@imknow.com | Développement | Actif |
+| Camille Rousseau | camille.rousseau@imknow.com | Finance | Actif |
+| Julien Leroy | julien.leroy@imknow.com | Développement | Actif |
+| Léa Dubois | lea.dubois@imknow.com | Juridique | Actif |
+| Nicolas Mercier | nicolas.mercier@imknow.com | Développement | Actif |
+| Clarisse Renaud | clarisse.renaud@imknow.com | Marketing | Actif |
+| Antoine Lefèvre | antoine.lefevre@imknow.com | RH | Inactif |
+| Béatrice Chevallier | beatrice.chevallier@imknow.com | Finance | Inactif |
+| David Moreau | david.moreau@imknow.com | Développement | En attente |
+| Élodie Petit | elodie.petit@imknow.com | Design | En attente |
+
+### 7.2 Données seedées
+
+| Entité | Quantité |
+|--------|----------|
+| Utilisateurs | 17 (1 superadmin + 1 admin + 15 employés) |
+| Catégories | 6 (Développement, Design, Marketing, RH, Finance, Juridique) |
+| Tags | 25 |
+| Publications | 30+ (publiées, rejetées par IA, rejetées par doublon) |
+| Commentaires | ~50 |
+| Likes / Bookmarks | ~40 |
+| Notifications | ~20 |
+| Signalements | ~10 |
+| Conversations IA | ~15 |
+
+### 7.3 Logique de modération (rappel)
+
+La modération IA est **binaire** — pas d'état intermédiaire :
+
+| Score IA | Résultat |
+|----------|----------|
+| `score ≤ 0.35` et non signalé | **Publié** automatiquement |
+| `score > 0.35` ou contenu signalé | **Rejeté** automatiquement |
+| Doublon détecté (similarité ≥ 0.92) | **Rejeté** (détection de doublon) |
+
+Un administrateur peut approuver manuellement une publication rejetée via le back-office.
+
+---
+
+## 8. Tests automatisés (Robot Framework)
 
 Le dossier `robot-tests/` contient une suite de **149 tests E2E** couvrant les principaux flux de l'application.
 
-### 7.1 Installation
+### 8.1 Installation
 
 ```bash
 cd robot-tests
@@ -296,23 +376,23 @@ rfbrowser init   # Télécharge les navigateurs Playwright
 > python -m Browser.entry init
 > ```
 
-### 7.2 Configuration
+### 8.2 Configuration
 
 Les credentials sont définis dans `robot-tests/resources/variables.resource`.
 
 **Compte EMPLOYEE** (tests fonctionnels) :
 ```
-${VALID_EMAIL}      testuser@imknow.com
-${VALID_PASSWORD}   Test@1234
+${VALID_EMAIL}      thomas.martin@imknow.com
+${VALID_PASSWORD}   Employee@1234
 ```
-Le compte doit exister en base avec `status = 'actif'` et `isEmailActive = true`.
 
 **Compte ADMIN** (tests des pages d'administration) :
 ```
 ${ADMIN_EMAIL}      admin@imknow.com
 ${ADMIN_PASSWORD}   Admin@1234
 ```
-Pour créer ce compte s'il n'existe pas :
+
+Pour créer le compte admin uniquement (sans le reste des seeds) :
 ```bash
 cd backend
 node create-admin.js
@@ -323,7 +403,7 @@ node create-admin.js
 > robot --variable VALID_EMAIL:me@test.com --variable VALID_PASSWORD:s3cr3t tests/
 > ```
 
-### 7.3 Lancer les tests
+### 8.3 Lancer les tests
 
 ```bash
 cd robot-tests
@@ -359,7 +439,7 @@ python -m robot --variable HEADLESS:true --outputdir results tests/
 
 > **Linux / macOS** — si `robot` est dans le PATH, remplacer `python -m robot` par `robot`.
 
-### 7.4 Couverture des tests
+### 8.4 Couverture des tests
 
 | Module | Fichier | Tests |
 |--------|---------|-------|
@@ -388,7 +468,7 @@ python -m robot --variable HEADLESS:true --outputdir results tests/
 | Admin — Statistiques | `TC_ADMIN_006_statistics.robot` | 7 |
 | **Total** | | **149** |
 
-### 7.5 Résultats
+### 8.5 Résultats
 
 Les rapports HTML sont générés dans `robot-tests/results/` :
 ```bash
@@ -398,7 +478,7 @@ open results/report.html      # macOS
 xdg-open results/report.html  # Linux
 ```
 
-### 7.6 Tags disponibles
+### 8.6 Tags disponibles
 
 | Tag | Portée |
 |-----|--------|
@@ -416,7 +496,7 @@ python -m robot --include admin --outputdir results tests/
 python -m robot --exclude regression --outputdir results tests/
 ```
 
-### 7.7 Intégration CI (GitHub Actions)
+### 8.7 Intégration CI (GitHub Actions)
 
 ```yaml
 - name: Install Robot Framework
@@ -425,8 +505,8 @@ python -m robot --exclude regression --outputdir results tests/
 - name: Install Playwright browsers
   run: python -m Browser.entry init
 
-- name: Create admin account
-  run: node backend/create-admin.js
+- name: Seed database
+  run: cd backend && npm run seed
 
 - name: Run tests
   run: python -m robot --variable HEADLESS:true --outputdir robot-tests/results robot-tests/tests/
@@ -440,7 +520,7 @@ python -m robot --exclude regression --outputdir results tests/
 
 ---
 
-## 8. Démarrage complet
+## 9. Démarrage complet
 
 Lancer dans cet ordre :
 
@@ -463,7 +543,7 @@ L'application est accessible sur **http://localhost:3001**.
 
 ---
 
-## 9. Scripts disponibles
+## 10. Scripts disponibles
 
 ### Backend
 
@@ -479,6 +559,7 @@ L'application est accessible sur **http://localhost:3001**.
 | `npm run typeorm:generate -- src/migrations/Nom` | Générer une migration |
 | `npm run typeorm:create -- src/migrations/Nom` | Créer une migration vide |
 | `npm run typeorm:show` | Voir l'état des migrations |
+| `npm run seed` | Insérer les données de développement |
 | `npm run test` | Tests unitaires (Jest) |
 | `npm run test:watch` | Tests unitaires en mode watch |
 | `npm run test:cov` | Tests unitaires avec couverture |

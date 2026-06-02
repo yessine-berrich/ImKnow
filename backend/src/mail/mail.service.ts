@@ -123,17 +123,6 @@ export class MailService implements OnModuleInit {
           };
           break;
 
-        case NotificationType.PUBLICATION_PENDING_MODERATION:
-          subject = 'Votre publication est en attente de modération';
-          context = {
-            ...context,
-            publicationTitle: data.publicationTitle || 'votre publication',
-            publicationUrl: this.buildPublicationUrl(data),
-            moderationScore: data.moderationScore,
-            message: message || 'Votre publication nécessite une vérification manuelle',
-          };
-          break;
-
         case NotificationType.PUBLICATION_REJECTED:
           subject = 'Votre publication a été rejeté';
           context = {

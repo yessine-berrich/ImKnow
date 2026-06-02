@@ -269,7 +269,7 @@ export default function CreatePublicationModal({
   const escapeRegExp = (str: string) =>
     str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-  const buildCreateFormData = (status: 'draft' | 'pending'): FormData => {
+  const buildCreateFormData = (status: 'draft' | 'published'): FormData => {
     const fd = new FormData();
     fd.append('title', title);
     fd.append('content', content);
@@ -280,7 +280,7 @@ export default function CreatePublicationModal({
     return fd;
   };
 
-  const handleCreateWithFiles = async (status: 'draft' | 'pending'): Promise<any> => {
+  const handleCreateWithFiles = async (status: 'draft' | 'published'): Promise<any> => {
     const token = getToken();
     if (!token) throw new Error('Non authentifié');
 
@@ -334,7 +334,7 @@ export default function CreatePublicationModal({
   };
 
   const buildUpdateDto = (
-    status: 'draft' | 'pending'
+    status: 'draft' | 'published'
   ): (UpdatePublicationDto & { hasChanges: boolean }) | null => {
     if (!isEditMode || !originalPublication) return null;
 
@@ -359,6 +359,7 @@ export default function CreatePublicationModal({
 
     dto.status = status as any;
     dto.changeSummary = changeSummary.trim() || (status === 'draft' ? t('create_pub_modal.change_summary_draft') : t('create_pub_modal.change_summary_submit'));
+
 
     return { ...dto, hasChanges };
   };
@@ -402,7 +403,7 @@ export default function CreatePublicationModal({
     setIsSubmittingPending(true);
     try {
       if (isEditMode && publicationId) {
-        const updateDto = buildUpdateDto('pending');
+        const updateDto = buildUpdateDto('published');
         if (!updateDto) { toast.error(t('create_pub_modal.toast_build_error')); return; }
 
         const { hasChanges, ...dtoToSend } = updateDto;
@@ -413,7 +414,7 @@ export default function CreatePublicationModal({
         let updatedPublication;
         if (!hasContentChanges) {
           updatedPublication = await publicationService.update(parseInt(publicationId), {
-            status: 'pending' as any,
+            status: 'published' as any,
             changeSummary: t('create_pub_modal.change_summary_no_change'),
           });
         } else {
@@ -425,12 +426,8 @@ export default function CreatePublicationModal({
           toast.error(t('create_pub_modal.toast_rejected', { reason: rejectionMessage }));
           setTimeout(() => { onClose(); }, 1500);
           return;
-        } else if (updatedPublication.status === 'pending') {
-          toast.success(t('create_pub_modal.toast_submitted'));
-        } else if (updatedPublication.status === 'published') {
-          toast.success(t('create_pub_modal.toast_published'));
         } else {
-          toast.success(t('create_pub_modal.toast_submitted'));
+          toast.success(t('create_pub_modal.toast_published'));
         }
 
         setTimeout(() => {
@@ -439,19 +436,15 @@ export default function CreatePublicationModal({
           onClose();
         }, 1000);
       } else {
-        const createdPublication = await handleCreateWithFiles('pending');
+        const createdPublication = await handleCreateWithFiles('published');
 
         if (createdPublication.status === 'rejected') {
           const rejectionMessage = createdPublication.rejectionReason || t('create_pub_modal.rejection_default');
           toast.error(t('create_pub_modal.toast_rejected', { reason: rejectionMessage }));
           setTimeout(() => { onClose(); }, 1500);
           return;
-        } else if (createdPublication.status === 'pending') {
-          toast.success(t('create_pub_modal.toast_submitted'));
-        } else if (createdPublication.status === 'published') {
-          toast.success(t('create_pub_modal.toast_published'));
         } else {
-          toast.success(t('create_pub_modal.toast_submitted'));
+          toast.success(t('create_pub_modal.toast_published'));
         }
 
         setTimeout(() => {

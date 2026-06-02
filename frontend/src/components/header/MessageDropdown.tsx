@@ -1,82 +1,51 @@
 // components/header/MessageDropdown.tsx
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { chatService, Conversation } from '../../../services/chat.service';
+import { Conversation } from '../../../services/chat.service';
 import { chatSocketService, NewChatMessagePayload } from '../../../services/chat-socket.service';
-import { fetchCurrentUser, getToken } from '../../../services/auth.service';
 import { Dropdown } from '../ui/dropdown/Dropdown';
 import { DropdownItem } from '../ui/dropdown/DropdownItem';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { enUS } from 'date-fns/locale';
 import { useTranslation } from '../../context/LanguageContext';
-import { translateError } from '@/utils/errorTranslation';
 import UserAvatar from '../chat/UserAvatar';
 import { useChatContext } from '../../context/ChatContext';
+import { toast } from '@/components/modals/ToastContainer';
 
 interface MessageDropdownProps {
   onMessageClick?: () => void;
 }
 
 export default function MessageDropdown({ onMessageClick }: MessageDropdownProps) {
-  const { canShowOnlineFor } = useChatContext();
+  const {
+    canShowOnlineFor,
+    conversations: ctxConversations,
+    conversationsLoading,
+    refreshConversations,
+    currentUserId,
+  } = useChatContext();
   const { t, language } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [localConversations, setLocalConversations] = useState<Conversation[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const router = useRouter();
-  const needsRefreshRef = useRef(false);
+  const conversationsRef = useRef<Conversation[]>([]);
 
-  // ── Load current user then connect socket ──────────────────────────────
+  // ── Sync from context ──────────────────────────────────────────────────
   useEffect(() => {
-    const init = async () => {
-      try {
-        const token = getToken();
-        if (!token) { setError(t('messages_dropdown.err_not_authenticated')); setLoading(false); return; }
-
-        const user = await fetchCurrentUser();
-        if (!user?.id) { setError(t('messages_dropdown.err_load_user')); setLoading(false); return; }
-
-        setCurrentUserId(user.id);
-        localStorage.setItem('userId', user.id.toString());
-        setError(null);
-      } catch {
-        setError(t('messages_dropdown.err_loading_user'));
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, []);
-
-  // ── Fetch conversations from API ───────────────────────────────────────
-  const loadConversations = useCallback(async () => {
-    if (!currentUserId) return;
-    try {
-      const response = await chatService.getUserConversations();
-      const list = response.conversations || [];
-      const sorted = [...list].sort((a, b) => {
-        const at = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
-        const bt = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
-        return bt - at;
-      });
-      setConversations(sorted);
-      setUnreadCount(sorted.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0));
-    } catch (err: any) {
-      setError(translateError(err.message, t) || t('messages_dropdown.err_load_conversations'));
-    }
-  }, [currentUserId]);
-
-  // ── Initial load once userId is known ─────────────────────────────────
-  useEffect(() => {
-    if (currentUserId) loadConversations();
-  }, [currentUserId, loadConversations]);
+    const sorted = [...ctxConversations].sort((a, b) => {
+      const at = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+      const bt = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+      return bt - at;
+    });
+    setLocalConversations(sorted);
+    conversationsRef.current = sorted;
+    setUnreadCount(sorted.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0));
+  }, [ctxConversations]);
 
   // ── Socket.io — real-time new message ─────────────────────────────────
   useEffect(() => {
@@ -87,13 +56,15 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
     const handleNewMessage = (payload: NewChatMessagePayload) => {
       const isIncoming = payload.message.senderId !== currentUserId;
 
-      setConversations(prev => {
+      const messagePreview = payload.message.type === 'image' ? '📷 Photo'
+        : payload.message.type === 'file' ? '📎 Fichier'
+        : payload.message.content?.length > 60
+          ? payload.message.content.substring(0, 60) + '…'
+          : (payload.message.content ?? '');
+
+      setLocalConversations(prev => {
         const idx = prev.findIndex(c => c.conversationId === payload.conversationId);
-        if (idx === -1) {
-          // Unknown conversation — refresh on next open
-          needsRefreshRef.current = true;
-          return prev;
-        }
+        if (idx === -1) return prev;
 
         const updated = prev.map(c => {
           if (c.conversationId !== payload.conversationId) return c;
@@ -111,16 +82,30 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
           };
         });
 
-        // Re-sort by most recent
-        return [...updated].sort((a, b) => {
+        const result = [...updated].sort((a, b) => {
           const at = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
           const bt = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
           return bt - at;
         });
+        conversationsRef.current = result;
+        return result;
       });
 
       if (isIncoming) {
         setUnreadCount(prev => prev + 1);
+
+        const conv = conversationsRef.current.find(c => c.conversationId === payload.conversationId);
+        const u = conv?.participant;
+        const senderName = u
+          ? ((u.firstName || u.lastName)
+              ? `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim()
+              : (u as any).fullName || t('messages_dropdown.user_fallback'))
+          : t('messages_dropdown.user_fallback');
+        const avatarUrl = u && (u as any).profileImage
+          ? `http://localhost:3000/api/users/profile-image/${u.id}`
+          : null;
+
+        toast.message({ message: messagePreview, senderName, avatarUrl });
       }
     };
 
@@ -131,13 +116,10 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
     };
   }, [currentUserId]);
 
-  // ── Refresh on open (sync reads done in chat page) ─────────────────────
+  // ── Refresh on open ────────────────────────────────────────────────────
   useEffect(() => {
-    if (isOpen && currentUserId) {
-      loadConversations();
-      needsRefreshRef.current = false;
-    }
-  }, [isOpen, currentUserId, loadConversations]);
+    if (isOpen) refreshConversations();
+  }, [isOpen, refreshConversations]);
 
   const closeDropdown = () => {
     setIsOpen(false);
@@ -217,15 +199,11 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
         </div>
 
         {/* Body */}
-        {loading ? (
+        {conversationsLoading && localConversations.length === 0 ? (
           <div className="flex items-center justify-center h-32">
             <div className="w-6 h-6 border-2 border-[#00926B] border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center h-32 text-center">
-            <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>
-          </div>
-        ) : conversations.length === 0 ? (
+        ) : localConversations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center">
             <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -235,7 +213,7 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
           </div>
         ) : (
           <ul className="flex flex-col flex-1 overflow-y-auto custom-scrollbar">
-            {conversations.slice(0, 10).map((conversation) => {
+            {localConversations.slice(0, 10).map((conversation) => {
               const name = getParticipantName(conversation);
               const hasUnread = (conversation.unreadCount ?? 0) > 0;
               return (
@@ -284,9 +262,9 @@ export default function MessageDropdown({ onMessageClick }: MessageDropdownProps
           </ul>
         )}
 
-        {conversations.length > 10 && (
+        {localConversations.length > 10 && (
           <div className="mt-2 text-center text-xs text-gray-400 dark:text-gray-500">
-            {t('messages_dropdown.more_conversations', { count: conversations.length - 10 })}
+            {t('messages_dropdown.more_conversations', { count: localConversations.length - 10 })}
           </div>
         )}
 

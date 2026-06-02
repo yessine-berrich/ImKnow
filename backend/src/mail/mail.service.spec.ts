@@ -230,21 +230,6 @@ describe('MailService', () => {
       );
     });
 
-    it('should send PUBLICATION_PENDING_MODERATION notification', async () => {
-      await service.sendNotificationEmail(
-        'author@example.com',
-        NotificationType.PUBLICATION_PENDING_MODERATION,
-        'Pending review',
-        { publicationId: 1 },
-      );
-
-      expect(mockSendMail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          subject: "Votre publication est en attente de modération",
-        }),
-      );
-    });
-
     it('should send USER_ROLE_CHANGED notification', async () => {
       await service.sendNotificationEmail(
         'user@example.com',

@@ -37,7 +37,7 @@ interface Publication {
   isFeatured?: boolean;
   publishedAt: string;
   updatedAt?: string;
-  status: 'draft' | 'published' | 'pending' | 'rejected';
+  status: 'draft' | 'published' | 'rejected';
   stats: {
     likes: number;
     comments: number;

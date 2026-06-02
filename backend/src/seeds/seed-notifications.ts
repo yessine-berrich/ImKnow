@@ -49,7 +49,7 @@ const NOTIFICATIONS: NotificationData[] = [
   { recipientEmail: 'marie.dupont@imknow.com',                                                type: NotificationType.ACCOUNT_ACTIVATED,    message: 'Votre compte a été activé avec succès.' },
   { recipientEmail: 'thomas.martin@imknow.com',                                               type: NotificationType.PUBLICATION_PUBLISHED, message: 'Votre article "Guide complet React 18" a été publié.', data: { publicationId: null } },
   { recipientEmail: 'alexandre.petit@imknow.com',                                             type: NotificationType.PUBLICATION_REJECTED,  message: 'Votre article "Comment cracker Photoshop" a été rejeté (contenu non conforme).', data: { publicationId: null } },
-  { recipientEmail: 'lea.dubois@imknow.com',                                                  type: NotificationType.PUBLICATION_PENDING_MODERATION, message: 'Votre article "Pourquoi les microservices c\'est de la merde" est en attente de modération.', data: { publicationId: null } },
+  { recipientEmail: 'lea.dubois@imknow.com',                                                  type: NotificationType.PUBLICATION_REJECTED, message: 'Votre article "Pourquoi les microservices c\'est de la merde" a été rejeté par la modération automatique.', data: { publicationId: null } },
 ];
 
 export async function seedNotifications(
