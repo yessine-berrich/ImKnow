@@ -352,7 +352,7 @@ export default function AssistantPage() {
             )}
           </div>
 
-          {activeId && messages.length > 0 && (
+          {/* {activeId && messages.length > 0 && (
             <button
               onClick={() => { const c = conversations.find((x) => x.id === activeId); if (c) exportConversation(c.title, messages); }}
               className="flex items-center gap-1 px-2 py-1 text-xs text-gray-400 hover:text-[#168F6F] hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-colors"
@@ -360,7 +360,7 @@ export default function AssistantPage() {
             >
               <Download className="h-3.5 w-3.5" />
             </button>
-          )}
+          )} */}
         </div>
 
         {/* Messages zone */}
@@ -646,9 +646,9 @@ function ConvItem({
           <button onClick={(e) => onStartEdit(e, conv)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-blue-500 transition-colors" title="Renommer">
             <Pencil className="h-3 w-3" />
           </button>
-          <button onClick={(e) => onExport(e, conv)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-purple-500 transition-colors" title="Exporter">
+          {/* <button onClick={(e) => onExport(e, conv)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-purple-500 transition-colors" title="Exporter">
             <Download className="h-3 w-3" />
-          </button>
+          </button> */}
           <button onClick={(e) => onDelete(e, conv.id)} className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-400 hover:text-red-500 transition-colors" title="Supprimer">
             <Trash2 className="h-3 w-3" />
           </button>

@@ -94,7 +94,7 @@ export class ContentModerationService {
       .sort((a, b) => b.score - a.score)[0];
 
     const result: any = {
-      isFlagged: textResult.isFlagged || mediaResults.some((r) => r.isFlagged) || finalScore > 0.35,
+      isFlagged: textResult.isFlagged || mediaResults.some((r) => r.isFlagged) || finalScore >= 0.35,
       score: finalScore,
       categories: uniqueCategories,
       reason: worstMedia?.reason ?? textResult.reason,
@@ -242,26 +242,25 @@ export class ContentModerationService {
             {
               role: 'system',
               content: `Tu es un modérateur de contenu strict.
-Réponds UNIQUEMENT avec un JSON valide, sans markdown, sans explication.
-Format EXACT :
-{
-  "isFlagged": boolean,
-  "score": number entre 0.0 et 1.0,
-  "categories": array parmi ["toxicity","severe_toxicity","obscene","threat","insult","identity_hate","sexual_content","violence","spam","hate_speech","harassment","piracy"],
-  "reason": "explication courte en français",
-  "confidence": number entre 0.0 et 1.0
-}
-Règles de scoring :
-- 0.0 à 0.2 : contenu sain
-- 0.2 à 0.35 : contenu limite, surveiller
-- 0.35 à 0.7 : contenu problématique → PENDING
-- 0.7 à 1.0 : contenu grave → REJECTED
-Exemples de contenu grave (score > 0.7) :
-- contenu sexuel explicite
-- piratage logiciel, cracks, torrents
-- discours de haine, violence explicite
-- spam ou arnaque
-- noms de fichiers évocateurs de contenu illégal (ex: crack, keygen, xxx, torrent)`,
+                Réponds UNIQUEMENT avec un JSON valide, sans markdown, sans explication.
+                Format EXACT :
+                {
+                  "isFlagged": boolean,
+                  "score": number entre 0.0 et 1.0,
+                  "categories": array parmi ["toxicity","severe_toxicity","obscene","threat","insult","identity_hate","sexual_content","violence","spam","hate_speech","harassment","piracy"],
+                  "reason": "explication courte en français",
+                  "confidence": number entre 0.0 et 1.0
+                }
+                Règles de scoring et décision :
+                - 0.0 à 0.35 : contenu sain ou acceptable → ACCEPTE (isFlagged: false)
+                - 0.35 à 1.0 : contenu problématique ou grave → REJETE (isFlagged: true)
+
+                Exemples de contenu à rejeter immédiatement (score >= 0.35) :
+                - contenu sexuel explicite ou nudité
+                - piratage logiciel, cracks, torrents, keygens
+                - discours de haine, insultes, harcèlement, violence
+                - spam, arnaques ou publicités suspectes
+                - noms de fichiers évocateurs de contenu illégal`,
             },
             {
               role: 'user',
@@ -322,7 +321,7 @@ Exemples de contenu grave (score > 0.7) :
       'Analyse cette image pour la modération de contenu. ' +
       'Réponds UNIQUEMENT avec du JSON valide (sans markdown) :\n' +
       '{"isFlagged":boolean,"score":0.0-1.0,"reason":"string en français","categories":["nudity","violence","hate_symbols","graphic_content","spam"]}\n' +
-      'Score : 0.0-0.2=approprié, 0.2-0.35=limite, 0.35-0.7=problématique, 0.7-1.0=grave (nudité explicite, violence graphique…)';
+      'Règles : Score de 0.0 à 0.35 = approprié/accepté (isFlagged: false). Score de 0.35 à 1.0 = problématique/interdit (isFlagged: true).';
 
     for (const visionModel of this.visionModels) {
       try {
