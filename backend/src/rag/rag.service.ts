@@ -4,6 +4,7 @@ import { RagResponse } from './interfaces/rag-response.interface';
 import { GroqRagService } from './groq-rag.service';
 import { RagRetrievalService } from './rag-retrieval.service';
 import { AiConversationService } from 'src/ai-conversation/ai-conversation.service';
+import { filter } from 'rxjs/internal/operators/filter';
 
 @Injectable()
 export class RagService {
@@ -11,7 +12,7 @@ export class RagService {
     private readonly ragRetrievalService: RagRetrievalService,
     private readonly groqRagService: GroqRagService,
     private readonly aiConversationService: AiConversationService,
-  ) {}
+  ) { }
 
   async ragSearch(queryDto: RagQueryDto, userId: number): Promise<RagResponse> {
     const { q, limit = 12, minSimilarity = 0.60, conversationId } = queryDto;
@@ -67,9 +68,10 @@ export class RagService {
       // Keep only sources within 12 percentage points of the best score, max 4
       const topScore = allSources[0]?.similarity ?? 0;
       const sources = allSources
-        .filter(s => s.similarity >= topScore - 0.12)
-        .slice(0, 4);
-
+        // .filter(s => s.similarity >= topScore - 0.12)
+        // .slice(0, 4);
+        .filter(s => s.similarity >= 0.72 && s.similarity >= topScore - 0.10)
+        .slice(0, 3);
       // Save assistant message with sources
       await this.aiConversationService.addMessage(
         conversation.id,
