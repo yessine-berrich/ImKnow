@@ -14,7 +14,7 @@ export class RagService {
   ) {}
 
   async ragSearch(queryDto: RagQueryDto, userId: number): Promise<RagResponse> {
-    const { q, limit = 12, minSimilarity = 0.25, conversationId } = queryDto;
+    const { q, limit = 12, minSimilarity = 0.60, conversationId } = queryDto;
 
     // ── Resolve / create conversation ──────────────────────────────────────
     const conversation = await this.aiConversationService.getOrCreate(
@@ -60,9 +60,15 @@ export class RagService {
           });
         }
       }
-      const sources = Array.from(sourceMap.values()).sort(
+      const allSources = Array.from(sourceMap.values()).sort(
         (a, b) => b.similarity - a.similarity,
       );
+
+      // Keep only sources within 12 percentage points of the best score, max 4
+      const topScore = allSources[0]?.similarity ?? 0;
+      const sources = allSources
+        .filter(s => s.similarity >= topScore - 0.12)
+        .slice(0, 4);
 
       // Save assistant message with sources
       await this.aiConversationService.addMessage(

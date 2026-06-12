@@ -49,7 +49,6 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
   const hasActiveFilters = Object.values(filters).some(v => v && v !== '');
 
   const roles = [
-    { value: 'SUPERADMIN', label: t('users_page.role_superadmin_full'), color: 'bg-purple-500', icon: '🛡️' },
     { value: 'ADMIN',      label: t('users_page.role_admin'),           color: 'bg-red-500',    icon: '👑' },
     { value: 'EMPLOYEE',   label: t('users_page.role_employee'),        color: 'bg-blue-500',   icon: '👤' },
   ];
@@ -102,9 +101,9 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
             </span>
           </span>
           {filters.role && (
-            <button onClick={(e) => { e.stopPropagation(); onChange('role', ''); }} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onChange('role', ''); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onChange('role', ''); } }} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <X className="h-3 w-3" />
-            </button>
+            </span>
           )}
         </button>
         {openDropdown === 'role' && (
@@ -147,9 +146,9 @@ export default function UsersFilter({ filters, onChange, onReset }: UsersFilterP
             </span>
           </span>
           {filters.status && (
-            <button onClick={(e) => { e.stopPropagation(); onChange('status', ''); }} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); onChange('status', ''); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onChange('status', ''); } }} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
               <X className="h-3 w-3" />
-            </button>
+            </span>
           )}
         </button>
         {openDropdown === 'status' && (

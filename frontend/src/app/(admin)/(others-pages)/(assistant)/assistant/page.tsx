@@ -102,6 +102,8 @@ export default function AssistantPage() {
   const [editingId, setEditingId]       = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
 
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLTextAreaElement>(null);
   const editInputRef   = useRef<HTMLInputElement>(null);
@@ -218,9 +220,15 @@ export default function AssistantPage() {
     } catch { /* ignore */ }
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: number) => {
+  const handleDelete = (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    if (!confirm('Supprimer cette conversation ?')) return;
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmId === null) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
     try {
       await aiConversationService.delete(id);
       setConversations((prev) => prev.filter((c) => c.id !== id));
@@ -557,6 +565,37 @@ export default function AssistantPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteConfirmId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Supprimer la conversation</h3>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              Cette action est irréversible. La conversation sera définitivement supprimée.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar       { width: 4px; }

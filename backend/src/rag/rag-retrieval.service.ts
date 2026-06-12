@@ -21,7 +21,7 @@ export class RagRetrievalService {
   async semanticChunkSearch(
     query: string,
     limit = 8,
-    minSimilarity = 0.25,
+    minSimilarity = 0.60,
   ): Promise<ChunkSearchResult[]> {
     if (!query?.trim()) return [];
 
