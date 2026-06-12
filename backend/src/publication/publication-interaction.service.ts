@@ -47,15 +47,13 @@ export class PublicationInteractionService {
       publication.likes = [...publication.likes, user];
 
       if (publication.author.id !== userId) {
-        await this.notificationService.createAndNotify(
+        this.notificationService.createAndNotify(
           NotificationType.PUBLICATION_LIKED,
           publication.author.id,
           user,
           `${user.firstName} a aimé votre publication "${publication.title}"`,
-          {
-            publicationId: publication.id,
-          },
-        );
+          { publicationId: publication.id },
+        ).catch((err) => console.error('[Notification] PUBLICATION_LIKED:', err.message));
       }
     }
 
@@ -97,15 +95,13 @@ export class PublicationInteractionService {
       publication.bookmarks = [...publication.bookmarks, user];
 
       if (publication.author.id !== userId) {
-        await this.notificationService.createAndNotify(
+        this.notificationService.createAndNotify(
           NotificationType.PUBLICATION_BOOKMARKED,
-          publication.author.id, // destinataire = auteur
-          user, // expéditeur
+          publication.author.id,
+          user,
           `${user.firstName} a mis votre publication "${publication.title}" en favori`,
-          {
-            publicationId: publication.id,
-          },
-        );
+          { publicationId: publication.id },
+        ).catch((err) => console.error('[Notification] PUBLICATION_BOOKMARKED:', err.message));
       }
     }
 

@@ -86,27 +86,22 @@ export class FollowService {
 
     if (follower) {
       if (mutualFollow) {
-        // Nouvelle amitié → initialiser la conversation
         await this.chatService.createSystemWelcomeMessage(followerId, followingId);
-
-        await this.notificationService.createAndNotify(
+        this.notificationService.createAndNotify(
           NotificationType.NEW_FOLLOWER,
           followingId,
           follower,
           `Vous et ${follower.firstName} ${follower.lastName} êtes maintenant amis`,
           { followerId: follower.id },
-        );
+        ).catch((err) => console.error('[Notification] NEW_FOLLOWER (mutual):', err.message));
       } else {
-        // One-way follow — notify the followed user
-        if (targetUser.emailNotificationsEnabled) {
-          await this.notificationService.createAndNotify(
-            NotificationType.NEW_FOLLOWER,
-            followingId,
-            follower,
-            `${follower.firstName} ${follower.lastName} started following you`,
-            { followerId: follower.id },
-          );
-        }
+        this.notificationService.createAndNotify(
+          NotificationType.NEW_FOLLOWER,
+          followingId,
+          follower,
+          `${follower.firstName} ${follower.lastName} a commencé à vous suivre`,
+          { followerId: follower.id },
+        ).catch((err) => console.error('[Notification] NEW_FOLLOWER:', err.message));
       }
     }
 

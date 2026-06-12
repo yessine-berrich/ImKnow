@@ -64,7 +64,7 @@ export class CommentService {
     if (createCommentDto.parentId) {
       const parentComment = await this.commentRepository.findOne({
         where: { id: createCommentDto.parentId },
-        relations: ['publication'],
+        relations: ['publication', 'author'],
       });
 
       if (!parentComment) {
@@ -94,50 +94,30 @@ export class CommentService {
 
     const savedComment = await this.commentRepository.save(comment);
 
-    if (comment.parent) {
-      const parentAuthor = comment.parent.author;
-      if (parentAuthor.id !== userId) {
-        // ne pas notifier soi-même
-        await this.notificationService.createAndNotify(
-          NotificationType.REPLY,
-          parentAuthor.id, // destinataire = auteur du parent
-          user, // expéditeur = celui qui répond
-          `${user.firstName} a répondu à votre commentaire`,
-          {
-            commentId: savedComment.id,
-            publicationId: createCommentDto.publicationId,
-            parentCommentId: comment.parent.id,
-          },
-        );
-      }
-    }
-
-    if (!comment.parent) {
-      const publicationAuthor = publication.author;
-      if (publicationAuthor.id !== userId) {
-        // ne pas notifier soi-même
-        await this.notificationService.createAndNotify(
-          NotificationType.NEW_COMMENT,
-          publicationAuthor.id,
-          user,
-          `${user.firstName} a commenté votre publication`,
-          {
-            commentId: savedComment.id,
-            publicationId: createCommentDto.publicationId,
-          },
-        );
-      }
-    }
-
-    // Cas 2 : Mentions → notifier chaque personne mentionnée
-    if (comment.mentionedUsers?.length) {
-      for (const mentioned of comment.mentionedUsers) {
-        if (mentioned.id !== userId) {
+    try {
+      if (comment.parent) {
+        const parentAuthor = comment.parent.author;
+        if (parentAuthor?.id && parentAuthor.id !== userId) {
           await this.notificationService.createAndNotify(
-            NotificationType.MENTION,
-            mentioned.id,
+            NotificationType.REPLY,
+            parentAuthor.id,
             user,
-            `${user.firstName} vous a mentionné dans un commentaire`,
+            `${user.firstName} a répondu à votre commentaire`,
+            {
+              commentId: savedComment.id,
+              publicationId: createCommentDto.publicationId,
+              parentCommentId: comment.parent.id,
+            },
+          );
+        }
+      } else {
+        const publicationAuthor = publication.author;
+        if (publicationAuthor.id !== userId) {
+          await this.notificationService.createAndNotify(
+            NotificationType.NEW_COMMENT,
+            publicationAuthor.id,
+            user,
+            `${user.firstName} a commenté votre publication`,
             {
               commentId: savedComment.id,
               publicationId: createCommentDto.publicationId,
@@ -145,6 +125,25 @@ export class CommentService {
           );
         }
       }
+
+      if (comment.mentionedUsers?.length) {
+        for (const mentioned of comment.mentionedUsers) {
+          if (mentioned.id !== userId) {
+            await this.notificationService.createAndNotify(
+              NotificationType.MENTION,
+              mentioned.id,
+              user,
+              `${user.firstName} vous a mentionné dans un commentaire`,
+              {
+                commentId: savedComment.id,
+                publicationId: createCommentDto.publicationId,
+              },
+            );
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('[Notification] Erreur lors de l\'envoi de la notification commentaire:', err.message);
     }
 
     // Retourner avec les relations nécessaires
@@ -237,16 +236,13 @@ export class CommentService {
     } else {
       comment.likes = [...comment.likes, user];
       if (comment.author.id !== userId) {
-        await this.notificationService.createAndNotify(
+        this.notificationService.createAndNotify(
           NotificationType.COMMENT_LIKED,
           comment.author.id,
           user,
           `${user.firstName} a aimé votre commentaire`,
-          {
-            commentId: comment.id,
-            publicationId: comment.publication?.id,
-          },
-        );
+          { commentId: comment.id, publicationId: comment.publication?.id },
+        ).catch((err) => console.error('[Notification] COMMENT_LIKED:', err.message));
       }
     }
 
