@@ -11,6 +11,7 @@ import {
 import Avatar from '../ui/avatar/Avatar';
 import { useTranslation } from '../../context/LanguageContext';
 import { translateError } from '@/utils/errorTranslation';
+import { toast } from '@/components/modals/ToastContainer';
 import { followService } from '../../../services/follow.service';
 import { userService } from '../../../services/user.service';
 import type { UserReportReason } from '../../../services/user.service';
@@ -186,13 +187,7 @@ export default function UserProfileHeader({
   };
 
   const showToast = (message: string, type: 'success' | 'error') => {
-    const el = document.createElement('div');
-    el.className = `fixed top-4 right-4 z-[9999] px-5 py-3 rounded-xl shadow-xl text-white text-sm font-medium ${
-      type === 'success' ? 'bg-[#168F6F]' : 'bg-red-600'
-    }`;
-    el.textContent = message;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
+    type === 'success' ? toast.success(message) : toast.error(message);
   };
 
   const baseButtonStyle =
