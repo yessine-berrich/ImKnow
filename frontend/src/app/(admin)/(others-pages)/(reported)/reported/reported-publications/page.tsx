@@ -773,7 +773,6 @@ export default function ReportedPublicationsPage() {
                   <th className="px-4 py-3 font-medium text-center">{t('reported_page.col_reports')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_top_reason')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_status')}</th>
-                  <th className="px-4 py-3 font-medium">{t('reported_page.col_trend')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_last_report')}</th>
                   <th className="px-4 py-3 font-medium text-right">{t('reported_page.col_action')}</th>
                 </tr>
@@ -782,14 +781,14 @@ export default function ReportedPublicationsPage() {
                 {loading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 10 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <td key={j} className="px-4 py-3"><Skeleton className="h-5" /></td>
                       ))}
                     </tr>
                   ))
                 ) : !displayedItems.length ? (
                   <tr>
-                    <td colSpan={10} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <Flag size={32} className="mx-auto text-gray-200 dark:text-gray-700 mb-3" />
                       <p className="text-sm text-gray-400">{t('reported_page.empty_pub')}</p>
                       {hasActiveFilters && (
@@ -833,11 +832,6 @@ export default function ReportedPublicationsPage() {
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${sc?.cls ?? 'text-gray-500 bg-gray-100'}`}>
                             {sc ? t(sc.labelKey) : item.publicationStatus}
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            <TrendIcon trend={item.trend} />
-                          </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400">
                           {item.lastReportAt ? new Date(item.lastReportAt).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US') : '—'}

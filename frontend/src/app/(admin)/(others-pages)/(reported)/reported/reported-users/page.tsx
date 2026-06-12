@@ -781,7 +781,6 @@ export default function ReportedUsersPage() {
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_top_reason')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_status')}</th>
                   <th className="px-4 py-3 font-medium">{t('reported_page.col_priority')}</th>
-                  <th className="px-4 py-3 font-medium">{t('reported_page.col_trend')}</th>
                   <th className="px-4 py-3 font-medium text-right">{t('reported_page.col_action')}</th>
                 </tr>
               </thead>
@@ -789,14 +788,14 @@ export default function ReportedUsersPage() {
                 {loading ? (
                   Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 10 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <td key={j} className="px-4 py-3"><Skeleton className="h-5" /></td>
                       ))}
                     </tr>
                   ))
                 ) : !displayedItems.length ? (
                   <tr>
-                    <td colSpan={10} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <Users size={32} className="mx-auto text-gray-200 dark:text-gray-700 mb-3" />
                       <p className="text-sm text-gray-400">{t('reported_page.empty_user')}</p>
                       {hasActiveFilters && (
@@ -844,9 +843,6 @@ export default function ReportedUsersPage() {
                       </td>
                       <td className="px-4 py-3">
                         <PriorityBadge priority={item.priority} />
-                      </td>
-                      <td className="px-4 py-3">
-                        <TrendIcon trend={item.trend} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
