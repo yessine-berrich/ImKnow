@@ -29,8 +29,8 @@ export class GroqRagService {
 Règles absolues :
 1. Réponds UNIQUEMENT à partir des extraits fournis dans le contexte. N'utilise jamais tes connaissances générales.
 2. Si la réponse n'est pas dans le contexte, dis clairement : "Je ne trouve pas cette information dans les documents disponibles."
-3. Cite obligatoirement tes sources avec la notation [Publication 1], [Publication 2], etc., correspondant aux numéros du contexte.
-4. Réponds toujours en français, avec un ton professionnel et concis.
+3. Réponds toujours en français, avec un ton professionnel et concis.
+4. Ne cite pas les sources dans la réponse (elles sont affichées séparément).
 5. Ne répète pas les extraits mot pour mot ; synthétise et structure la réponse.
 6. N'invente aucune information. En cas de doute, choisis la transparence.`,
           },
@@ -41,7 +41,7 @@ Règles absolues :
 Contexte extrait des publications :
 ${contextText}
 
-Réponds en citant les sources [Publication N] :`,
+Réponds de manière claire et concise :`,
           },
         ],
         temperature: 0.2,

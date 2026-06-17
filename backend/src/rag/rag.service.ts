@@ -8,6 +8,9 @@ import { filter } from 'rxjs/internal/operators/filter';
 
 @Injectable()
 export class RagService {
+  static generateRAGResponse(generateRAGResponse: any) {
+    throw new Error('Method not implemented.');
+  }
   constructor(
     private readonly ragRetrievalService: RagRetrievalService,
     private readonly groqRagService: GroqRagService,
@@ -70,8 +73,12 @@ export class RagService {
       const sources = allSources
         // .filter(s => s.similarity >= topScore - 0.12)
         // .slice(0, 4);
-        .filter(s => s.similarity >= 0.72 && s.similarity >= topScore - 0.10)
-        .slice(0, 3);
+
+        // .filter(s => s.similarity >= 0.72 && s.similarity >= topScore - 0.10)
+        // .slice(0, 3);
+        
+        .filter((s, i) => i === 0 || s.similarity >= topScore - 0.10)
+        .slice(0, 4);
       // Save assistant message with sources
       await this.aiConversationService.addMessage(
         conversation.id,
